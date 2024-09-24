@@ -3,6 +3,7 @@ from zafiaonline.zafiaonline import Client
 
 Mafia = Client()
 Mafia.sign_in("email", "password")
+
 Mafia.join_global_chat()  # join in global chat
 
 while 1:
