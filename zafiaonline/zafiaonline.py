@@ -17,8 +17,7 @@ from websocket import create_connection
 
 
 class Client(WebClient):
-    def __init__(self,
-                 debug: bool = False):  # кому нужен прокси в мафке? proxy.list = {ip:pass}, грубо упрощено. """proxy: list = None, """ было после self,
+    def __init__(self, debug: bool = False):  # proxy: list = None, было после "self,"
         self.token: str = None
         self.id: str = None
         self.md5hash = Md5()  # .utils.md5hash
