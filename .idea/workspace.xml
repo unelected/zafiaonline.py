@@ -17,11 +17,27 @@
       </list>
     </option>
   </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="GitHubPullRequestSearchHistory"><![CDATA[{
+  "lastFilter": {
+    "state": "OPEN",
+    "assignee": "unelected"
+  }
+}]]></component>
+  <component name="GithubPullRequestsUISettings"><![CDATA[{
+  "selectedUrlAndAccountId": {
+    "url": "https://github.com/unelected/zafiaonline.py.git",
+    "accountId": "6aae840b-f1b5-48c2-a658-b842848de10d"
+  }
+}]]></component>
   <component name="ProjectColorInfo">{
   &quot;customColor&quot;: &quot;&quot;,
   &quot;associatedIndex&quot;: 6
 }</component>
   <component name="ProjectId" id="2oOTPe8Mw8EhoqkFRvIgvkXUCVD" />
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
@@ -29,8 +45,16 @@
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
     "RunOnceActivity.ShowReadmeOnStart": "true",
+    "git-widget-placeholder": "master",
     "last_opened_file_path": "C:/Users/cr/PycharmProjects/mafia/zafiaonline.py",
     "settings.editor.selected.configurable": "vcs.Git"
+  },
+  "keyToStringList": {
+    "GitStage.ChangesTree.GroupingKeys": [
+      "directory",
+      "module",
+      "repository"
+    ]
   }
 }]]></component>
   <component name="SharedIndexes">
@@ -49,6 +73,19 @@
       <option name="presentableId" value="Default" />
       <updated>1730739600152</updated>
     </task>
+    <task id="LOCAL-00001" summary="lib update">
+      <option name="closed" value="true" />
+      <created>1730817267028</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1730817267028</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="lib update" />
+    <option name="LAST_COMMIT_MESSAGE" value="lib update" />
   </component>
 </project>
