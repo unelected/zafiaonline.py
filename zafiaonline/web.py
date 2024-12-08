@@ -47,7 +47,7 @@ class WebClient:
             "lang": language
         }
         response = requests.post(f"{self.rest_address}/user/email/verify",
-                                 ata=data, headers=self.auth_headers).json()
+                                 data=data, headers=self.auth_headers).json()
         return response
 
     def user_get(self, _id: str) -> None:
