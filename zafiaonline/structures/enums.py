@@ -48,3 +48,9 @@ class RoomModelType(IntEnum):
     NOT_RATING_MODE = 0
     RATING_MODE = 1
 
+
+class ProfilePhotoType(IntEnum):
+    NO_PHOTO = 0
+    PHOTO_ADDED = 1
+
+
