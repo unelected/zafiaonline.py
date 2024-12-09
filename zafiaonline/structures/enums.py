@@ -27,7 +27,6 @@ class Roles(IntEnum):
     INFORMER = 11
 
 
-
 class RatingMode(str, Enum):
     ALL_TIME = "all_time"
     TODAY = "today"
