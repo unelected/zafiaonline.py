@@ -54,3 +54,7 @@ class ProfilePhotoType(IntEnum):
     PHOTO_ADDED = 1
 
 
+class FriendInRoomType(IntEnum):
+    NO_FRIEND_IN_ROOM = 0
+    FRIEND_IN_ROOM = 1
+
