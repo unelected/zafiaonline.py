@@ -1,6 +1,7 @@
 <h1 align="center">
   Mafia Online API on Python
 </h1>
+
 ![Python version](https://img.shields.io/badge/python-3.7+-blue.svg)
 
 
