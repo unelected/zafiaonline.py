@@ -2,10 +2,10 @@
   Mafia Online API on Python
 </h1>
 
+<p align="center">This library for <a href="https://play.google.com/store/apps/details?id=com.tokarev.mafia">Mafia Online</a></p>
+
 ![Python version](https://img.shields.io/badge/python-3.7+-blue.svg)
 
-
-<p align="center">This library for <a href="https://play.google.com/store/apps/details?id=com.tokarev.mafia">Mafia Online</a></p>
 
 # Install
 ```
