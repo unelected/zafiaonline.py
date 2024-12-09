@@ -1,6 +1,5 @@
 from enum import IntEnum, Enum
 
-
 class Sex(IntEnum):
     WOMEN = 0
     MEN = 1
