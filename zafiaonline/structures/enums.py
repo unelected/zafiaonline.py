@@ -45,8 +45,8 @@ class ActivityType(IntEnum):
 
 
 class RoomModelType(IntEnum):
-    NOT_RATING_MODE = 0
-    RATING_MODE = 1
+    NOT_MATCHMAKING_MODE = 0
+    MATCHMAKING_MODE = 1
 
 
 class ProfilePhotoType(IntEnum):
