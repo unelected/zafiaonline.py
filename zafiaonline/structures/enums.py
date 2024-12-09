@@ -5,10 +5,12 @@ class Sex(IntEnum):
     WOMEN = 0
     MEN = 1
 
+
 class Languages(str, Enum):
     UNSELECTED = ""
     RUSSIAN = "ru"
     ENGLISH = "en"
+
 
 class Roles(IntEnum):
     UNKNOWN = 0
@@ -24,10 +26,13 @@ class Roles(IntEnum):
     SPY = 10
     INFORMER = 11
 
+
+
 class RatingMode(str, Enum):
     ALL_TIME = "all_time"
     TODAY = "today"
     YESTERDAY = "yesterday"
+
 
 class RatingType(str, Enum):
     GAMES = "games"
@@ -35,19 +40,24 @@ class RatingType(str, Enum):
     AUTHORITY = "authority"
     WINS = "wins"
 
+
 class ActivityType(IntEnum):
     OFFLINE = 0
     ONLINE = 1
+
 
 class RoomModelType(IntEnum):
     NOT_MATCHMAKING_MODE = 0
     MATCHMAKING_MODE = 1
 
+
 class ProfilePhotoType(IntEnum):
     NO_PHOTO = 0
     PHOTO_ADDED = 1
 
+
 class FriendInRoomType(IntEnum):
     NO_FRIEND_IN_ROOM = 0
     FRIEND_IN_ROOM = 1
+
 
