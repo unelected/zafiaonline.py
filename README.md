@@ -9,6 +9,18 @@
 ```
 git clone https://github.com/unelected/zafiaonline.py.git
 ```
+## Requirements
+
+For correct operation of the library, you will need to install the following libraries:
+
+- [websocket-client](https://github.com/websocket-client/websocket-client)
+- [msgspec](https://github.com/jcrist/msgspec)
+- [requests](https://github.com/psf/requests)
+
+You can install them using `pip`:
+
+```bash
+pip install websocket-client msgspec requests
 
 # Import and Auth
 ```python
