@@ -13,7 +13,6 @@ class Languages(str, Enum):
 
 
 class Roles(IntEnum):
-    NO_ROLE = -1
     UNKNOWN = 0
     CIVILIAN = 1
     DOCTOR = 2
