@@ -43,3 +43,9 @@ class RatingType(str, Enum):
 class ActivityType(IntEnum):
     OFFLINE = 0
     ONLINE = 1
+
+
+class RoomModelType(IntEnum):
+    NOT_RATING_MODE = 0
+    RATING_MODE = 1
+
