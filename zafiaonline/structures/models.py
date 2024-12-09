@@ -1,8 +1,8 @@
 from msgspec import Struct
-from .packet_data_keys import Renaming
-from .enums import Sex, Languages, Roles
 from typing import List
 
+from .packet_data_keys import Renaming
+from .enums import Sex, Languages, Roles
 
 class ModelUser(Struct, rename=Renaming.USER):
     user_id: str = None
