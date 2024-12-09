@@ -1,7 +1,7 @@
 import requests
 import base64
 
-from .structures.enums import Languages, Sex
+from zafiaonline.structures.enums import Languages, Sex
 
 class WebClient:
     def __init__(self, client) -> None:
