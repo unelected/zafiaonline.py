@@ -21,6 +21,7 @@ You can install them using `pip`:
 
 ```bash
 pip install websocket-client msgspec requests
+```
 
 # Import and Auth
 ```python
