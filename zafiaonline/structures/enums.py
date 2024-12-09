@@ -38,3 +38,8 @@ class RatingType(str, Enum):
     EXPERIENCE = "experience"
     AUTHORITY = "authority"
     WINS = "wins"
+
+
+class ActivityType(IntEnum):
+    OFFLINE = 0
+    ONLINE = 1
