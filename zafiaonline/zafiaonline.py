@@ -125,7 +125,7 @@ class Client(WebClient):
             PacketDataKeys.ROOM: {
                 PacketDataKeys.MIN_PLAYERS: min_players,
                 PacketDataKeys.MAX_PLAYERS: max_players,
-                PacketDataKeys.PASSWORD: self.md5hash.md5salt(password) if password else "",
+                PacketDataKeys.PASSWORD: self.md5hash.md5salt(password or ""),
                 PacketDataKeys.DEVICE_ID: 0,
                 PacketDataKeys.SELECTED_ROLES: selected_roles,
                 PacketDataKeys.MIN_LEVEL: min_level,
@@ -134,11 +134,11 @@ class Client(WebClient):
             }
         }
         self.send_server(request_data)
-        time.sleep(.5)
+        time.sleep(.1)
         data = self._get_data(PacketDataKeys.ROOM_CREATED)
-        while data[PacketDataKeys.TYPE] != PacketDataKeys.ROOM_CREATED:
+        if data[PacketDataKeys.TYPE] != PacketDataKeys.ROOM_CREATED:
             self.send_server(request_data)
-            time.sleep(.5)
+            time.sleep(.1)
             data = self._get_data(PacketDataKeys.ROOM_CREATED)
             print("receiver")
         return decode(json.dumps(data[PacketDataKeys.ROOM]), type=ModelRoom)
