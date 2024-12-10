@@ -46,17 +46,19 @@ class Client(WebClient):
         **Returns**
             - **Success** : list
         """
-        data = dict()
-        data[PacketDataKeys.DEVICE_ID] = token_hex(10)
-        data[PacketDataKeys.TYPE] = PacketDataKeys.SIGN_IN
-        data[PacketDataKeys.EMAIL] = email
-        data[PacketDataKeys.PASSWORD] = self.md5hash.md5salt(password) if password else ""
-        data[PacketDataKeys.OBJECT_ID] = user_id
-        data[PacketDataKeys.TOKEN] = token
+        
+        data: dict = {
+            PacketDataKeys.DEVICE_ID: token_hex(10),
+            PacketDataKeys.TYPE: PacketDataKeys.SIGN_IN,
+            PacketDataKeys.EMAIL: email,
+            PacketDataKeys.PASSWORD: self.md5hash.md5salt(password or ""),
+            PacketDataKeys.OBJECT_ID: user_id,
+            PacketDataKeys.TOKEN: token,
+        }
         self.send_server(data)
-        time.sleep(.5)
+        time.sleep(.1)
         data = self._get_data(PacketDataKeys.USER_SIGN_IN)
-        while data[PacketDataKeys.TYPE] != PacketDataKeys.USER_SIGN_IN:
+        if data[PacketDataKeys.TYPE] != PacketDataKeys.USER_SIGN_IN:
             return False
         self.user = decode(json.dumps(data[PacketDataKeys.USER]), type=ModelUser)
         self.server_config = decode(json.dumps(data[PacketDataKeys.SERVER_CONFIG]), type=ModelServerConfig)
