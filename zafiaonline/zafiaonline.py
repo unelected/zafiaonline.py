@@ -250,6 +250,9 @@ class Client(WebClient):
         self.send_server(data)
 
     def role_action(self, user_id: str, room_id: str, room_model_type: int = 0) -> None:
+        """
+        is used when using a role and voting when a game is started
+        """
         data: dict = {
             PacketDataKeys.TYPE: PacketDataKeys.ROLE_ACTION,
             PacketDataKeys.USER_OBJECT_ID: user_id,
