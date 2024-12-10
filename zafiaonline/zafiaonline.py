@@ -219,7 +219,7 @@ class Client(WebClient):
         self.send_server(data)
     
 
-    def create_player(self, room_id: str) -> Optional[dict]:
+    def create_player(self, room_id: str, room_model_type: int = 0) -> Optional[dict]:
         """
         need run after join_room()
 
@@ -228,6 +228,7 @@ class Client(WebClient):
         """
         data: dict = {
             PacketDataKeys.TYPE: PacketDataKeys.CREATE_PLAYER,
+            PacketDataKeys.ROOM_MODEL_TYPE: room_model_type,
             PacketDataKeys.ROOM_OBJECT_ID: room_id
         }
         self.send_server(data)
