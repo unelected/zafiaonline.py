@@ -226,6 +226,7 @@ class Client(WebClient):
         need run after join_room()
 
         :param room_id: id into room
+        :param room_model_type: type of room always 0, because matchmaking is deleted. use 1 when your game type is matchmaking
         :return: None
         """
         data: dict = {
