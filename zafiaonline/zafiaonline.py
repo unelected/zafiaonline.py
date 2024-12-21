@@ -13,7 +13,7 @@ from zafiaonline import ListenDataException
 from zafiaonline.utils.md5hash import Md5
 from zafiaonline.structures.packet_data_keys import PacketDataKeys
 from zafiaonline.structures.models import ModelUser, ModelServerConfig, ModelRoom, ModelFriend, ModelMessage
-from zafiaonline.structures.enums import Languages, Roles, Sex, RatingMode, RatingType
+from zafiaonline.structures.enums import Languages, Roles, Sex, RatingMode, RatingType, RoomModelType
 from zafiaonline.web import WebClient
 
 class Client(WebClient):
@@ -27,6 +27,7 @@ class Client(WebClient):
         self.server_config: ModelServerConfig = ModelServerConfig()
         self.address = "37.143.8.68"
         self.port = "7090"
+        self.web_port = "8008"
         self.alive = True
         self.data = Queue()
         self.ws = None
@@ -118,8 +119,7 @@ class Client(WebClient):
                     title: str = "", max_players: int = 8,
                     min_players: int = 5, password: str = "", min_level: int = 1,
                     vip_enabled: bool = False) -> ModelRoom:
-        if selected_roles is None:
-            selected_roles = [0]
+        selected_roles = selected_roles or [0]
         request_data: dict = {
             PacketDataKeys.TYPE: PacketDataKeys.ROOM_CREATE,
             PacketDataKeys.ROOM: {
@@ -136,7 +136,7 @@ class Client(WebClient):
         self.send_server(request_data)
         time.sleep(.1)
         data = self._get_data(PacketDataKeys.ROOM_CREATED)
-        if data[PacketDataKeys.TYPE] != PacketDataKeys.ROOM_CREATED:
+        while data[PacketDataKeys.TYPE] != PacketDataKeys.ROOM_CREATED:
             self.send_server(request_data)
             time.sleep(.1)
             data = self._get_data(PacketDataKeys.ROOM_CREATED)
@@ -221,13 +221,12 @@ class Client(WebClient):
         self.send_server(data)
     
 
-    def create_player(self, room_id: str, room_model_type: int = 0) -> Optional[dict]:
+    def create_player(self, room_id: str, room_model_type: RoomModelType = RoomModelType.NOT_MATCHMAKING_MODE) -> Optional[dict]:
         """
         need run after join_room()
-
+        :param room_model_type: room type
         :param room_id: id into room
-        :param room_model_type: type of room always 0, because matchmaking is deleted. use 1 when your game type is matchmaking
-        :return: None
+        :return: None or Players in room
         """
         data: dict = {
             PacketDataKeys.TYPE: PacketDataKeys.CREATE_PLAYER,
@@ -253,7 +252,7 @@ class Client(WebClient):
         }
         self.send_server(data)
 
-    def role_action(self, user_id: str, room_id: str, room_model_type: int = 0) -> None:
+    def role_action(self, user_id: str, room_id: str, room_model_type: RoomModelType = RoomModelType.NOT_MATCHMAKING_MODE) -> None:
         """
         is used when using a role and voting when a game is started
         """
@@ -360,7 +359,7 @@ class Client(WebClient):
         }
         self.send_server(data)
 
-    def remove_type(self, room_model_type: int) -> None:
+    def remove_type(self, room_model_type: RoomModelType = RoomModelType.NOT_MATCHMAKING_MODE) -> None:
         data: dict = {
             PacketDataKeys.TYPE: PacketDataKeys.GIVE_UP,
             PacketDataKeys.ROOM_MODEL_TYPE: room_model_type
@@ -397,7 +396,7 @@ class Client(WebClient):
                 return data
             data: dict = self.listen()
 
-    def give_up(self, room_id: str, room_model_type: int = 0) -> None:
+    def give_up(self, room_id: str, room_model_type: RoomModelType = RoomModelType.NOT_MATCHMAKING_MODE) -> None:
         data: dict = {
             PacketDataKeys.TYPE: PacketDataKeys.GIVE_UP,
             PacketDataKeys.ROOM_OBJECT_ID: room_id,

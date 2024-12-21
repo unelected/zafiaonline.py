@@ -267,7 +267,6 @@ class PacketDataKeys(str, Enum):
     ROOM_MODEL_TYPE = "rmt"
     MATCH_MAKING_GET_STATUS = "mmgsk"
     MATH_MAKING_ADD_USER = "mmauk"
-    FRIEND_IN_ROOM = "fir"
 
 
 class Renaming(dict, Enum):

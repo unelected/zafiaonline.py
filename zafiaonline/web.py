@@ -6,7 +6,7 @@ from zafiaonline.structures.enums import Languages, Sex
 class WebClient:
     def __init__(self, client) -> None:
         self.client = client
-        self.rest_address = f"http://{self.client.address}:8008"
+        self.rest_address = f"http://{self.client.address}:{self.client.web_port}"
 
     @property
     def auth_headers(self) -> dict:
