@@ -4,7 +4,7 @@
 
 <p align="center">This library for <a href="https://play.google.com/store/apps/details?id=com.tokarev.mafia">Mafia Online</a></p>
 
-![Python version](https://img.shields.io/badge/python-3.7+-blue.svg)
+![Python version](https://img.shields.io/badge/python-3.9+-blue.svg)
 
 
 # Install
