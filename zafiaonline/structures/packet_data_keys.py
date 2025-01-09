@@ -307,3 +307,5 @@ class Renaming(dict, Enum):
                "created": "c", "text": "tx", "message_style": "mstl",
                "accepted": "a", "message_type": "t"
                }
+    GUI = {"count_authority_for_swap_icon":"r"
+           }

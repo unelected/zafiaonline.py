@@ -6,31 +6,27 @@ from zafiaonline.structures.enums import Sex, Languages, Roles
 
 class ModelUser(Struct, rename=Renaming.USER):
     user_id: str = None
-    username: str = None
     updated: int = None
+    username: str = None
     photo: str = None
     experience: int = None
     next_level_experience: int = None
     previous_level_experience: int = None
     level: int = None
     authority: int = None
-    gold: int = None
-    money: int = None
     is_vip: int = None
     vip_updated: int = None
     played_games: int = None
-    score: int = None
+    match_making_score: int = None
     sex: Sex = Sex.MEN
+    player_role_statistics: dict = None
     wins_as_killer: int = None
     wins_as_mafia: int = None
     wins_as_peaceful: int = None
     token: str = None
-    accept_messages: int = None
     rank: int = None
-    selected_language: Languages = Languages.RUSSIAN
     online: int = None
-    player_role_statistics: dict = None
-    match_making_score: int = None
+    selected_language: Languages = Languages.RUSSIAN
 
 
 class ModelServerConfig(Struct, rename=Renaming.SERVER_CONFIG):
@@ -79,3 +75,6 @@ class ModelMessage(Struct, rename=Renaming.MESSAGE):
     message_style: int = None
     accepted: int = None
     message_type: int = None
+
+class ModelGUI(Struct, rename=Renaming.GUI):
+    count_authority_for_swap_icon: dict = None
