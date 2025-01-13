@@ -4,8 +4,9 @@ import base64
 from zafiaonline.structures.enums import Languages, Sex
 
 class WebClient:
-    def __init__(self, client) -> None:
+    def __init__(self, client, web_port) -> None:
         self.client = client
+        self.web_port = web_port
         self.rest_address = f"http://{self.client.address}:{self.client.web_port}"
 
     @property
