@@ -1,26 +1,28 @@
 import json
-import threading
 import base64
-import time
 import logging
 
 from typing import List, Optional, Union
 from secrets import token_hex
-from msgspec.json import decode
-from queue import Queue
-from websocket import create_connection
 
-from zafiaonline.utils.exceptions import ListenDataException
+from msgspec.json import decode
+
 from zafiaonline.utils.md5hash import Md5
 from zafiaonline.structures.packet_data_keys import PacketDataKeys
-from zafiaonline.structures.models import ModelUser, ModelServerConfig, ModelRoom, ModelFriend, ModelMessage
-from zafiaonline.structures.enums import Languages, Roles, Sex, RatingMode, RatingType, RoomModelType
+from zafiaonline.structures.models import (ModelUser, ModelServerConfig,
+                                           ModelRoom, ModelFriend,
+                                           ModelMessage)
+from zafiaonline.structures.enums import (Languages, Roles,
+                                          Sex, RatingMode, RatingType,
+                                          RoomModelType)
 from zafiaonline.web import WebClient
+from zafiaonline.websocket_module import Websocket
 
 logging.basicConfig(level=logging.INFO)
 
-class Client(WebClient):
-    def __init__(self, proxy: Optional[list] = None, debug: Optional[bool] = False) -> None:
+class Client(Websocket, WebClient):
+    def __init__(self, proxy: Optional[list] = None, debug:
+    Optional[bool] = False) -> None:
         self.proxy = proxy if proxy is not None else []
         self.debug = debug
         self.token: Optional[str] = None
@@ -28,20 +30,19 @@ class Client(WebClient):
         self.md5hash = Md5()
         self.user: ModelUser = ModelUser()
         self.server_config: ModelServerConfig = ModelServerConfig()
-        self.address = "37.143.8.68"
-        self.port = "7090"
-        self.web_port = "8008"
-        self.alive = True
-        self.data = Queue()
-        self.ws = None
+        self.address:str = "37.143.8.68"
+        self.port:str = "7090"
+        self.web_port:str = "8008"
+        self.rest_address \
+            = f"http://{self.address}:{self.web_port}"
         super().__init__(self)
-        self.create_connection()
-        self.listener = None
 
-    def sign_in(self, email: str = "", password: str = "",
+    async def sign_in(self, email: str = "", password: str = "",
                 token: str = "", user_id: str = "") -> Union[ModelUser, bool]:
         if email == "email":
-            logging.info(f"your email is literally {email} please change your config if your nickname isn't email")
+            logging.warning(f"your email is literally {email} "
+                         f"please change your config if your nickname"
+                         f" isn't email")
         """
         Sign in into user
 
@@ -52,78 +53,84 @@ class Client(WebClient):
         **Returns**
             - **Success** : list
         """
-        
+        if not self.ws:
+            await self.create_connection()
         data: dict = {
             PacketDataKeys.DEVICE_ID: token_hex(10),
             PacketDataKeys.TYPE: PacketDataKeys.SIGN_IN,
             PacketDataKeys.EMAIL: email,
-            PacketDataKeys.PASSWORD: self.md5hash.md5salt(password or ""),
+            PacketDataKeys.PASSWORD: self.md5hash.md5salt(password or
+                                                                ""),
             PacketDataKeys.OBJECT_ID: user_id,
             PacketDataKeys.TOKEN: token,
         }
-        self.send_server(data)
-        time.sleep(.1)
-        data = self.get_data(PacketDataKeys.USER_SIGN_IN)
+        await self.send_server(data)
+        data = await self.get_data(PacketDataKeys.USER_SIGN_IN)
         if data[PacketDataKeys.TYPE] != PacketDataKeys.USER_SIGN_IN:
-            logging.info("sign in data send error")
+            logging.debug("sign in data get error")
             return False
-        self.user = decode(json.dumps(data[PacketDataKeys.USER]), type=ModelUser)
-        self.server_config = decode(json.dumps(data[PacketDataKeys.SERVER_CONFIG]), type=ModelServerConfig)
+        self.user = decode(json.dumps(data[PacketDataKeys.USER]),
+                           type=ModelUser)
+        self.server_config = decode(json.dumps(data
+                                               [PacketDataKeys.SERVER_CONFIG])
+                                    , type=ModelServerConfig)
         self.token = self.user.token
         self.id = self.user.user_id
         return self.user
         
-    def get_rating(self, rating_type: RatingType = RatingType.AUTHORITY,
+    async def get_rating(self, rating_type: RatingType = RatingType.AUTHORITY,
                    rating_mode: RatingMode = RatingMode.ALL_TIME) -> dict:
         data: dict = {
             PacketDataKeys.TYPE: PacketDataKeys.GET_RATING,
             PacketDataKeys.RATING_TYPE: rating_type,
             PacketDataKeys.RATING_MODE: rating_mode
         }
-        self.send_server(data)
-        return self.get_data(PacketDataKeys.RATING)
+        await self.send_server(data)
+        return await self.get_data(PacketDataKeys.RATING)
 
-    def kick_user_vote(self, room_id: str, value: bool = True) -> None:
+    async def kick_user_vote(self, room_id: str, value: bool = True) -> None:
         data: dict = {
             PacketDataKeys.TYPE: PacketDataKeys.KICK_USER_VOTE,
             PacketDataKeys.ROOM_OBJECT_ID: room_id,
             PacketDataKeys.VOTE: value
         }
-        self.send_server(data)
+        await self.send_server(data)
         
-    def kick_user(self, user_id: str, room_id: str) -> None:
+    async def kick_user(self, user_id: str, room_id: str) -> None:
         data: dict = {
             PacketDataKeys.TYPE: PacketDataKeys.KICK_USER,
             PacketDataKeys.ROOM_OBJECT_ID: room_id,
             PacketDataKeys.USER_OBJECT_ID: user_id
         }
-        self.send_server(data)
+        await self.send_server(data)
 
-    def username_set(self, nickname: str) -> None:
+    async def username_set(self, nickname: str) -> None:
         data: dict = {
             PacketDataKeys.TYPE: PacketDataKeys.USERNAME_SET,
             PacketDataKeys.USERNAME: nickname
         }
-        self.send_server(data)
+        await self.send_server(data)
 
-    def select_language(self, language: Languages = Languages.RUSSIAN) -> None:
+    async def select_language(self, language: Languages = Languages.RUSSIAN)\
+            -> None:
         data: dict = {
             PacketDataKeys.TYPE: PacketDataKeys.USER_SET_SERVER_LANGUAGE,
             PacketDataKeys.SERVER_LANGUAGE: language
         }
-        self.send_server(data)
+        await self.send_server(data)
 
-    def vote_player_list(self, user_id: str, room_id: str) -> None:
+    async def vote_player_list(self, user_id: str, room_id: str) -> None:
         data: dict = {
             PacketDataKeys.TYPE: PacketDataKeys.VOTE_PLAYER_LIST,
             PacketDataKeys.USER_OBJECT_ID: user_id,
             PacketDataKeys.ROOM_OBJECT_ID: room_id
         }
-        self.send_server(data)
+        await self.send_server(data)
 
-    def create_room(self, selected_roles: Optional[List[Roles]] = None,
+    async def create_room(self, selected_roles: Optional[List[Roles]] = None,
                     title: str = "", max_players: int = 8,
-                    min_players: int = 5, password: str = "", min_level: int = 1,
+                    min_players: int = 5, password: str = "",
+                    min_level: int = 1,
                     vip_enabled: bool = False) -> ModelRoom:
         selected_roles = selected_roles or [0]
         request_data: dict = {
@@ -131,7 +138,8 @@ class Client(WebClient):
             PacketDataKeys.ROOM: {
                 PacketDataKeys.MIN_PLAYERS: min_players,
                 PacketDataKeys.MAX_PLAYERS: max_players,
-                PacketDataKeys.PASSWORD: self.md5hash.md5salt(password or ""),
+                PacketDataKeys.PASSWORD: self.md5hash.md5salt(password
+                                                                    or ""),
                 PacketDataKeys.DEVICE_ID: 0,
                 PacketDataKeys.SELECTED_ROLES: selected_roles,
                 PacketDataKeys.MIN_LEVEL: min_level,
@@ -139,95 +147,96 @@ class Client(WebClient):
                 PacketDataKeys.VIP_ENABLED: vip_enabled
             }
         }
-        self.send_server(request_data)
-        time.sleep(.1)
-        data = self.get_data(PacketDataKeys.ROOM_CREATED)
-        while data[PacketDataKeys.TYPE] != PacketDataKeys.ROOM_CREATED:
-            self.send_server(request_data)
-            time.sleep(.1)
-            data = self.get_data(PacketDataKeys.ROOM_CREATED)
-            logging.info("receiver")
+        await self.send_server(request_data)
+        data = await self.get_data(PacketDataKeys.ROOM_CREATED)
+        if data[PacketDataKeys.TYPE] != PacketDataKeys.ROOM_CREATED:
+            await self.send_server(request_data)
+            data = await self.get_data(PacketDataKeys.ROOM_CREATED)
+            logging.debug("receiver")
         return decode(json.dumps(data[PacketDataKeys.ROOM]), type=ModelRoom)
 
-    def friend_list(self) -> List[ModelFriend]:
+    async def friend_list(self) -> List[ModelFriend]:
         data: dict = {
             PacketDataKeys.TYPE:  PacketDataKeys.ADD_CLIENT_TO_FRIENDSHIP_LIST
         }
-        self.send_server(data)
-        data = self.get_data(PacketDataKeys.FRIENDSHIP_LIST)
+        await self.send_server(data)
+        data = await self.get_data(PacketDataKeys.FRIENDSHIP_LIST)
         friends: List[ModelFriend] = []
         for friend in data[PacketDataKeys.FRIENDSHIP_LIST]:
             friends.append(decode(json.dumps(friend), type=ModelFriend))
         return friends
     
-    def search_player(self, nickname:str) -> dict:
+    async def search_player(self, nickname:str) -> dict:
         data: dict = {
             PacketDataKeys.TYPE: PacketDataKeys.SEARCH_USER,
             PacketDataKeys.SEARCH_TEXT: nickname
         }
-        self.send_server(data)
-        return self.get_data(PacketDataKeys.SEARCH_USER)
+        await self.send_server(data)
+        return await self.get_data(PacketDataKeys.SEARCH_USER)
 
-    def remove_friend(self, friend_id: str) -> None:
+    async def remove_friend(self, friend_id: str) -> None:
         data: dict = {
             PacketDataKeys.TYPE: PacketDataKeys.REMOVE_FRIEND,
             PacketDataKeys.FRIEND_USER_OBJECT_ID: friend_id
         }
-        self.send_server(data)
+        await self.send_server(data)
 
-    def update_photo(self, file: bytes) -> None:
+    async def update_photo(self, file: bytes) -> None:
         data: dict = {
             PacketDataKeys.TYPE: PacketDataKeys.UPLOAD_PHOTO,
             PacketDataKeys.FILE: base64.encodebytes(file).decode()
         }
-        self.send_server(data)
+        await self.send_server(data)
 
-    def update_photo_server(self, file: bytes) -> None:
+    async def update_photo_server(self, file: bytes) -> None:
         data: dict = {
             PacketDataKeys.TYPE: PacketDataKeys.UPLOAD_SCREENSHOT,
             PacketDataKeys.FILE: base64.encodebytes(file).decode()
         }
-        self.send_server(data)
+        await self.send_server(data)
 
-    def update_sex(self, sex: Sex) -> dict:
+    async def update_sex(self, sex: Sex) -> dict:
         data: dict = {
             PacketDataKeys.TYPE: PacketDataKeys.USER_CHANGE_SEX,
             PacketDataKeys.SEX: sex
         }
-        self.send_server(data)
-        return self.listen()
+        await self.send_server(data)
+        return await self.listen()
 
-    def message_complaint(self, reason: str, screenshot_id: int, user_id: str) -> dict:
+    async def message_complaint(self, reason: str,
+                                screenshot_id: int, user_id: str) -> dict:
         data: dict = {
             PacketDataKeys.TYPE: PacketDataKeys.MAKE_COMPLAINT,
             PacketDataKeys.USER_OBJECT_ID: user_id,
             PacketDataKeys.REASON: reason,
-            PacketDataKeys.SCREENSHOT: screenshot_id  # get from update_photo_server()
+            PacketDataKeys.SCREENSHOT: screenshot_id  # get from
+                                                      # update_photo_server()
         }
-        self.send_server(data)
-        return self.listen()
+        await self.send_server(data)
+        return await self.listen()
 
-    def get_private_messages(self, friend_id: str) -> List[ModelMessage]:
+    async def get_private_messages(self, friend_id: str) -> List[ModelMessage]:
         data: dict = {
             PacketDataKeys.TYPE: PacketDataKeys.ADD_CLIENT_TO_PRIVATE_CHAT,
             PacketDataKeys.FRIENDSHIP: friend_id
         }
-        self.send_server(data)
-        data = self.get_data(PacketDataKeys.PRIVATE_CHAT_LIST_MESSAGES)
+        await self.send_server(data)
+        data = await self.get_data(PacketDataKeys.PRIVATE_CHAT_LIST_MESSAGES)
         messages: List[ModelMessage] = []
         for message in data[PacketDataKeys.MESSAGES]:
             messages.append(decode(json.dumps(message), type=ModelMessage))
         return messages
 
-    def remove_player(self, room_id: str) -> None:
+    async def remove_player(self, room_id: str) -> None:
         data: dict = {
             PacketDataKeys.TYPE: PacketDataKeys.REMOVE_PLAYER,
             PacketDataKeys.ROOM_OBJECT_ID: room_id
         }
-        self.send_server(data)
+        await self.send_server(data)
     
 
-    def create_player(self, room_id: str, room_model_type: RoomModelType = RoomModelType.NOT_MATCHMAKING_MODE) -> Optional[dict]:
+    async def create_player(self, room_id: str, room_model_type:
+    RoomModelType = RoomModelType.NOT_MATCHMAKING_MODE) -> Optional[dict]:
         """
         need run after join_room()
         :param room_model_type: room type
@@ -239,26 +248,29 @@ class Client(WebClient):
             PacketDataKeys.ROOM_MODEL_TYPE: room_model_type,
             PacketDataKeys.ROOM_OBJECT_ID: room_id
         }
-        self.send_server(data)
-        return self.get_data(PacketDataKeys.PLAYERS)
+        await self.send_server(data)
+        return await self.get_data(PacketDataKeys.ROOM_STATISTICS)
 
-    def join_room(self, room_id: str, password: str = "") -> None:
+    async def join_room(self, room_id: str, password: str = "") -> None:
         data: dict = {
             PacketDataKeys.TYPE: PacketDataKeys.ROOM_ENTER,
-            PacketDataKeys.ROOM_PASS: self.md5hash.md5salt(password) if password else "",
+            PacketDataKeys.ROOM_PASS: self.md5hash.md5salt(password)
+            if password else "",
             PacketDataKeys.ROOM_OBJECT_ID: room_id
         }
-        self.send_server(data)
+        await self.send_server(data)
         
 
-    def leave_room(self, room_id: str) -> None:
+    async def leave_room(self, room_id: str) -> None:
         data: dict = {
             PacketDataKeys.TYPE: PacketDataKeys.REMOVE_PLAYER,
             PacketDataKeys.ROOM_OBJECT_ID: room_id
         }
-        self.send_server(data)
+        await self.send_server(data)
 
-    def role_action(self, user_id: str, room_id: str, room_model_type: RoomModelType = RoomModelType.NOT_MATCHMAKING_MODE) -> None:
+    async def role_action(self, user_id: str, room_id: str,
+                    room_model_type: RoomModelType =
+                    RoomModelType.NOT_MATCHMAKING_MODE) -> None:
         """
         is used when using a role and voting when a game is started
         """
@@ -268,30 +280,33 @@ class Client(WebClient):
             PacketDataKeys.ROOM_OBJECT_ID: room_id,
             PacketDataKeys.ROOM_MODEL_TYPE: room_model_type
         }
-        self.send_server(data, True)
+        await self.send_server(data, True)
 
-    def add_client_to_rooms_list(self) -> None:
+    async def add_client_to_rooms_list(self) -> None:
         data: dict = {
             PacketDataKeys.TYPE: PacketDataKeys.ADD_CLIENT_TO_ROOMS_LIST
         }
-        self.send_server(data)
+        await self.send_server(data)
 
-    def join_global_chat(self) -> None:
+    async def join_global_chat(self) -> None:
         data: dict = {
             PacketDataKeys.TYPE: PacketDataKeys.ADD_CLIENT_TO_CHAT
         }
-        self.send_server(data)
+        await self.send_server(data)
 
-    def leave_from_global_chat(self) -> None:
-        self.dashboard()
+    async def leave_from_global_chat(self) -> None:
+        await self.dashboard()
 
-    def dashboard(self) -> None:
+    async def dashboard(self) -> None:
         data: dict = {
             PacketDataKeys.TYPE: PacketDataKeys.ADD_CLIENT_TO_DASHBOARD
         }
-        self.send_server(data)
+        await self.send_server(data)
 
-    def send_message_friend(self, friend_id: str, content: str) -> None:
+    async def send_message_friend(self, friend_id: str, content: str) -> None:
+        if content == "":
+            logging.warning("anti-ban protection, dont send message")
+            return
         data: dict = {
             PacketDataKeys.TYPE: PacketDataKeys.PRIVATE_CHAT_MESSAGE_CREATE,
             PacketDataKeys.MESSAGE: {
@@ -299,9 +314,13 @@ class Client(WebClient):
                 PacketDataKeys.TEXT: content
             }
         }
-        self.send_server(data)
+        await self.send_server(data)
 
-    def send_message_room(self, content: str, room_id: str, message_style: int = 0) -> None:
+    async def send_message_room(self, content: str, room_id: str,
+                          message_style: int = 0) -> None:
+        if content == "":
+            logging.warning("anti-ban protection, dont send message")
+            return
         data: dict = {
             PacketDataKeys.TYPE: PacketDataKeys.ROOM_MESSAGE_CREATE,
             PacketDataKeys.MESSAGE: {
@@ -310,9 +329,10 @@ class Client(WebClient):
             },
             PacketDataKeys.ROOM_OBJECT_ID: room_id
         }
-        self.send_server(data)
+        await self.send_server(data)
 
-    def send_message_global(self, content: str, message_style: int = 0) -> None:
+    async def send_message_global(self, content: str, message_style: int = 0)\
+            -> None:
         """
         Send message to global chat
 
@@ -320,6 +340,9 @@ class Client(WebClient):
             - **content** - Content of message
             - **message_style** - Style of message
         """
+        if content == "":
+            logging.warning("ant-ban protection, dont send message")
+            return
         data: dict = {
             PacketDataKeys.TYPE: PacketDataKeys.CHAT_MESSAGE_CREATE,
             PacketDataKeys.MESSAGE: {
@@ -327,97 +350,62 @@ class Client(WebClient):
                 PacketDataKeys.MESSAGE_STYLE: message_style,
             }
         }
-        self.send_server(data)
+        await self.send_server(data)
 
-    def get_user(self, user_id: str) -> dict:
+    async def get_user(self, user_id: str) -> Optional[dict]:
         data: dict = {
             PacketDataKeys.TYPE: PacketDataKeys.GET_USER_PROFILE,
             PacketDataKeys.USER_OBJECT_ID: user_id
         }
-        self.send_server(data)
+        await self.send_server(data)
         try:
-            return self.get_data(PacketDataKeys.USER_PROFILE)
+            return await self.get_data(PacketDataKeys.USER_PROFILE)
         except Exception as e:
-            logging.critical(f"get user {user_id} data error {e}")
+            logging.error(f"get user {user_id} data error {e}")
+            return None
 
-    def match_making_get_status(self) -> dict:
+    async def match_making_get_status(self) -> dict:
         data: dict = {
             PacketDataKeys.TYPE: PacketDataKeys.MATCH_MAKING_GET_STATUS
         }
-        self.send_server(data)
-        return self.get_data("mmms")
+        await self.send_server(data)
+        return await self.get_data("mmms")
 
-    def match_making_get_users_waits_count(self, players_size: int = 8) -> dict:
+    async def match_making_get_users_waits_count(self, players_size: int = 8)\
+            -> dict:
         data: dict = {
             PacketDataKeys.TYPE: "mmguiabk",
             "mmbpa": players_size
         }
-        self.send_server(data)
-        return self.get_data("mmuiabk")
+        await self.send_server(data)
+        return await self.get_data("mmuiabk")
 
-    def match_making_add_user(self, players_size: int = 8) -> None:
+    async def match_making_add_user(self, players_size: int = 8) -> None:
         data: dict = {
             PacketDataKeys.TYPE: PacketDataKeys.MATCH_MAKING_ADD_USER,
             "mmbpa": players_size
         }
-        self.send_server(data)
+        await self.send_server(data)
 
-    def match_making_remove_user(self) -> None:
+    async def match_making_remove_user(self) -> None:
         data: dict = {
-            PacketDataKeys.TYPE: "mmruk"
+            PacketDataKeys.TYPE: PacketDataKeys.MATCH_MAKING_REMOVE_USER
         }
-        self.send_server(data)
+        await self.send_server(data)
 
-    def remove_type(self, room_model_type: RoomModelType = RoomModelType.NOT_MATCHMAKING_MODE) -> None:
+    async def remove_type(self, room_model_type: RoomModelType =
+    RoomModelType.NOT_MATCHMAKING_MODE) -> None:
         data: dict = {
             PacketDataKeys.TYPE: PacketDataKeys.GIVE_UP,
             PacketDataKeys.ROOM_MODEL_TYPE: room_model_type
         }
-        self.send_server(data)
+        await self.send_server(data)
 
-    def give_up(self, room_id: str, room_model_type: RoomModelType = RoomModelType.NOT_MATCHMAKING_MODE) -> None:
+    async def give_up(self, room_id: str, room_model_type: RoomModelType =
+    RoomModelType.NOT_MATCHMAKING_MODE) -> None:
         data: dict = {
             PacketDataKeys.TYPE: PacketDataKeys.GIVE_UP,
             PacketDataKeys.ROOM_OBJECT_ID: room_id,
             PacketDataKeys.ROOM_MODEL_TYPE: room_model_type
         }
-        self.send_server(data)
-
-    def create_connection(self) -> None:
-        self.ws = create_connection(f"ws://{self.address}:{self.port}")
-        self.listener = threading.Thread(target=self.__listener).start()
-
-    def __listener(self) -> None:
-        while self.alive:
-            try:
-                get_string_data = self.ws.recv()
-                self.data.put(get_string_data)
-                self.ws.ping()
-            except ListenDataException as e:
-                logging.critical("error get data", e)
-
-    def send_server(self, data: dict, remove_token_from_object: bool = False) -> None:
-        if not self.ws:
-            raise ValueError("WebSocket connection is not established.")
-        if not remove_token_from_object:
-            data[PacketDataKeys.TOKEN] = self.token
-        data[PacketDataKeys.USER_OBJECT_ID] = data.get(PacketDataKeys.USER_OBJECT_ID, self.id)
-        self.ws.send((json.dumps(data)+"\n").encode())
-
-    def listen(self) -> dict:
-        response = self.data.get(timeout=5)
-        return json.loads(response)
-
-    def get_data(self, mafia_type: str) -> dict:
-        data: dict = self.listen()
-        while self.alive:
-            try:
-                if data.get(PacketDataKeys.TYPE) in [mafia_type, "empty", PacketDataKeys.ERROR_OCCUR]:
-                    return data
-                data: dict = self.listen()
-            except Exception as e:
-                logging.critical(f"get_data error {e}")
-
-    def __del__(self) -> None:
-        self.alive = False
-        self.ws.close()
+        await self.send_server(data)
