@@ -1,31 +1,57 @@
 # simple mafia online bot
-from zafiaonline.exceptions import ListenExampleErrorException
+import asyncio
+
+from zafiaonline.utils.exceptions import ListenExampleErrorException
 from zafiaonline.zafiaonline import Client
 from zafiaonline.structures import PacketDataKeys
 
-Mafia = Client()
-Mafia.sign_in("email", "password")
+async def main():
+    user_agreement = input("[en] send messages may ban you, do you accept "
+                           "this? if "
+                      "don't "
+                "accept you'll use only chat listener\n"
+                "if you agree, write yes: \n\n"
+                "[ru] отправка сообщений может заблокировать аккаунт, "
+                           "принимаешь "
+                "ли ты это? если нет то будет доступна только прослушка чата\n"
+                "если ты согласен то введи да: ")
+    
+    Mafia = Client()
+    await Mafia.sign_in("email", "password")
 
-Mafia.join_global_chat() # join in global chat
+    await Mafia.join_global_chat()  # join in global chat
 
-while 1:
-	try:
-		result = Mafia.listen()
-	except ListenExampleErrorException as e:
-		print("listen error", e)
-		continue
+    while True:
+        try:
+            result = await Mafia.listen() # try listen data for result
+        except ListenExampleErrorException as e:
+            print("listen error", e)
+            continue
 
-	if result[PacketDataKeys.TYPE] == PacketDataKeys.MESSAGE: # if new message
-		message = result[PacketDataKeys.MESSAGE]
-		message_type = message[PacketDataKeys.MESSAGE_TYPE]
+        if result[
+            PacketDataKeys.TYPE] == PacketDataKeys.MESSAGE:  # if new message
+            message = result[PacketDataKeys.MESSAGE]
+            message_type = message[PacketDataKeys.MESSAGE_TYPE]
 
-		if message_type == 1: # if message type "text"
-			uu = message[PacketDataKeys.USER] # message user info
-			content = message[PacketDataKeys.TEXT]
+            if message_type == 1:  # if message type "text"
+                uu = message[PacketDataKeys.USER]  # message user info
+                content = message[PacketDataKeys.TEXT] # get text
 
-			print(content)
+                user_id = uu[PacketDataKeys.OBJECT_ID] # get sender id
+                user_name = uu[PacketDataKeys.USERNAME] # get sender nickname
 
-			user_id = uu[PacketDataKeys.OBJECT_ID]
-			user_name = uu[PacketDataKeys.USERNAME]
+                print(f"[{user_name}]: {content}") # print nickname
+                # with message
 
-			Mafia.send_message_global(content) # send message to global chat
+                if user_id != Mafia.id: # id sameness check
+                    send_content = content # in id with sender and you are
+                    # not the same content will send
+                else:
+                    send_content = None
+
+                if user_agreement == "yes" or "да":
+                    if send_content: # if have content
+                        await Mafia.send_message_global(
+                            send_content)  # send message to global chat
+
+asyncio.run(main())
