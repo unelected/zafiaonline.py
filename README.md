@@ -28,7 +28,10 @@ pip install websockets msgspec requests
 # Import and Auth
 ```python
 import zafiaonline
+import asyncio
 
-Mafia = zafiaonline.Client()
-Mafia.sign_in("email", "password")
+async def main():
+    Mafia = zafiaonline.Client()
+    await Mafia.sign_in("email", "password")
+asyncio.run(main())
 ```
