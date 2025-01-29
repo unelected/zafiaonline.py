@@ -2,7 +2,7 @@
 import asyncio
 
 from zafiaonline.utils.exceptions import ListenExampleErrorException
-from zafiaonline.zafiaonline import Client
+from zafiaonline.main import Client
 from zafiaonline.structures import PacketDataKeys
 
 async def main():
