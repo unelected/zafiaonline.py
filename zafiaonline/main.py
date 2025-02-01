@@ -15,12 +15,11 @@ from zafiaonline.structures.models import (ModelUser, ModelServerConfig,
 from zafiaonline.structures.enums import (Languages, Roles,
                                           Sex, RatingMode, RatingType,
                                           RoomModelType)
-from zafiaonline.web import WebClient
 from zafiaonline.websocket_module import Websocket
 
 logging.basicConfig(level=logging.INFO)
 
-class Client(Websocket, WebClient):
+class Client(Websocket):
     def __init__(self, proxy: Optional[list] = None, debug:
     Optional[bool] = False) -> None:
         self.proxy = proxy if proxy is not None else []
@@ -32,9 +31,6 @@ class Client(Websocket, WebClient):
         self.server_config: ModelServerConfig = ModelServerConfig()
         self.address:str = "37.143.8.68"
         self.port:str = "7090"
-        self.web_port:str = "8008"
-        self.rest_address \
-            = f"http://{self.address}:{self.web_port}"
         super().__init__(self)
 
     async def sign_in(self, email: str = "", password: str = "",
