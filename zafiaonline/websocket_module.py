@@ -164,7 +164,7 @@ class Websocket:
 
     async def delete(self) -> None:
         self.alive = False
-        if self.ws and self.alive:
+        if self.ws:
             try:
                 await self.ws.close(code=1000)
                 logging.debug("websocket connection closed gracefully.")
