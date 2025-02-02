@@ -163,8 +163,8 @@ class Websocket:
             data = await self.listen()
 
     async def delete(self) -> None:
-        self.alive = False
         if self.ws:
+            self.alive = False
             try:
                 await self.ws.close(code=1000)
                 logging.debug("websocket connection closed gracefully.")
