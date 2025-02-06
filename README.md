@@ -6,21 +6,22 @@
 
 ![Python version](https://img.shields.io/badge/python-3.9+-blue.svg)
 
-
 # Install
-```
-git clone https://github.com/unelected/zafiaonline.py.git
-```
-## Requirements
 
-For correct operation of the library, you will need to install the following libraries:
+To install the package, you can either use `pip` directly or clone the repository and install it manually:
 
-- [websockets](https://github.com/python-websockets/websockets)
-- [msgspec](https://github.com/jcrist/msgspec)
-You can install them using `pip`:
+## Option 1: Using pip (recommended)
+```bash
+pip install git+https://github.com/unelected/zafiaonline.py.git
+```
+
+## Option 2: Manual installation
+If you prefer to clone the repository and install it manually, follow these steps:
 
 ```bash
-pip install websockets msgspec
+git clone https://github.com/unelected/zafiaonline.py.git
+cd zafiaonline.py
+pip install .
 ```
 
 # Import and Auth
