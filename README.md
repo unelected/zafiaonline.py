@@ -17,12 +17,10 @@ For correct operation of the library, you will need to install the following lib
 
 - [websockets](https://github.com/python-websockets/websockets)
 - [msgspec](https://github.com/jcrist/msgspec)
-- [requests](https://github.com/psf/requests)
-
 You can install them using `pip`:
 
 ```bash
-pip install websockets msgspec requests
+pip install websockets msgspec
 ```
 
 # Import and Auth
