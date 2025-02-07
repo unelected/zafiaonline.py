@@ -261,8 +261,8 @@ class Client(Websocket):
 
         give_up_request: dict = {
             PacketDataKeys.TYPE: PacketDataKeys.GIVE_UP,
-            PacketDataKeys.ROOM_OBJECT_ID: room_id,
-            PacketDataKeys.ROOM_MODEL_TYPE: room_model_type
+            PacketDataKeys.ROOM_MODEL_TYPE: room_model_type,
+            PacketDataKeys.ROOM_OBJECT_ID: room_id
         }
         await self.send_server(give_up_request)
 

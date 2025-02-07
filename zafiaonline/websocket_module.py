@@ -40,7 +40,7 @@ class Websocket:
 
         asyncio.create_task(self.__listener())
 
-    async def delete(self) -> None:
+    async def disconnect(self) -> None:
         if self.ws and self.alive:
             self.alive = False
             try:
@@ -154,7 +154,7 @@ class Websocket:
         for attempt in range(3):
             try:
 
-                await self.delete()
+                await self.disconnect()
                 await asyncio.sleep(1)
                 await self.create_connection()
                 break
@@ -204,5 +204,5 @@ class Websocket:
                 pass
             except Exception as e:
                 logging.error(f"unexpected error in listener: {e}")
-                await self.delete()
+                await self.disconnect()
                 raise
