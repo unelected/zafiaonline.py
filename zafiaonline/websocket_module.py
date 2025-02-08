@@ -29,6 +29,7 @@ class Websocket:
             await self._reconnect()
         except Exception as e:
             logging.error(f"Unexpected error in create_connection: {e}")
+            await self._reconnect()
 
     async def disconnect(self) -> None:
         if self.ws and self.alive:
@@ -164,10 +165,10 @@ class Websocket:
 
             except ConnectionClosedOK:
                 logging.debug("connection closed normally (1000)")
-                raise
+                break
             except websockets.exceptions.ConnectionClosedError as e:
                 logging.debug(f"connection closed: {e}")
-                raise
+                break
             except asyncio.CancelledError:
                 logging.debug("listener task was cancelled.")
                 raise
@@ -183,4 +184,4 @@ class Websocket:
             except Exception as e:
                 logging.error(f"unexpected error in listener: {e}")
                 await self.disconnect()
-                raise
+                break
