@@ -23,12 +23,6 @@ class Websocket:
             self.ws = await connect(self.uri)
             await self.__on_connect()
             self.alive = True
-            if self.listener_task and not self.listener_task.done():
-                self.listener_task.cancel()
-                try:
-                    await self.listener_task
-                except asyncio.CancelledError:
-                    logging.debug("Old listener_task was cancelled.")
             self.listener_task = asyncio.create_task(self.__listener())
 
         except (
