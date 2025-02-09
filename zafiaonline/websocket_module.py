@@ -14,7 +14,7 @@ class Websocket:
         self.alive = True
         self.ws = None
         self.uri = f"ws://{self.client.address}:{self.client.port}"
-        self.listener_task = asyncio.create_task(self.__listener())
+        self.listener_task = None
         self.ws_lock = asyncio.Lock()
 
     async def create_connection(self) -> None:
@@ -25,7 +25,11 @@ class Websocket:
             self.alive = True
             if self.listener_task and not self.listener_task.done():
                 self.listener_task.cancel()
-            asyncio.create_task(self.__listener())
+                try:
+                    await self.listener_task
+                except asyncio.CancelledError:
+                    logging.debug("Old listener_task was cancelled.")
+            self.listener_task = asyncio.create_task(self.__listener())
 
         except (
         ConnectionClosed, websockets.exceptions.InvalidStatus) as e:
