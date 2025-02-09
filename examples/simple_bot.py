@@ -19,7 +19,7 @@ async def main():
     Mafia = Client()
     await Mafia.sign_in("email", "password")
 
-    await Mafia.join_global_chat()  # join in global chat
+    await Mafia.join_global_chat()  # join global chat
 
     while True:
         try:
@@ -49,7 +49,7 @@ async def main():
                 else:
                     send_content = None
 
-                if user_agreement == "yes" or "да":
+                if user_agreement in ("yes", "да"):
                     if send_content: # if have content
                         await Mafia.send_message_global(
                             send_content)  # send message to global chat
