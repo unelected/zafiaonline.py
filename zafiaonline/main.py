@@ -20,7 +20,7 @@ from zafiaonline.websocket_module import Websocket
 logging.basicConfig(level=logging.INFO)
 
 class Client(Websocket):
-    def __init__(self, proxy: Optional[list] = None, debug:
+    def __init__(self, proxy: Optional[list[any]] = None, debug:
     Optional[bool] = False) -> None:
         self.proxy = proxy if proxy is not None else []
         self.debug = debug
@@ -30,10 +30,10 @@ class Client(Websocket):
         self.user: ModelUser = ModelUser()
         self.server_config: ModelServerConfig = ModelServerConfig()
         self.address:str = "37.143.8.68"
-        self.port:str = "7090"
+        self.port:int = 7090
         self.rest_address \
             = f"http://{self.address}:{self.port}"
-        super().__init__(self)
+        super().__init__(client=self)
 
     async def sign_in(self, email: str = "", password: str = "",
                 token: str = "", user_id: str = "") -> Union[ModelUser, bool]:
@@ -69,13 +69,15 @@ class Client(Websocket):
 
         received_data = await self.get_data(
             PacketDataKeys.USER_SIGN_IN)
-        if (received_data[PacketDataKeys.TYPE] !=
+        if (received_data.get(PacketDataKeys.TYPE) !=
                 PacketDataKeys.USER_SIGN_IN):
             logging.debug("sign in data get error")
             return False
 
-        self.user = decode(json.dumps(received_data[PacketDataKeys.USER]),
-                           type=ModelUser)
+        self.user = self.user = decode(
+            json.dumps(received_data[PacketDataKeys.USER]).encode(),
+            type=ModelUser)
+
         self.server_config = decode(json.dumps(received_data
                                                [PacketDataKeys.SERVER_CONFIG])
                                     , type=ModelServerConfig)
@@ -393,8 +395,8 @@ class Client(Websocket):
         try:
             return await self.get_data(PacketDataKeys.USER_PROFILE)
         except Exception as e:
-            logging.error(f"get user {user_id} data error {e}")
-            return None
+            logging.error(f"get user {user_id} data error {e}", exc_info=True)
+            return
 
     async def match_making_get_status(self) -> dict:
         status_request: dict = {
