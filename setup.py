@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="zafiaonline",
-    version="2.1.1",
+    version="2.2.0",
     packages=find_packages(include=["zafiaonline", "zafiaonline.*"]),
     install_requires=["websockets", "msgspec"],
     description="A Python API library for interacting with Mafia Online game.",
