@@ -53,7 +53,7 @@ class Client(Websocket):
             - **Success** : list
         """
 
-        if not self.ws:
+        if not self.alive:
             await self.create_connection()
 
         auth_data: dict = {
@@ -393,10 +393,14 @@ class Client(Websocket):
         await self.send_server(user_payload)
 
         try:
-            return await self.get_data(PacketDataKeys.USER_PROFILE)
+            user_data = await self.get_data(PacketDataKeys.USER_PROFILE)
+            if user_data is None:
+                logging.error("Ошибка: get_data вернул None")
+                raise
+            return user_data
         except Exception as e:
             logging.error(f"get user {user_id} data error {e}", exc_info=True)
-            return
+            raise
 
     async def match_making_get_status(self) -> dict:
         status_request: dict = {

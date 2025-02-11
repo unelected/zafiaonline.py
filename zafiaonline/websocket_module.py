@@ -11,7 +11,7 @@ class Websocket:
     def __init__(self, client) -> None:
         self.client = client
         self.data_queue = asyncio.Queue()
-        self.alive = True
+        self.alive = None
         self.ws = None
         self.uri = f"ws://{self.client.address}:{self.client.port}"
         self.listener_task = None
@@ -19,33 +19,38 @@ class Websocket:
 
     async def create_connection(self) -> None:
         try:
-
-            self.ws = await connect(self.uri)
-            await self.__on_connect()
-            self.alive = True
-            self.listener_task = asyncio.create_task(self.__listener())
+            if not self.alive:
+                self.ws = await connect(self.uri)
+                await self.__on_connect()
+                self.alive = True
+                self.listener_task = asyncio.create_task(self.__listener())
+            else:
+                logging.info("connect already created")
 
         except (
         ConnectionClosed, websockets.exceptions.InvalidStatus) as e:
             logging.error(f"Connection failed: {e}. Retrying...")
             await self._reconnect()
+            raise
         except Exception as e:
             logging.error(f"Unexpected error in create_connection: {e}")
             await self._reconnect()
             raise
 
     async def disconnect(self) -> None:
-        if self.ws and not self.ws.close:
+        logging.debug(f"Попытка закрыть WebSocket. self.alive={self.alive}")
+        if self.alive:
             self.alive = False
             try:
 
                 await self.ws.close(code=1000)
                 logging.debug("Websocket connection closed gracefully.")
-                if self.listener_task:
+                if self.listener_task and not self.listener_task.done():
                     self.listener_task.cancel()
 
             except ConnectionClosed as e:
                 logging.debug(f"Connection already closed: {e}")
+                raise
             except Exception as e:
                 logging.error(f"Error while closing websocket connection: {e}")
                 raise
@@ -56,11 +61,11 @@ class Websocket:
 
     async def send_server(self, data: dict,
                           remove_token_from_object: bool = False) -> None:
-        if not self.ws:
+        if not self.alive:
             logging.error(
                 "Websocket is not connected. Attempting to reconnect...")
             await self._reconnect()
-            if not self.ws:
+            if not self.alive:
                 logging.error("Reconnection failed. Dropping message.")
                 return
 
@@ -84,22 +89,29 @@ class Websocket:
             try:
                 response = await asyncio.wait_for(self.data_queue.get(),
                                                   timeout=5)
-                if response is not None:
-                    return json.loads(response)
-                raise ValueError("Received None response from queue")
+                if response is None:
+                    logging.error("Received None response from queue")
+                    continue
+                data = json.loads(response)
+                try:
+                    return data
+                except json.JSONDecodeError:
+                    logging.error(f"Invalid JSON received: {response}")
+                    continue
             except asyncio.CancelledError:
                 logging.debug("Listen task was cancelled.")
-                raise TimeoutError
-            except asyncio.TimeoutError:
                 raise
+            except asyncio.TimeoutError:
+                logging.debug("timeout")
+                continue
             except json.JSONDecodeError:
                 logging.error("Invalid JSON received.")
                 raise
             except KeyboardInterrupt:
-                pass
+                raise
             except Exception as e:
                 logging.error(f"Unexpected error in listen: {e}")
-                raise
+                continue
 
     async def get_data(self, mafia_type: str) -> dict:
         try:
@@ -140,7 +152,7 @@ class Websocket:
                 return
             try:
                 async with self.ws_lock:
-                    if self.ws:
+                    if self.alive:
                         await self.disconnect()
                 await asyncio.sleep(min(2 ** attempt, 30))
                 if not self.alive:
@@ -169,15 +181,10 @@ class Websocket:
         await self.ws.send("Hello, World!")
 
     async def __listener(self) -> None:
-        while self.ws and self.alive:
+        while self.alive:
             try:
-
-                if self.alive:
-                    message = await self.ws.recv()
-                    await self.data_queue.put(message)
-                else:
-                    raise ConnectionClosed
-
+                message = await self.ws.recv()
+                await self.data_queue.put(message)
 
             except ConnectionClosedOK:
                 logging.debug("Connection closed normally (1000)")
@@ -187,12 +194,12 @@ class Websocket:
                 break
             except asyncio.CancelledError:
                 logging.debug("Listener task was cancelled.")
-                raise
+                break
             except websockets.ConnectionClosed:
                 logging.debug("Websocket connection closed in "
                                 "listener data. reconnecting...")
                 await self._reconnect()
-                raise
+                break
             except KeyboardInterrupt:
                 raise
             except Exception as e:
