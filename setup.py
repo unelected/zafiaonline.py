@@ -4,7 +4,7 @@ setup(
     name="zafiaonline",
     version="2.2.4",
     packages=find_packages(include=["zafiaonline", "zafiaonline.*"]),
-    install_requires=["websockets", "msgspec"],
+    install_requires=["websockets", "msgspec", "sphinx"],
     description="A Python API library for interacting with Mafia Online game.",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
