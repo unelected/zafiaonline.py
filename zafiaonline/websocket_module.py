@@ -98,9 +98,6 @@ class Websocket:
                 except json.JSONDecodeError:
                     logging.error(f"Invalid JSON received: {response}")
                     continue
-            except asyncio.CancelledError:
-                logging.debug("Listen task was cancelled.")
-                raise
             except asyncio.TimeoutError:
                 logging.debug("timeout")
                 continue
@@ -116,9 +113,7 @@ class Websocket:
     async def get_data(self, mafia_type: str) -> dict:
         try:
             data = await self.listen()
-
-        except asyncio.CancelledError:
-            logging.debug("Get data task was cancelled")
+        except KeyboardInterrupt:
             raise
 
         while self.alive:
@@ -131,9 +126,6 @@ class Websocket:
                 if event in [mafia_type, "empty", PacketDataKeys.ERROR_OCCUR]:
                     return data
 
-            except asyncio.CancelledError:
-                logging.debug("Get data task was cancelled")
-                raise
             except KeyboardInterrupt:
                 raise
             except Exception as e:
@@ -168,9 +160,6 @@ class Websocket:
                 logging.info("Reconnection successful.")
                 return
 
-            except asyncio.CancelledError:
-                logging.error("Reconnection task was cancelled.")
-                break
             except Exception as e:
                 logging.error(
                     f"Reconnection attempt {attempt + 1} failed: {e}")

@@ -396,7 +396,7 @@ class Client(Websocket):
             user_data = await self.get_data(PacketDataKeys.USER_PROFILE)
             if user_data is None:
                 logging.error("Ошибка: get_data вернул None")
-                raise
+                return
             return user_data
         except Exception as e:
             logging.error(f"get user {user_id} data error {e}", exc_info=True)
