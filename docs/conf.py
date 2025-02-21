@@ -20,3 +20,4 @@ autodoc_typehints = "description"
 
 # -- Options for HTML output -------------------------------------------------
 html_theme = 'sphinx_rtd_theme'
+html_baseurl = "https://unelected.github.io/zafiaonline.py"
