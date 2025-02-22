@@ -1,6 +1,8 @@
 from zafiaonline.main import Client
 from zafiaonline.websocket_module import Websocket
-from zafiaonline import utils, structures
+import zafiaonline.utils as utils
+import zafiaonline.structures as structures
+
 __all__ = (
     "Client",
     "Websocket",

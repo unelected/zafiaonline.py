@@ -75,6 +75,5 @@ class ModelMessage(Struct, rename=Renaming.MESSAGE):
     message_style: int = None
     accepted: int = None
     message_type: int = None
-
 class ModelGUI(Struct, rename=Renaming.GUI):
     count_authority_for_swap_icon: dict = None

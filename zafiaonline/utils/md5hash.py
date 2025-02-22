@@ -17,8 +17,10 @@ class Md5:
         Returns a string hashed multiple times with a salt.
 
         :param string: The input string to hash.
-        :param salt: The salt to append to the string before hashing (Mafia requires "azxsw").
-        :param iterations: The number of times to hash the string (Mafia requires 5).
+        :param salt: The salt to append to the string before hashing (Mafia
+        requires "azxsw").
+        :param iterations: The number of times to hash the string (Mafia
+        requires 5).
         :return: The salted and hashed string.
         """
         for _ in range(iterations):
