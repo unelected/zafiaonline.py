@@ -1,3 +1,4 @@
+import asyncio
 import json
 import base64
 import logging
@@ -133,7 +134,7 @@ class Client(Websocket):
 
         if not received_data or received_data.get(
                 PacketDataKeys.TYPE) != PacketDataKeys.USER_SIGN_IN:
-            logging.debug("Sign-in data retrieval error")
+            logging.error("Sign-in data retrieval error")
             return False
 
         self._set_user_data(received_data)
@@ -358,6 +359,7 @@ class Client(Websocket):
             logging.warning("Invalid room creation response, retrying...")
             await self.send_server(room_request)
             received_data = await self.get_data(PacketDataKeys.ROOM_CREATED)
+            await asyncio.sleep(1)
 
         if received_data.get(
                 PacketDataKeys.TYPE) != PacketDataKeys.ROOM_CREATED:
@@ -882,8 +884,9 @@ class Client(Websocket):
 
         try:
             user_data = await self.get_data(PacketDataKeys.USER_PROFILE)
-            if user_data is None:
-                logging.error("Error: get_data returned None")
+            if not user_data or user_data.get(
+                    PacketDataKeys.TYPE) != PacketDataKeys.USER_SIGN_IN:
+                logging.error("Get user data retrieval error")
                 return None
             return user_data
         except Exception as e:
