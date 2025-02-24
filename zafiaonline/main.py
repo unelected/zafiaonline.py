@@ -354,7 +354,7 @@ class Client(Websocket):
         """
         received_data = await self.get_data(PacketDataKeys.ROOM_CREATED)
 
-        if received_data.get(
+        while received_data.get(
                 PacketDataKeys.TYPE) != PacketDataKeys.ROOM_CREATED:
             logging.warning("Invalid room creation response, retrying...")
             await self.send_server(room_request)
@@ -884,9 +884,8 @@ class Client(Websocket):
 
         try:
             user_data = await self.get_data(PacketDataKeys.USER_PROFILE)
-            if not user_data or user_data.get(
-                    PacketDataKeys.TYPE) != PacketDataKeys.USER_SIGN_IN:
-                logging.error("Get user data retrieval error")
+            if not user_data:
+                logging.error("Error: get_data returned None")
                 return None
             return user_data
         except Exception as e:
