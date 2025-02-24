@@ -793,7 +793,7 @@ class Client(Websocket):
             PacketDataKeys.TYPE: PacketDataKeys.PRIVATE_CHAT_MESSAGE_CREATE,
             PacketDataKeys.MESSAGE: {
                 PacketDataKeys.FRIENDSHIP: friend_id,
-                PacketDataKeys.TEXT: content
+                PacketDataKeys.TEXT: content[:200]
             }
         }
         await self.send_server(message_data)
@@ -822,7 +822,7 @@ class Client(Websocket):
         message_data: dict = {
             PacketDataKeys.TYPE: PacketDataKeys.ROOM_MESSAGE_CREATE,
             PacketDataKeys.MESSAGE: {
-                PacketDataKeys.TEXT: content,
+                PacketDataKeys.TEXT: content[:200],
                 PacketDataKeys.MESSAGE_STYLE: message_style
             },
             PacketDataKeys.ROOM_OBJECT_ID: room_id
@@ -852,7 +852,7 @@ class Client(Websocket):
         message_data: dict = {
             PacketDataKeys.TYPE: PacketDataKeys.CHAT_MESSAGE_CREATE,
             PacketDataKeys.MESSAGE: {
-                PacketDataKeys.TEXT: content,
+                PacketDataKeys.TEXT: content[:200],
                 PacketDataKeys.MESSAGE_STYLE: message_style,
             }
         }
