@@ -40,46 +40,115 @@ class Websocket:
         """
         Establishes a WebSocket connection if not already connected.
 
-        - Creates a new WebSocket connection to the server.
-        - Calls `__on_connect()` to handle post-connection setup.
-        - Starts the listener task for incoming messages.
-        - If the connection fails, attempts to reconnect.
+        This method is responsible for setting up a persistent WebSocket
+        connection to the server. It ensures that only one active connection
+        exists at a time, handles potential connection failures, and initiates
+        necessary post-connection setup (such as authentication and starting
+        the listener for incoming messages).
 
-        **Raises**
-            - **ConnectionClosed, InvalidStatus** - If the connection fails,
-            it retries.
-            - **Exception** - Logs unexpected errors and attempts reconnection.
+        **Workflow:**
+            1. Checks if a connection is already active (`self.alive`).
+            2. Attempts to establish a new WebSocket connection.
+            3. Calls `_post_connect_setup()` to perform necessary
+            initialization.
+            4. Starts a background task (`__listener()`) to listen for
+            incoming messages.
+            5. If the connection attempt fails, retries using
+            `_handle_reconnect()`.
+
+        **Example Usage:**
+            ```python
+            client = WebsocketClient(uri="wss://example.com/socket")
+            await client.create_connection()
+            ```
+
+        **Raises:**
+            - `websockets.exceptions.ConnectionClosed`: If the WebSocket
+            connection is closed unexpectedly.
+            - `websockets.exceptions.InvalidStatus`: If the server
+            responds with an invalid status code.
+            - `Exception`: For any other unforeseen errors during
+            connection initialization.
+
+        **Notes:**
+            - This method is asynchronous and should be awaited to ensure
+            proper execution.
+            - If the connection is lost, `_handle_reconnect()` will attempt
+            to restore it.
         """
-        try:
-            if not self.alive:
-                self.ws = await connect(self.uri)
-                await self.__on_connect()
-                self.alive = True
-                self.listener_task = asyncio.create_task(self.__listener())
-            else:
-                logging.info("Connection already established.")
+        if self.alive:
+            logging.info("Connection already established.")
+            return
 
+        try:
+            await self._connect()
+            await self._post_connect_setup()
         except (ConnectionClosed, websockets.exceptions.InvalidStatus) as e:
             logging.error(f"Connection failed: {e}. Retrying...")
-            await self._reconnect()
+            await self._handle_reconnect()
             raise
         except Exception as e:
             logging.error(f"Unexpected error in create_connection: {e}")
-            await self._reconnect()
+            await self._handle_reconnect()
             raise
+
+    async def _connect(self) -> None:
+        """Creates a WebSocket connection to the server."""
+        self.ws = await connect(self.uri)
+        self.alive = True
+
+    async def _post_connect_setup(self) -> None:
+        """Handles actions after establishing a successful connection."""
+        await self.__on_connect()
+        self.listener_task = asyncio.create_task(self.__listener())
+
+    async def _handle_reconnect(self) -> None:
+        """Attempts to reconnect after a failed connection attempt."""
+        self.alive = False
+        await self._reconnect()
 
     async def disconnect(self) -> None:
         """
-        Closes the WebSocket connection gracefully.
+        Gracefully closes the WebSocket connection.
+
+        This method ensures a clean shutdown of the WebSocket connection,
+        preventing resource leaks and handling any unexpected errors that
+        may occur during closure.
+        If the connection is already closed, it simply logs the event and
+        exits.
+
+        **Workflow:**
+            1. Checks if the connection is active (`self.alive`).
+            2. Sets `self.alive` to `False` to prevent further operations.
+            3. Calls `_close_websocket()` to properly close the connection.
+            4. Cancels the background listener task (`__listener()`) to
+            stop receiving messages.
+            5. Logs the successful disconnection.
+
+        **Example Usage:**
+            ```python
+            client = WebsocketClient(uri="wss://example.com/socket")
+            await client.create_connection()
+            # Do some operations...
+            await client.disconnect()
+            ```
 
         **Logs:**
-            - Attempts to close the connection.
-            - Confirms successful closure.
-            - Handles possible exceptions.
+            - Logs an attempt to close the connection.
+            - Logs if the WebSocket is already closed.
+            - Logs when the disconnection process is successfully completed.
 
         **Raises:**
-            - ConnectionClosed: If the connection is already closed.
-            - Exception: If an unexpected error occurs.
+            - `websockets.exceptions.ConnectionClosed`: If the connection
+            was already closed.
+            - `Exception`: If an unexpected error occurs while closing the
+            connection.
+
+        **Notes:**
+            - This method is asynchronous and should be awaited to ensure
+            proper execution.
+            - After calling this method, the client instance should not be
+            used unless reconnected.
         """
         logging.debug(
             f"Attempting to close WebSocket. self.alive={self.alive}")
@@ -230,20 +299,19 @@ class Websocket:
         while self.alive:
             try:
                 if data is None:
-                    logging.debug("Data is None. Cannot proceed.")
+                    logging.error("Data is None. Cannot proceed.")
                     raise ValueError("Received None data.")
 
                 event = data.get(PacketDataKeys.TYPE)
                 if event in [mafia_type, "empty", PacketDataKeys.ERROR_OCCUR]:
                     return data
+                data = await self.listen()
 
             except KeyboardInterrupt:
                 raise
             except Exception as e:
                 logging.error(f"Unexpected error in get_data: {e}")
                 raise
-
-            data = await self.listen()
 
     async def _reconnect(self) -> None:
         """
