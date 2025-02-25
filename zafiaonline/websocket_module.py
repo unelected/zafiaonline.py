@@ -291,13 +291,9 @@ class Websocket:
             - Raises `KeyboardInterrupt` for manual termination.
             - Logs and raises on unexpected errors.
         """
-        try:
-            data = await self.listen()
-        except KeyboardInterrupt:
-            raise
-
         while self.alive:
             try:
+                data = await self.listen()
                 if data is None:
                     logging.error("Data is None. Cannot proceed.")
                     raise ValueError("Received None data.")
@@ -305,7 +301,6 @@ class Websocket:
                 event = data.get(PacketDataKeys.TYPE)
                 if event in [mafia_type, "empty", PacketDataKeys.ERROR_OCCUR]:
                     return data
-                data = await self.listen()
 
             except KeyboardInterrupt:
                 raise

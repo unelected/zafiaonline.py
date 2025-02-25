@@ -352,21 +352,26 @@ class Client(Websocket):
         Returns:
             Optional[dict]: The validated response if successful, else None.
         """
-        received_data = await self.get_data(PacketDataKeys.ROOM_CREATED)
+        max_attempts = 2
+        attempt = 0
 
-        while received_data.get(
-                PacketDataKeys.TYPE) != PacketDataKeys.ROOM_CREATED:
-            logging.warning("Invalid room creation response, retrying...")
-            await self.send_server(room_request)
-            received_data = await self.get_data(PacketDataKeys.ROOM_CREATED)
+        while attempt < max_attempts:
+            try:
+                received_data = await self.get_data(
+                    PacketDataKeys.ROOM_CREATED)
+                if isinstance(received_data, dict) and received_data.get(
+                        PacketDataKeys.TYPE) == PacketDataKeys.ROOM_CREATED:
+                    return received_data
+                logging.warning("Invalid room creation response, retrying...")
+                await self.send_server(room_request)
+            except Exception as e:
+                logging.error(f"Ошибка при получении ответа от сервера: "
+                              f"{e}", exc_info=True)
+            attempt += 1
             await asyncio.sleep(1)
 
-        if received_data.get(
-                PacketDataKeys.TYPE) != PacketDataKeys.ROOM_CREATED:
-            logging.error("Room creation failed after retry.")
-            return None
-
-        return received_data
+        logging.error("Room creation failed after retry.")
+        return None
 
     @staticmethod
     def _decode_room(received_data: dict) -> Optional[ModelRoom]:
