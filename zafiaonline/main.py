@@ -3,7 +3,7 @@ import json
 import base64
 import logging
 
-from typing import List, Optional, Union
+from typing import List, Optional, Union, Dict, Any
 from secrets import token_hex
 
 from msgspec.json import decode
@@ -365,7 +365,7 @@ class Client(Websocket):
                 logging.warning("Invalid room creation response, retrying...")
                 await self.send_server(room_request)
             except Exception as e:
-                logging.error(f"Ошибка при получении ответа от сервера: "
+                logging.error(f"Get server data error: "
                               f"{e}", exc_info=True)
             attempt += 1
             await asyncio.sleep(1)
@@ -881,7 +881,7 @@ class Client(Websocket):
             - Logs an error if no data is returned.
             - Uses exception handling to catch and log potential failures.
         """
-        user_payload: dict = {
+        user_payload: Dict[str, Any] = {
             PacketDataKeys.TYPE: PacketDataKeys.GET_USER_PROFILE,
             PacketDataKeys.USER_OBJECT_ID: user_id
         }
@@ -896,7 +896,7 @@ class Client(Websocket):
         except Exception as e:
             logging.error(f"Error retrieving user {user_id} data: {e}",
                           exc_info=True)
-            raise
+            return None
 
     async def match_making_get_status(self) -> dict:
         """
