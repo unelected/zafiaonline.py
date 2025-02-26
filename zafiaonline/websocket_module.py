@@ -293,34 +293,34 @@ class Websocket:
         """
         while self.alive:
             try:
-                data = await self.listen()
+                data = await asyncio.wait_for(self.listen(), timeout=10)
+
                 if data is None:
                     logging.error("Data is None. Cannot proceed.")
                     raise ValueError("Received None data.")
 
                 event = data.get(PacketDataKeys.TYPE)
-                if mafia_type == PacketDataKeys.ROOM_CREATED:
-                    if event in [mafia_type, "empty",
-                                 PacketDataKeys.ERROR_OCCUR]:
-                        return data
-                    else:
-                        return None
+
                 if event is None:
                     logging.warning(
-                        "Received data without a valid event type. "
-                        "Ignoring...")
+                        "Received data without a valid event type. Ignoring...")
                     continue
+
                 if event in [mafia_type, "empty", PacketDataKeys.ERROR_OCCUR]:
                     return data
-                if event not in [mafia_type, "empty",
-                                 PacketDataKeys.ERROR_OCCUR]:
-                    logging.warning(
-                        f"Unexpected event type received: {event}. Ignoring...")
-                    continue
+
+                logging.warning(
+                    f"Unexpected event type received: {event}. Ignoring...")
+
+            except asyncio.TimeoutError:
+                logging.warning(
+                    "Timeout reached while waiting for data. Resetting...")
+                return None
 
             except KeyboardInterrupt:
                 logging.info("KeyboardInterrupt")
                 raise
+
             except Exception as e:
                 logging.error(f"Unexpected error in get_data: {e}")
                 raise
