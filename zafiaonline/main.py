@@ -289,18 +289,14 @@ class Client(Websocket):
             ModelRoom: The created room object.
         """
         selected_roles = selected_roles or [0]
-        print("создаем реквест")
         room_request = self._build_room_request(selected_roles, title,
                                                 max_players, min_players,
                                                 password, min_level,
                                                 vip_enabled)
 
-        print("отправляем на сервер")
         await self.send_server(room_request)
-        print("получаем данные")
         received_data = await self._get_validated_room_response(room_request)
 
-        print("ретерним декод")
         return self._decode_room(received_data)
 
     def _build_room_request(
@@ -363,10 +359,8 @@ class Client(Websocket):
 
         while attempt < max_attempts:
             try:
-                print("пытаемся получить данный снова")
                 received_data = await self.get_data(
                     PacketDataKeys.ROOM_CREATED)
-                print("получилиданные, чекаем валидность")
                 if isinstance(received_data, dict) and received_data.get(
                         PacketDataKeys.TYPE) == PacketDataKeys.ROOM_CREATED:
                     return received_data
