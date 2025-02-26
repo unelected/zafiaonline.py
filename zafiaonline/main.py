@@ -35,6 +35,7 @@ class Client(Websocket):
         self.debug = debug
         self.token: Optional[str] = None
         self.id: Optional[str] = None
+        self.device_id = None
         self.md5hash = Md5()
         self.user = ModelUser()
         self.server_config = ModelServerConfig()
@@ -111,8 +112,9 @@ class Client(Websocket):
         Returns:
             dict: The authentication payload.
         """
+        self.device_id = token_hex(10)
         return {
-            PacketDataKeys.DEVICE_ID: token_hex(10),
+            PacketDataKeys.DEVICE_ID: self.device_id,
             # Generates a random device ID
             PacketDataKeys.TYPE: PacketDataKeys.SIGN_IN,
             PacketDataKeys.EMAIL: email,
@@ -287,14 +289,18 @@ class Client(Websocket):
             ModelRoom: The created room object.
         """
         selected_roles = selected_roles or [0]
+        print("создаем реквест")
         room_request = self._build_room_request(selected_roles, title,
                                                 max_players, min_players,
                                                 password, min_level,
                                                 vip_enabled)
 
+        print("отправляем на сервер")
         await self.send_server(room_request)
+        print("получаем данные")
         received_data = await self._get_validated_room_response(room_request)
 
+        print("ретерним декод")
         return self._decode_room(received_data)
 
     def _build_room_request(
@@ -329,7 +335,7 @@ class Client(Websocket):
                 PacketDataKeys.MIN_PLAYERS: min(18, max(5, min_players)),
                 PacketDataKeys.MAX_PLAYERS: min(21, max(8, max_players)),
                 PacketDataKeys.PASSWORD: self.md5hash.md5salt(password or ""),
-                PacketDataKeys.DEVICE_ID: 0,
+                PacketDataKeys.DEVICE_ID: self.device_id,
                 PacketDataKeys.SELECTED_ROLES: selected_roles,
                 PacketDataKeys.MIN_LEVEL: max(1, min_level),
                 PacketDataKeys.TITLE: title.strip()[:15],
@@ -730,6 +736,7 @@ class Client(Websocket):
             PacketDataKeys.TYPE: PacketDataKeys.ADD_CLIENT_TO_CHAT
         }
         await self.send_server(chat_join_request)
+
 
     async def leave_from_global_chat(self) -> None:
         """
