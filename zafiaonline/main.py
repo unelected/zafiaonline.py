@@ -363,8 +363,10 @@ class Client(Websocket):
 
         while attempt < max_attempts:
             try:
+                print("пытаемся получить данный снова")
                 received_data = await self.get_data(
                     PacketDataKeys.ROOM_CREATED)
+                print("получилиданные, чекаем валидность")
                 if isinstance(received_data, dict) and received_data.get(
                         PacketDataKeys.TYPE) == PacketDataKeys.ROOM_CREATED:
                     return received_data
