@@ -268,7 +268,7 @@ class Websocket:
             except Exception as e:
                 logging.error(f"Unexpected error in listen: {e}")
 
-    async def get_data(self, mafia_type: str) -> dict:
+    async def get_data(self, mafia_type: str) -> Optional[dict]:
         """
         Retrieves data from the WebSocket listener and filters it based on
         the given mafia type.
@@ -299,6 +299,12 @@ class Websocket:
                     raise ValueError("Received None data.")
 
                 event = data.get(PacketDataKeys.TYPE)
+                if mafia_type == PacketDataKeys.ROOM_CREATED:
+                    if event in [mafia_type, "empty",
+                                 PacketDataKeys.ERROR_OCCUR]:
+                        return data
+                    else:
+                        return None
                 if event is None:
                     logging.warning(
                         "Received data without a valid event type. "
