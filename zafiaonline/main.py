@@ -364,7 +364,8 @@ class Client(Websocket):
                 if isinstance(received_data, dict) and received_data.get(
                         PacketDataKeys.TYPE) == PacketDataKeys.ROOM_CREATED:
                     return received_data
-                logging.warning("Invalid room creation response, retrying...")
+                logging.warning(f"Invalid room creation response {received_data}, "
+                                "retrying...")
                 await self.send_server(room_request)
             except Exception as e:
                 logging.error(f"Get server data error: "
