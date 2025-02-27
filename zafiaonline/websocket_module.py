@@ -296,20 +296,20 @@ class Websocket:
                 data = await asyncio.wait_for(self.listen(), timeout=10)
 
                 if data is None:
-                    logging.error("Data is None. Cannot proceed.")
+                    logging.debug("Data is None. Cannot proceed.")
                     raise ValueError("Received None data.")
 
                 event = data.get(PacketDataKeys.TYPE)
 
                 if event is None:
-                    logging.warning(
+                    logging.debug(
                         "Received data without a valid event type. Ignoring...")
                     continue
 
                 if event in [mafia_type, "empty", PacketDataKeys.ERROR_OCCUR]:
                     return data
 
-                logging.warning(
+                logging.debug(
                     f"Unexpected event type received: {event}. Ignoring...")
 
             except asyncio.TimeoutError:
