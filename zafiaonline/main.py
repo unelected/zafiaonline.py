@@ -370,7 +370,7 @@ class Client(Websocket):
                 logging.error(f"Get server data error: "
                               f"{e}", exc_info=True)
             attempt += 1
-            await asyncio.sleep(1)
+            await asyncio.sleep(12)
 
         logging.error("Room creation failed after retry.")
         return None
