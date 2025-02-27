@@ -25,3 +25,18 @@ class ListenExampleErrorException(Exception):
 
     def __init__(self, message="An example listening error occurred."):
         super().__init__(message)
+
+class BanError(Exception):
+    def __init__(self, event=None):
+        from zafiaonline import Client  # Ensure correct import
+        from zafiaonline.structures.packet_data_keys import PacketDataKeys
+
+        # Ensure event is not None before accessing it
+        reason = event[PacketDataKeys.REASON] if event else "unknown reason"
+        username = Client().user.username if Client().user else "Unknown User"
+
+        message = f"{username}, You have been banned due to {reason}"
+        super().__init__(message)
+
+        # Disconnect the client
+        Client().disconnect()

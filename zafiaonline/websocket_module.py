@@ -7,6 +7,8 @@ from websockets import ConnectionClosedOK, connect, ConnectionClosed
 from typing import Optional
 
 from zafiaonline.structures import PacketDataKeys
+from zafiaonline.utils.exceptions import BanError
+
 
 class Websocket:
     def __init__(self, client) -> None:
@@ -306,8 +308,11 @@ class Websocket:
                         "Received data without a valid event type. Ignoring...")
                     continue
 
-                if event in [mafia_type, "empty", PacketDataKeys.ERROR_OCCUR]:
+                if event in [mafia_type, "empty", PacketDataKeys.ERROR_OCCUR,]:
                     return data
+
+                if event == PacketDataKeys.USER_BLOCKED:
+                    raise BanError
 
                 logging.debug(
                     f"Unexpected event type received: {event}. Ignoring...")
