@@ -24,11 +24,6 @@ cd zafiaonline.py
 pip install .
 ```
 
-## 📖 Documentation  
-
-The documentation is available at: [zafiaonline Docs](https://unelected.github.io/zafiaonline.py/)  
-
-
 
 # Import and Auth
 ```python
