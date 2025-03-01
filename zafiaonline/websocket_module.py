@@ -107,7 +107,7 @@ class Websocket:
     async def _handle_reconnect(self) -> None:
         """Attempts to reconnect after a failed connection attempt."""
         self.alive = False
-        await self._reconnect()
+        asyncio.create_task(self._reconnect())
 
     async def disconnect(self) -> None:
         """
@@ -204,7 +204,7 @@ class Websocket:
         if not self.alive:
             logging.error(
                 "WebSocket is not connected. Attempting to reconnect...")
-            await self._reconnect()
+            asyncio.create_task(self._reconnect())
             if not self.alive:
                 logging.error("Reconnection failed. Dropping message.")
                 return
@@ -223,7 +223,7 @@ class Websocket:
         except websockets.ConnectionClosed:
             logging.error(
                 "WebSocket closed while sending data. Reconnecting...")
-            await self._reconnect()
+            asyncio.create_task(self._reconnect())
 
     async def listen(self) -> dict:
         """
@@ -435,7 +435,7 @@ class Websocket:
             except websockets.ConnectionClosed:
                 logging.warning(
                     "WebSocket connection lost. Attempting to reconnect...")
-                await self._reconnect()
+                asyncio.create_task(self._reconnect())
                 break
             except KeyboardInterrupt:
                 raise
