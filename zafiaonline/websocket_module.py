@@ -270,7 +270,7 @@ class Websocket:
             except Exception as e:
                 logging.error(f"Unexpected error in listen: {e}")
 
-    async def get_data(self, mafia_type: str) -> Optional[dict]:
+    async def unsafe_get_data(self, mafia_type: str) -> Optional[dict]:
         """
         Retrieves data from the WebSocket listener and filters it based on
         the given mafia type.
@@ -329,6 +329,18 @@ class Websocket:
             except Exception as e:
                 logging.error(f"Unexpected error in get_data: {e}")
                 raise
+
+    async def get_data(self, key, retries=5, delay=2):
+        for attempt in range(retries):
+            try:
+                data = await self.unsafe_get_data(key)
+                if data is not None:
+                    return data
+            except ValueError:
+                pass
+            await asyncio.sleep(delay)
+        raise ValueError(
+            f"Failed to get data for {key} after {retries} retries")
 
     async def _reconnect(self) -> None:
         """
