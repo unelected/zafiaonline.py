@@ -330,7 +330,7 @@ class Websocket:
                 logging.error(f"Unexpected error in get_data: {e}")
                 raise
 
-    async def get_data(self, key, retries=5, delay=2):
+    async def get_data(self, key, retries = 2, delay=2):
         for attempt in range(retries):
             try:
                 data = await self.unsafe_get_data(key)

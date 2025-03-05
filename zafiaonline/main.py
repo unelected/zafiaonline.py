@@ -553,7 +553,20 @@ class Client(Websocket):
             PacketDataKeys.ROOM_OBJECT_ID: room_id
         }
         await self.send_server(create_player_request)
-        return await self.get_data(PacketDataKeys.ROOM_STATISTICS)
+        data = await self.get_data(PacketDataKeys.ROOM_STATISTICS)
+        attempts = 0
+        while data is None and attempts < 3:
+            await self.send_server(create_player_request)
+            data = await self.get_data(PacketDataKeys.ROOM_STATISTICS)
+            attempts += 1
+            if data is not None and attempts < 3:
+                continue
+            else:
+                return None
+        player_list = data.get(PacketDataKeys.ROOM_STATISTICS, {}).get(PacketDataKeys.PLAYERS, [])
+        room_messages = data.get(PacketDataKeys.ROOM_STATISTICS, {}).get(
+            PacketDataKeys.MESSAGES, [])
+        return {"player_list":player_list, "room_messages":room_messages}
 
     async def join_room(self, room_id: str, password: str = "") -> None:
         """
