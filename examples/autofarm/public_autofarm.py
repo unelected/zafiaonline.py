@@ -398,7 +398,7 @@ class Farm:
                                          f" {self.self_role}")
                         else:
                             if (role in DISABLED_ROLES and
-                                    account.client.id) != self.mafia_main.id:
+                                    account.client.id != self.mafia_main.id):
                                 await account.client.disconnect()
                                 self.players[index].disconn = True
                                 logging.info("отключаем:")
