@@ -497,7 +497,7 @@ class Farm:
                             if player.email == removed_player[0].email:
                                 self.players[ind].alive = False
                         if REMOVE_FROM_SERVER_KILLED:
-                            if not removed_player[0].disconn:
+                            if not removed_player[0].disconn or removed_player[0].client.id == self.mafia_main.id:
                                 await removed_player[0].client.disconnect()
                                 logging.info("удаляем труп с сервера")
                             self.players.remove(removed_player[0])
