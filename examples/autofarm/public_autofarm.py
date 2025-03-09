@@ -51,7 +51,7 @@ MODE = int(config['mode'])
 """
 FORCE = config['force']
 MAX_PLAYERS = int(config['max_players'])
-ACCOUNTS = config['accounts'][str(MAX_PLAYERS)] # int?
+ACCOUNTS = config['accounts'][str(MAX_PLAYERS)]
 MAIN_ACCOUNT_DATA: Union[str, List[str]] = config['main']
 DISABLED_ROLES: List[int] = []
 
@@ -76,7 +76,7 @@ CIVILIANS = [
     Roles.JOURNALIST
 ]
 ENABLED_ROLES: List[Roles] = [Roles.INFORMER,
-                              Roles.SPY,# Roles.DOCTOR, Roles.LOVER,
+                              Roles.SPY, Roles.DOCTOR, Roles.LOVER,
                               Roles.JOURNALIST]
 if MODE == 1:
     ENABLED_ROLES: List[Roles] = [Roles.BARMAN, Roles.TERRORIST,
@@ -219,7 +219,6 @@ class Farm:
         while True:
             client = Client()
             try:
-                #await client.create_connection()
                 response = await client.sign_in(email, password)
             except Exception as e:
                 logging.info(f"создание клиента невозможно,"
