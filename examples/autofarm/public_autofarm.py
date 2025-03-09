@@ -210,13 +210,8 @@ class Farm:
                 player.client.user.username == username and player.alive]
 
     async def join_to_room(self, account: Client):
-        if MAX_PLAYERS > 8:
-            await asyncio.sleep(1)
         await account.join_room(self.room_id, PASSWORD)
-        if MAX_PLAYERS <= 8:
-            await asyncio.sleep(0.18)
-        else:
-            await asyncio.sleep(0.5)
+        await asyncio.sleep(0.18)
         await account.create_player(self.room_id)
 
     @staticmethod
@@ -357,6 +352,7 @@ class Farm:
             self.room_id = room.room_id
             for index, account in enumerate(self.players):
                 await self.join_to_room(account.client)
+                await asyncio.sleep(.3)
 
             logging.info("Все вошли")
             self.played = True
