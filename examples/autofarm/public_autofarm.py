@@ -218,8 +218,6 @@ class Farm:
         else:
             await asyncio.sleep(0.5)
         await account.create_player(self.room_id)
-        if MAX_PLAYERS > 8:
-            await asyncio.sleep(1)
 
     @staticmethod
     async def create_client(email: str, password: str) -> Player:
