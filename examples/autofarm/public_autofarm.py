@@ -220,6 +220,7 @@ class Farm:
             client = Client()
             try:
                 response = await client.sign_in(email, password)
+                await asyncio.sleep(.01)
             except Exception as e:
                 logging.info(f"создание клиента невозможно,"
                              f" удаляем клиент {e}")
