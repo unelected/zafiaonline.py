@@ -183,7 +183,7 @@ class Farm:
                                      Roles.SHERIFF and Roles.SHERIFF not in
                                      x.abr and x.alive, self.players))
 
-    def get_who_lover_may_fucking(self):
+    def get_who_lover_may_loving(self):
         possibly_disconnected = self.disconn_players if (
             self.disconn_players) else self.players
         return list(filter(lambda x: x.role not in
@@ -473,16 +473,16 @@ class Farm:
                     if message[PacketDataKeys.MESSAGE_TYPE] == 5:
                         logging.info("Мафия в чате")
                         try:
-                            fucking_list = self.get_who_lover_may_fucking()
-                            fucker = self.get_player_role(Roles.LOVER)
-                            if fucking_list and fucker:
-                                fucked = random.choice(fucking_list)
-                                await fucker[0].client.role_action(
-                                    fucked.client.id, self.room_id)
+                            loving_list = self.get_who_lover_may_loving()
+                            lover = self.get_player_role(Roles.LOVER)
+                            if loving_list and lover:
+                                loved = random.choice(loving_list)
+                                await lover[0].client.role_action(
+                                    loved.client.id, self.room_id)
                                 logging.info(f"любовница на "
-                                             f"{fucked.get_nickname()}")
+                                             f"{loved.get_nickname()}")
                         except Exception as e:
-                            logging.info(f"\n!!! Ошибка при траханье??????"
+                            logging.info(f"\nОшибка при действии любовницы"
                                          f" {e} \n")
                             #raise
                     elif message[PacketDataKeys.MESSAGE_TYPE] in [3, 12]:
