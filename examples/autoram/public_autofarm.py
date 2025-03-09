@@ -248,6 +248,8 @@ class Farm:
         self.rh = False
         if not skip_timer:
             time.sleep(26)
+        else:
+            time.sleep(2)
         logging.info('go')
 
     async def shuher(self, user_id: str = "user_57e6cce718056") -> Optional[
