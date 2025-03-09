@@ -220,6 +220,7 @@ class Farm:
             client = Client()
             try:
                 response = await client.sign_in(email, password)
+                await asyncio.sleep(.01)
             except Exception as e:
                 logging.info(f"создание клиента невозможно,"
                              f" удаляем клиент {e}")
@@ -236,14 +237,14 @@ class Farm:
 
     async def rehost(self, skip_timer: bool = False) -> None:
         if not skip_timer:
-            logging.info("\nПересоздаем. ждём 16 секунд\n")
+            logging.info("\nПересоздаем. ждём 26 секунд\n")
         for player in self.conn_players():
             await player.client.disconnect()
 
         self.played = False
         self.rh = False
         if not skip_timer:
-            time.sleep(16)
+            time.sleep(26)
         logging.info('go')
 
     async def shuher(self, user_id: str = "user_57e6cce718056") -> Optional[
