@@ -2,6 +2,7 @@ import asyncio
 import json
 import base64
 import logging
+import re
 
 from typing import List, Optional, Union, Dict, Any
 from secrets import token_hex
@@ -557,15 +558,20 @@ class Client(Websocket):
         attempts = 0
         while data is None and attempts < 3:
             await self.send_server(create_player_request)
-            data = await self.get_data(PacketDataKeys.ROOM_STATISTICS)
+            try:
+                data = await self.get_data(PacketDataKeys.ROOM_STATISTICS)
+            except TimeoutError:
+                logging.error("NOT CRITICAL error get room players and "
+                              "messages")
             attempts += 1
             if data is not None and attempts < 3:
-                continue
+                break
             else:
-                return None
-        player_list = data.get(PacketDataKeys.ROOM_STATISTICS, {}).get(PacketDataKeys.PLAYERS, [])
-        room_messages = data.get(PacketDataKeys.ROOM_STATISTICS, {}).get(
-            PacketDataKeys.MESSAGES, [])
+                if data is None:
+                    return None
+        player_list = data.get(PacketDataKeys.PLAYERS, [])
+        room_messages = data.get(PacketDataKeys.MESSAGES, [])
+
         return {"player_list":player_list, "room_messages":room_messages}
 
     async def join_room(self, room_id: str, password: str = "") -> None:
@@ -789,7 +795,7 @@ class Client(Websocket):
         """
         if not content.strip():
             logging.warning(
-                "Anti-ban protection: message not sent because it's empty.")
+                "Anti-ban protection: the message hasn't been sent because it's blank.")
             return False
         return True
 
@@ -810,12 +816,13 @@ class Client(Websocket):
         """
         if not self.validate_message_content(content):
             return
+        content = self.clean_content(content)
 
         message_data: dict = {
             PacketDataKeys.TYPE: PacketDataKeys.PRIVATE_CHAT_MESSAGE_CREATE,
             PacketDataKeys.MESSAGE: {
                 PacketDataKeys.FRIENDSHIP: friend_id,
-                PacketDataKeys.TEXT: content[:200]
+                PacketDataKeys.TEXT: content
             }
         }
         await self.send_server(message_data)
@@ -840,11 +847,12 @@ class Client(Websocket):
         """
         if not self.validate_message_content(content):
             return
+        content = self.clean_content(content)
 
         message_data: dict = {
             PacketDataKeys.TYPE: PacketDataKeys.ROOM_MESSAGE_CREATE,
             PacketDataKeys.MESSAGE: {
-                PacketDataKeys.TEXT: content[:200],
+                PacketDataKeys.TEXT: content,
                 PacketDataKeys.MESSAGE_STYLE: message_style
             },
             PacketDataKeys.ROOM_OBJECT_ID: room_id
@@ -870,15 +878,22 @@ class Client(Websocket):
         """
         if not self.validate_message_content(content):
             return
+        content = self.clean_content(content)
 
         message_data: dict = {
             PacketDataKeys.TYPE: PacketDataKeys.CHAT_MESSAGE_CREATE,
             PacketDataKeys.MESSAGE: {
-                PacketDataKeys.TEXT: content[:200],
+                PacketDataKeys.TEXT: content,
                 PacketDataKeys.MESSAGE_STYLE: message_style,
             }
         }
         await self.send_server(message_data)
+
+    @staticmethod
+    def clean_content(content):
+        new_content = content[:200]
+        clean_content = re.sub(r'\s+', ' ', new_content)
+        return clean_content
 
     async def get_user(self, user_id: str) -> Optional[dict]:
         """
@@ -905,7 +920,7 @@ class Client(Websocket):
         await self.send_server(user_payload)
 
         try:
-            user_data = await self.get_data(PacketDataKeys.USER_PROFILE)
+            user_data = await self.unsafe_get_data(PacketDataKeys.USER_PROFILE)
             if not user_data:
                 logging.error("Error: get_data returned None")
                 return None
