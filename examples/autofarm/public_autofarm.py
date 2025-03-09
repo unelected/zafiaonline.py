@@ -220,7 +220,6 @@ class Farm:
             client = Client()
             try:
                 response = await client.sign_in(email, password)
-                await asyncio.sleep(.01)
             except Exception as e:
                 logging.info(f"создание клиента невозможно,"
                              f" удаляем клиент {e}")
@@ -397,7 +396,8 @@ class Farm:
                                          f" ({MAIN_ACCOUNT_DATA[0]}):"
                                          f" {self.self_role}")
                         else:
-                            if role in DISABLED_ROLES:
+                            if (role in DISABLED_ROLES and
+                                    account.client.id) != self.mafia_main.id:
                                 await account.client.disconnect()
                                 self.players[index].disconn = True
                                 logging.info("отключаем:")
@@ -497,7 +497,9 @@ class Farm:
                             if player.email == removed_player[0].email:
                                 self.players[ind].alive = False
                         if REMOVE_FROM_SERVER_KILLED:
-                            if not removed_player[0].disconn or removed_player[0].client.id == self.mafia_main.id:
+                            if (not removed_player[0].disconn and
+                                    removed_player[0].client.id !=
+                                    self.mafia_main.id):
                                 await removed_player[0].client.disconnect()
                                 logging.info("удаляем труп с сервера")
                             self.players.remove(removed_player[0])
@@ -513,7 +515,9 @@ class Farm:
                                     if player.email == removed_player[0].email:
                                         self.players[ind].alive = False
                                 if REMOVE_FROM_SERVER_KILLED:
-                                    if not removed_player[0].disconn:
+                                    if (not removed_player[0].disconn and
+                                            removed_player[0].client.id !=
+                                            self.mafia_main.id):
                                         await removed_player[0].client.disconnect()
                                         logging.info("удаляем труп от терра с "
                                                      "сервера")
@@ -688,4 +692,3 @@ class Farm:
 if __name__ == "__main__":
     farm = Farm()
     asyncio.run(farm.start())
-
