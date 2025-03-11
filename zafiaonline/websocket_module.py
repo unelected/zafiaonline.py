@@ -204,7 +204,7 @@ class Websocket:
         if not self.alive:
             logging.error(
                 "WebSocket is not connected. Attempting to reconnect...")
-            asyncio.create_task(self._reconnect())
+            await self._reconnect()
             if not self.alive:
                 logging.error("Reconnection failed. Dropping message.")
                 return
@@ -270,7 +270,7 @@ class Websocket:
             except Exception as e:
                 logging.error(f"Unexpected error in listen: {e}")
 
-    async def unsafe_get_data(self, mafia_type: str) -> Optional[dict]:
+    async def get_data(self, mafia_type: str) -> Optional[dict]:
         """
         Retrieves data from the WebSocket listener and filters it based on
         the given mafia type.
@@ -298,15 +298,17 @@ class Websocket:
                 data = await asyncio.wait_for(self.listen(), timeout=10)
 
                 if data is None:
-                    logging.debug("Data is None. Cannot proceed.")
+                    logging.error("Data is None. Cannot proceed.")
                     raise ValueError("Received None data.")
 
                 event = data.get(PacketDataKeys.TYPE)
 
-                if event is None:
-                    logging.debug(
-                        "Received data without a valid event type. Ignoring...")
-                    continue
+                if event is None and PacketDataKeys.TIME not in data:
+                    logging.error(
+                        f"Received data without a valid event type. data"
+                        f": {data}"
+                    )
+                    return
 
                 if event in [mafia_type, "empty", PacketDataKeys.ERROR_OCCUR,]:
                     return data
@@ -330,15 +332,17 @@ class Websocket:
                 logging.error(f"Unexpected error in get_data: {e}")
                 raise
 
-    async def get_data(self, key, retries = 2, delay=2):
+    async def safe_get_data(self, key, retries = 2, delay=2):
         for attempt in range(retries):
             try:
-                data = await self.unsafe_get_data(key)
+                data = await self.get_data(key)
                 if data is not None:
                     return data
             except ValueError:
-                pass
-            await asyncio.sleep(delay)
+                return
+            except Exception as e:
+                logging.error(f"Unexpected error in get_data: {e}")
+                await asyncio.sleep(delay)
         raise ValueError(
             f"Failed to get data for {key} after {retries} retries")
 
@@ -359,21 +363,18 @@ class Websocket:
 
         max_attempts = 5
         for attempt in range(max_attempts):
-            if await self._should_stop_reconnect():
-                return
-
             await self._attempt_disconnect()
 
             await asyncio.sleep(min(2 ** attempt, 30))  # Exponential backoff
-
-            if await self._should_stop_reconnect():
-                return
 
             if await self._try_create_connection():
                 logging.info("Reconnection successful.")
                 return
 
             logging.error(f"Reconnection attempt {attempt + 1} failed.")
+
+        if await self._should_stop_reconnect():
+            return
 
         logging.critical("Max reconnection attempts reached. Giving up.")
 

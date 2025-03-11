@@ -300,16 +300,9 @@ class Client(Websocket):
 
         return self._decode_room(received_data)
 
-    def _build_room_request(
-            self,
-            selected_roles: Optional[List[Roles]],
-            title: str,
-            max_players: int,
-            min_players: int,
-            password: str,
-            min_level: int,
-            vip_enabled: bool,
-    ) -> dict:
+    def _build_room_request(self, selected_roles: Optional[List[Roles]],
+            title: str, max_players: int, min_players: int, password: str,
+            min_level: int, vip_enabled: bool) -> dict:
         """
         Constructs the request payload for creating a room.
 
@@ -329,12 +322,12 @@ class Client(Websocket):
         return {
             PacketDataKeys.TYPE: PacketDataKeys.ROOM_CREATE,
             PacketDataKeys.ROOM: {
-                PacketDataKeys.MIN_PLAYERS: min(18, max(5, min_players)),
                 PacketDataKeys.MAX_PLAYERS: min(21, max(8, max_players)),
-                PacketDataKeys.PASSWORD: self.md5hash.md5salt(password or ""),
-                PacketDataKeys.DEVICE_ID: self.device_id,
-                PacketDataKeys.SELECTED_ROLES: selected_roles,
+                PacketDataKeys.MIN_PLAYERS: min(18, max(5, min_players)),
                 PacketDataKeys.MIN_LEVEL: max(1, min_level),
+                PacketDataKeys.DEVICE_ID: self.device_id,
+                PacketDataKeys.PASSWORD: self.md5hash.md5salt(password or ""),
+                PacketDataKeys.SELECTED_ROLES: selected_roles,
                 PacketDataKeys.TITLE: title.strip()[:15],
                 PacketDataKeys.VIP_ENABLED: vip_enabled,
             },
@@ -355,10 +348,10 @@ class Client(Websocket):
         Returns:
             Optional[dict]: The validated response if successful, else None.
         """
-        max_attempts = 2
+        max_attempts = 3
         attempt = 0
 
-        while attempt < max_attempts:
+        while attempt <= max_attempts:
             try:
                 received_data = await self.get_data(
                     PacketDataKeys.ROOM_CREATED)
@@ -367,12 +360,12 @@ class Client(Websocket):
                     return received_data
                 logging.warning(f"Invalid room creation response {received_data}, "
                                 "retrying...")
+                await asyncio.sleep(12)
                 await self.send_server(room_request)
             except Exception as e:
                 logging.error(f"Get server data error: "
                               f"{e}", exc_info=True)
             attempt += 1
-            await asyncio.sleep(12)
 
         logging.error("Room creation failed after retry.")
         return None
@@ -390,12 +383,19 @@ class Client(Websocket):
             otherwise None.
         """
         try:
-            if PacketDataKeys.ROOM not in received_data:
-                logging.error("Missing room data in response")
-                return None
+            if received_data:
+                if PacketDataKeys.ROOM not in received_data:
+                    logging.error("Missing room data in response")
+                    return None
 
-            return decode(json.dumps(received_data[PacketDataKeys.ROOM]),
+                return decode(json.dumps(received_data[PacketDataKeys.ROOM]),
                           type=ModelRoom)
+            return None
+
+        except TypeError:
+            logging.error(f"Failed to decode room data: data is None",
+                          exc_info=True)
+            return None
 
         except Exception as e:
             logging.error(f"Failed to decode room data: {e}", exc_info=True)
@@ -413,6 +413,7 @@ class Client(Websocket):
         }
         await self.send_server(friends_request)
 
+        await asyncio.sleep(.01)
         received_data = await self.get_data(PacketDataKeys.FRIENDSHIP_LIST)
 
         friends: List[ModelFriend] = []
@@ -436,6 +437,7 @@ class Client(Websocket):
             PacketDataKeys.SEARCH_TEXT: nickname
         }
         await self.send_server(search_info_request)
+        await asyncio.sleep(.01)
         return await self.get_data(PacketDataKeys.SEARCH_USER)
 
     async def remove_friend(self, friend_id: str) -> None:
@@ -554,11 +556,13 @@ class Client(Websocket):
             PacketDataKeys.ROOM_OBJECT_ID: room_id
         }
         await self.send_server(create_player_request)
+        await asyncio.sleep(.01)
         data = await self.get_data(PacketDataKeys.ROOM_STATISTICS)
         attempts = 0
         while data is None and attempts < 3:
             await self.send_server(create_player_request)
             try:
+                await asyncio.sleep(.01)
                 data = await self.get_data(PacketDataKeys.ROOM_STATISTICS)
             except TimeoutError:
                 logging.error("NOT CRITICAL error get room players and "
@@ -689,6 +693,7 @@ class Client(Websocket):
         }
         await self.send_server(private_messages_request)
 
+        await asyncio.sleep(.01)
         received_messages = await self.get_data(
             PacketDataKeys.PRIVATE_CHAT_LIST_MESSAGES
         )
@@ -720,6 +725,7 @@ class Client(Websocket):
             PacketDataKeys.RATING_MODE: rating_mode
         }
         await self.send_server(rating_query)
+        await asyncio.sleep(.01)
         return await self.get_data(PacketDataKeys.RATING)
 
     async def add_client_to_room_list(self) -> None:
@@ -920,7 +926,8 @@ class Client(Websocket):
         await self.send_server(user_payload)
 
         try:
-            user_data = await self.unsafe_get_data(PacketDataKeys.USER_PROFILE)
+            await asyncio.sleep(.1)
+            user_data = await self.get_data(PacketDataKeys.USER_PROFILE)
             if not user_data:
                 logging.error("Error: get_data returned None")
                 return None
@@ -945,6 +952,7 @@ class Client(Websocket):
             PacketDataKeys.TYPE: PacketDataKeys.MATCH_MAKING_GET_STATUS
         }
         await self.send_server(status_request)
+        await asyncio.sleep(.01)
         return await self.get_data("mmms")
 
     async def users_waiting_count(self, players_size: int = 8) -> dict:
@@ -969,6 +977,7 @@ class Client(Websocket):
             "mmbpa": players_size
         }
         await self.send_server(users_in_wait_request)
+        await asyncio.sleep(.01)
         return await self.get_data("mmuiabk")
 
     async def match_making_add_user(self, players_size: int = 8) -> None:
