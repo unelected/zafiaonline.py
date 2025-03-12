@@ -250,6 +250,14 @@ class Client(Websocket):
         }
         await self.send_server(language_update_request)
 
+    async def buy_vip(self, app_language = "ENG"):
+        buy_vip_request: dict = {
+            PacketDataKeys.TYPE: PacketDataKeys.BUY_MARKET_ITEM,
+            PacketDataKeys.APP_LANGUAGE: app_language,
+            PacketDataKeys.OBJECT_ID: "vip_account"
+        }
+        await self.send_server(buy_vip_request)
+
     async def vote_player_list(self, user_id: str, room_id: str) -> None:
         """
         Sends a request to vote for a player in the given room.
