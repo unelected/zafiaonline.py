@@ -54,4 +54,5 @@ async def main():
                         await Mafia.send_message_global(
                             send_content)  # send message to global chat
 
+logging.basicConfig(level=logging.INFO)
 asyncio.run(main())
