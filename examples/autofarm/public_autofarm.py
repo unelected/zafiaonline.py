@@ -703,6 +703,7 @@ class Farm:
 
 
 farm = Farm()
+logging.basicConfig(level = logging.INFO)
 try:
     asyncio.run(farm.start())
 except KeyboardInterrupt:
