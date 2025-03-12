@@ -3,6 +3,7 @@ import json
 import base64
 import logging
 import re
+import sys
 
 from typing import List, Optional, Union, Dict, Any
 from secrets import token_hex
@@ -19,7 +20,16 @@ from zafiaonline.structures.enums import (Languages, Roles,
                                           RoomModelType)
 from zafiaonline.websocket_module import Websocket
 
-logging.basicConfig(level=logging.INFO)
+
+logger = logging.getLogger("zafiaonline")
+logger.setLevel(logging.INFO)
+logger.propagate = False
+
+if not logger.handlers:
+    handler = logging.StreamHandler(sys.stdout)
+    formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
 
 class Client(Websocket):
     def __init__(self, proxy: Optional[List[str]] = None, debug: bool =
