@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="zafiaonline",
-    version="2.5.2",
+    version="2.5.3",
     license='Pepsiware',
     packages=find_packages(include=["zafiaonline", "zafiaonline.*"]),
     install_requires=["websockets", "msgspec", "sphinx"],
