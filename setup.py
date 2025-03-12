@@ -2,8 +2,8 @@ from setuptools import setup, find_packages
 
 setup(
     name="zafiaonline",
-    version="2.5.14",
-    license='Beerware',
+    version="2.5.2",
+    license='Pepsiware',
     packages=find_packages(include=["zafiaonline", "zafiaonline.*"]),
     install_requires=["websockets", "msgspec", "sphinx"],
     description="A Python API library for interacting with Mafia Online game.",
