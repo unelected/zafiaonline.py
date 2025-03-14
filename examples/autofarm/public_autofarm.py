@@ -5,7 +5,6 @@ import json
 import string
 import logging
 
-from datetime import datetime
 from dataclasses import dataclass, field
 from typing import List, Optional, Union
 
@@ -123,16 +122,6 @@ class Farm:
             data = account.split(":")
             self.accounts.append([data[0], data[1]])
 
-    @staticmethod
-    def format_time():
-        return f"{datetime.now().strftime('%H:%M:%S')}"
-
-    def log(self, log: str, mode = "info") -> None:
-        log = f"{self.format_time()} | {log}"
-        self.svodka_text += f"{log}\n"
-        if mode in {"info", "debug", "warning", "error", "critical"}:
-            getattr(logging, mode)(log)
-
     @property
     def is_killing_mafia(self) -> bool:
         if MODE == 3:
@@ -246,7 +235,7 @@ class Farm:
 
     async def rehost(self, skip_timer: bool = False) -> None:
         if not skip_timer:
-            self.log("\nПересоздаем. ждём 26 секунд\n")
+            logging.info("\nПересоздаем. ждём 26 секунд\n")
         for player in self.conn_players():
             await player.client.disconnect()
 
@@ -256,7 +245,7 @@ class Farm:
             time.sleep(26)
         else:
             time.sleep(2)
-        self.log('go')
+        logging.info('go')
 
     async def shuher(self, user_id: str = "user_57e6cce718056") -> Optional[
         bool]:
@@ -298,7 +287,7 @@ class Farm:
 
     async def start(self):
         number_of_games = 1
-        self.log(f'скрипт перезапустился. режим: {MODE}. аккаунт -'
+        logging.info(f'скрипт перезапустился. режим: {MODE}. аккаунт -'
                      f' {MAIN_ACCOUNT_DATA[0]}')
         self.rh = True
         shuhers = 0
@@ -319,13 +308,13 @@ class Farm:
             if SHUFFLE_ACCOUNTS is True:
                 random.shuffle(ACCOUNTS)
             #def shuher_log(self): -> None
-            #self.log("! Шухер (wowa), но не на ru сервере,
+            #logging.info("! Шухер (wowa), но не на ru сервере,
             # " поэтому ждём 3 минуты")
             #await asyncio.sleep(shuher_time)
             #shuhers += 1
             if shuher_wowa:
                 if shuher_wowa != "ru":
-                    self.log(f"! Шухер (wowa), но не на {shuher_wowa} "
+                    logging.info(f"! Шухер (wowa), но не на {shuher_wowa} "
                                  f"сервере,"
                                  " поэтому ждём 3 минуты")
                     await client.disconnect()
@@ -333,7 +322,7 @@ class Farm:
                     shuhers += 1
                     continue
                 else:
-                    self.log(f"! ШУХЕР (wowa) НА {shuher_wowa} "
+                    logging.info(f"! ШУХЕР (wowa) НА {shuher_wowa} "
                                  f"СЕРВЕРЕ !\n ждём 10 минут")
                     await client.disconnect()
                     time.sleep(600)
@@ -356,11 +345,11 @@ class Farm:
                                                    vip_enabled = VIP_ENABLED)
                     break
                 except Exception as e:
-                    self.log(f"произошла ошибочка, {e}")
+                    logging.info(f"произошла ошибочка, {e}")
                     await asyncio.sleep(.5)
 
             await asyncio.sleep(.1)
-            self.log("Создалась комната")
+            logging.info("Создалась комната")
             self.svodka_text = (f"[👤] аккаунт: "
                                 f"{self.mafia_main_data.get_nickname()}\n")
             self.room_id = room.room_id
@@ -368,7 +357,7 @@ class Farm:
                 await self.join_to_room(account.client)
                 await asyncio.sleep(2)
 
-            self.log("Все вошли")
+            logging.info("Все вошли")
             self.played = True
             last_empty_packet_time = 0
             day_gs = 0
@@ -383,30 +372,30 @@ class Farm:
                         continue
                 except Exception as e:
                     #data = {PacketDataKeys.TYPE: "empty"}
-                    self.log(f"ошибка при обработке данных: {e}")
+                    logging.error(f"ошибка при обработке данных: {e}")
                     continue
                 data_type = data.get(PacketDataKeys.TYPE)
                 if data_type == PacketDataKeys.GAME_STATUS:
                     game_type = data[PacketDataKeys.GAME_STATUS]
                     if game_type == 2:
-                        self.log("Игра началась")
+                        logging.info("Игра началась")
                     elif game_type == 1:
-                        self.log("Ждём начала")
+                        logging.info("Ждём начала")
                     else:
-                        self.log("\n\n\n")
+                        logging.info("\n\n\n")
                 elif (data_type == PacketDataKeys.PLAYERS_STAT and
                       self.players[0].role == -1):
                     for index, account in enumerate(self.players):
                         role = await self.search_role(account)
                         if role == -1:
-                            self.log('failed get role_id')
+                            logging.info('failed get role_id')
                             await self.rehost()
                             break
                         self.players[index].role = role
                         if account.client.id == self.mafia_main.id:
                             self.self_role = role
 
-                            self.log(f"Номер твоей роли"
+                            logging.info(f"Номер твоей роли"
                                          f" ({MAIN_ACCOUNT_DATA[0]}):"
                                          f" {self.self_role}")
                         else:
@@ -414,11 +403,11 @@ class Farm:
                                     account.client.id != self.mafia_main.id):
                                 await account.client.disconnect()
                                 self.players[index].disconn = True
-                                self.log("отключаем:")
-                            self.log(f"у игрока {account.get_nickname()}"
+                                logging.info("отключаем:")
+                            logging.info(f"у игрока {account.get_nickname()}"
                                          f" роль: {role}")
                     if MODE == 4 or (not FORCE and MODE in [1, 2]):
-                        self.log(f"Убиваем: "
+                        logging.info(f"Убиваем: "
                                      f"{'МАФОВ' if self.is_killing_mafia else 'МИРОВ'}")
 
                     elif ((ROLE and self.self_role not in ROLE) or
@@ -427,7 +416,7 @@ class Farm:
                             self.is_killing_mafia) or
                             (self.self_role in MAFIAS and
                              self.is_killing_mafia)))):
-                        self.log('unavailable role')
+                        logging.info('unavailable role')
                         await self.rehost()
                         break
                     #listener_account = self.get_listener()
@@ -435,7 +424,7 @@ class Farm:
                 elif data_type == PacketDataKeys.GAME_DAYTIME:
                     type_day = data[PacketDataKeys.DAYTIME]
                     if type_day == 2:
-                        self.log("Чатятся")
+                        logging.info("Чатятся")
                 elif data_type == PacketDataKeys.GAME_FINISHED:
 
                     work_time = time.time() - UPTIME
@@ -445,7 +434,7 @@ class Farm:
                     work_time_minutes = (work_time % 3600) // 60
                     all_wins = (self.mafia_main.user.wins_as_mafia +
                                 self.mafia_main.user.wins_as_peaceful + 1)
-                    self.log(
+                    logging.info(
                         f"[🏆] {number_of_games} игра закончилась\n[⏳]"
                         f" {int(time.time() - room_time)} секунд\n"
                         f"[👤] роль: {self.self_role}\n[🔎] +"
@@ -471,7 +460,7 @@ class Farm:
                 #                boolean = False
                 #            if not boolean:
                 #                continue
-                #        self.log("закончилась сбойная игра, рехост")
+                #        logging.info("закончилась сбойная игра, рехост")
                 #        await self.rehost(True)
                 #        self.rh = True
                 #        number_of_games += 1
@@ -487,7 +476,7 @@ class Farm:
                                       f"{data.get(PacketDataKeys.MESSAGE)}")
                         message = data[PacketDataKeys.MESSAGE]
                     if message[PacketDataKeys.MESSAGE_TYPE] == 5:
-                        self.log("Мафия в чате")
+                        logging.info("Мафия в чате")
                         try:
                             loving_list = self.get_who_lover_may_loving()
                             lover = self.get_player_role(Roles.LOVER)
@@ -495,15 +484,15 @@ class Farm:
                                 loved = random.choice(loving_list)
                                 await lover[0].client.role_action(
                                     loved.client.id, self.room_id)
-                                self.log(f"любовница на "
+                                logging.info(f"любовница на "
                                              f"{loved.get_nickname()}")
                         except Exception as e:
-                            self.log(f"\nОшибка при действии любовницы"
+                            logging.error(f"\nОшибка при действии любовницы"
                                          f" {e} \n")
                             #raise
                     elif message[PacketDataKeys.MESSAGE_TYPE] in [3, 12]:
                         username = message[PacketDataKeys.TEXT]
-                        self.log(f"Убили {username}")
+                        logging.info(f"Убили {username}")
                         removed_player = self.find_by_username(username)
                         if not removed_player:
                             continue
@@ -515,13 +504,13 @@ class Farm:
                                     removed_player[0].client.id !=
                                     self.mafia_main.id):
                                 await removed_player[0].client.disconnect()
-                                self.log("удаляем труп с сервера")
+                                logging.info("удаляем труп с сервера")
                             self.players.remove(removed_player[0])
                     elif message[PacketDataKeys.MESSAGE_TYPE] == 18:
                         username_boom = message[PacketDataKeys.TEXT]
                         boom = (message[PacketDataKeys.USER][
                             PacketDataKeys.USERNAME])
-                        self.log(f'{boom} взорвал {username_boom}')
+                        logging.info(f'{boom} взорвал {username_boom}')
                         for username in [username_boom, boom]:
                             removed_player = self.find_by_username(username)
                             if removed_player:
@@ -533,7 +522,7 @@ class Farm:
                                             removed_player[0].client.id !=
                                             self.mafia_main.id):
                                         await removed_player[0].client.disconnect()
-                                        self.log("удаляем труп от терра с "
+                                        logging.info("удаляем труп от терра с "
                                                      "сервера")
                                     self.players.remove(removed_player[0])
                     elif message[PacketDataKeys.MESSAGE_TYPE] in [9, 13]:
@@ -542,10 +531,10 @@ class Farm:
                         killer_user = self.find_by_username(message.get(
                             PacketDataKeys.USER, {}).get(
                             PacketDataKeys.USERNAME))[0]
-                        self.log(f"{killer_user.get_nickname()} ударил в"
+                        logging.info(f"{killer_user.get_nickname()} ударил в"
                                      f" {died_user.get_nickname()}")
                     elif message[PacketDataKeys.MESSAGE_TYPE] == 6:
-                        self.log("Мафия выбирает жертву")
+                        logging.info("Мафия выбирает жертву")
                         try:
                             killing_list = self.get_who_mafia_may_kill()
                             killed = random.choice(killing_list)
@@ -559,7 +548,7 @@ class Farm:
                                     await (mafia.client.role_action
                                            (killed.client.id, self.room_id))
                         except Exception as e:
-                            self.log(f"Ошибка при убийстве?????? {e}")
+                            logging.error(f"Ошибка при убийстве?????? {e}")
                             #raise
                         try:
                             killing_list =\
@@ -576,7 +565,7 @@ class Farm:
                                            role_action(
                                         checkering.client.id, self.room_id))
                         except Exception as e:
-                            self.log(f"!!! Ошибка при журе?????? {e}")
+                            logging.error(f"!!! Ошибка при журе?????? {e}")
                             #raise
                         await asyncio.sleep(.2)
                         try:
@@ -591,10 +580,10 @@ class Farm:
 
                                 await (sheriff[0].client.role_action
                                        (checked.client.id, self.room_id))
-                                self.log(f"Чекнул "
+                                logging.info(f"Чекнул "
                                              f"{checked.get_nickname()}")
                         except Exception as e:
-                            self.log(f"!!! Ошибка при чеке?????? {e}")
+                            logging.error(f"!!! Ошибка при чеке?????? {e}")
                         try:
                             checked_list = self.get_who_doctor_may_health()
                             doctors = self.get_player_role(Roles.DOCTOR)
@@ -602,27 +591,27 @@ class Farm:
                                 checked = random.choice(checked_list)
                                 await (doctor.client.role_action
                                        (checked.client.id, self.room_id))
-                                self.log(f"Вылечил "
+                                logging.info(f"Вылечил "
                                              f"{checked.get_nickname()}")
                         except Exception as e:
-                            self.log(f"!!! Ошибка при лечении?????? {e}")
+                            logging.error(f"!!! Ошибка при лечении?????? {e}")
                     elif message[PacketDataKeys.MESSAGE_TYPE] == 8:
                         day_gs += 1
                         if ((MODE == 2 and day_gs > 3) or
                                 (MODE == 1 and day_gs > 6)):
-                            self.log("слишком много дневных гс, "
+                            logging.info("слишком много дневных гс, "
                                          "делаем рх")
                             await self.rehost()
                             stopers += 1
                             break
-                        self.log("Дневное гс")
+                        logging.info("Дневное гс")
 
                         terr = self.get_player_role(Roles.TERRORIST)
                         boomeds = self.get_who_terrorist_may_boom()
                         ignore = []
-                        self.log(terr[0], "info")
+                        logging.info(terr[0], "info")
                         for boom in boomeds:
-                            self.log(boom, "info")
+                            logging.info(boom, "info")
                         if terr and boomeds:
                             boomed = random.choice(boomeds)
                             ignore = [terr[0].client.id, boomed.client.id]
@@ -631,7 +620,7 @@ class Farm:
                                        (boomed.client.id, self.room_id))
                             except Exception as e:
                                 terr[0].disconn = True
-                                self.log("терр откинулся", e)
+                                logging.info("терр откинулся", e)
                             await asyncio.sleep(.4)
 
                         who_may_killed = list(filter
@@ -660,7 +649,7 @@ class Farm:
                         last_empty_packet_time = time.time()
                     else:
                         if (time.time() - last_empty_packet_time) > 5:
-                            self.log("ХАРД СБОЙ... скипаем")
+                            logging.error("ХАРД СБОЙ... скипаем")
                             # listener_ac
                             # count = self.get_listener(listener_account)
                             # for index, player in enumerate(self.players):
@@ -669,7 +658,7 @@ class Farm:
                             #        try:
                             #            player[0].delete()
                             #        except:
-                            #            self.log("failed of end session"
+                            #            logging.info("failed of end session"
                             #            , True)
                             #        resession = self.create_client
                             #        (player[2][0], player[2][1])
@@ -688,22 +677,24 @@ class Farm:
                                 await player.client.send_message_room(
                                     "",self.room_id)
                             except Exception as e:
-                                self.log(
+                                logging.info(
                                     f"отвалился аккаунт {player.get_nickname()}. удаляем его из списка игроков: {e}")
                                 self.players[index].disconn = True
                                 size_disabled_accounts = len(self.
                                                              disconn_players)
-                                self.log(f"{size_disabled_accounts}")
+                                logging.info(f"{size_disabled_accounts}")
                                 if size_disabled_accounts > 5:
-                                    self.log("отсоединилось больше "
+                                    logging.info("отсоединилось больше "
                                                  "5 акков, делаем рехост")
                                     stopers += 1
                                     await self.rehost()
-                        self.log(f">> [⌚] {data.get(PacketDataKeys.MESSAGE_TYPE)}")
+                        logging.info(f">> [⌚] {data.get(PacketDataKeys.MESSAGE_TYPE)}")
 
 
 farm = Farm()
-logging.basicConfig(level = logging.INFO)
+logging.basicConfig(level=logging.INFO,
+                        format="%(asctime)s - %(levelname)s - %(message)s",
+                        datefmt="%H:%M:%S")
 try:
     asyncio.run(farm.start())
 except KeyboardInterrupt:
