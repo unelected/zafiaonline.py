@@ -609,8 +609,6 @@ class Farm:
                         terr = self.get_player_role(Roles.TERRORIST)
                         boomeds = self.get_who_terrorist_may_boom()
                         ignore = []
-                        for boom in boomeds:
-                            logging.info(boom)
                         if terr and boomeds:
                             boomed = random.choice(boomeds)
                             ignore = [terr[0].client.id, boomed.client.id]
