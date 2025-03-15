@@ -282,7 +282,7 @@ class Client(Websocket):
             title: str = "",
             max_players: int = 8,
             min_players: int = 5,
-            password: str = "",
+            password: Optional[str] = None,
             min_level: int = 1,
             vip_enabled: bool = False
     ) -> ModelRoom:
@@ -319,7 +319,8 @@ class Client(Websocket):
         return self._decode_room(received_data)
 
     def _build_room_request(self, selected_roles: Optional[List[Roles]],
-            title: str, max_players: int, min_players: int, password: str,
+            title: str, max_players: int, min_players: int, password:
+            Optional[str],
             min_level: int, vip_enabled: bool) -> dict:
         """
         Constructs the request payload for creating a room.
@@ -344,7 +345,8 @@ class Client(Websocket):
                 PacketDataKeys.MIN_PLAYERS: min(18, max(5, min_players)),
                 PacketDataKeys.MIN_LEVEL: max(1, min_level),
                 PacketDataKeys.DEVICE_ID: self.device_id,
-                PacketDataKeys.PASSWORD: self.md5hash.md5salt(password or ""),
+                PacketDataKeys.PASSWORD: self.md5hash.md5salt(password)
+                if password is not None else "",
                 PacketDataKeys.SELECTED_ROLES: selected_roles,
                 PacketDataKeys.TITLE: title.strip()[:15],
                 PacketDataKeys.VIP_ENABLED: vip_enabled,
