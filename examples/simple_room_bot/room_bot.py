@@ -131,7 +131,8 @@ class RoomBot:
 
     async def delayed_send(self, response, delay):
         await asyncio.sleep(delay)
-        await client.send_message_room(response, self.room_id)
+        await client.send_message_room(response, self.room_id, 
+                                       message_style = MessageStyleData.style)
 
     async def get_messages(self, result):
         if result[PacketDataKeys.TYPE] == PacketDataKeys.MESSAGE:
