@@ -84,8 +84,6 @@ class Roles(IntEnum):
     SPY = 10          # Gathers information about players
     INFORMER = 11     # Manipulates information or misleads
 
-from enum import Enum
-
 class RatingMode(str, Enum):
     """
     Enumeration representing different rating modes for leaderboard rankings.
@@ -110,10 +108,6 @@ class RatingMode(str, Enum):
     ALL_TIME = "all_time"   # Leaderboard for all-time rankings
     TODAY = "today"         # Leaderboard for today's performance
     YESTERDAY = "yesterday" # Leaderboard for yesterday's performance
-
-
-
-from enum import Enum
 
 class RatingType(str, Enum):
     """
@@ -140,10 +134,6 @@ class RatingType(str, Enum):
     EXPERIENCE = "experience" # Rank based on total experience points
     AUTHORITY = "authority" # Rank based on authority level
     WINS = "wins"           # Rank based on total wins
-
-
-
-from enum import IntEnum
 
 class ActivityType(IntEnum):
     """
@@ -211,10 +201,6 @@ class ProfilePhotoType(IntEnum):
     NO_PHOTO = 0      # No profile photo uploaded
     PHOTO_ADDED = 1   # Profile photo has been added
 
-
-
-from enum import IntEnum
-
 class FriendInRoomType(IntEnum):
     """
     Enumeration representing the presence of a friend in a room.
@@ -238,5 +224,27 @@ class FriendInRoomType(IntEnum):
     NO_FRIEND_IN_ROOM = 0  # No friends present in the room
     FRIEND_IN_ROOM = 1     # At least one friend is in the room
 
+class MessageType:
+    TEXT = 1
+    JOIN = 2
+    LEAVE = 3
+    MAFIA_IN_CHAT = 5
+    MAFIA_CHOOSES_A_VICTIM = 6
+    DAYTIME_VOTING = 8
+    USER_IS_KILLED_MESSAGE = {3, 12}
+    VOTE_MESSAGES = {9, 13}
+    TERRORIST_IS_BOOM = 18
+    KICK_START = 23 # not minecraft // сообщение разделсяется знаками #=#
+    # первая часть - ник того кто выгоняет 2 - того которого выгоняют
+    KICK_RESULTS = 24
+    GIVE_UP = 27
 
-
+class MessageStyles:
+    NO_COLOR = 0
+    GREY_COLOR = 1
+    BLUE_COLOR = 2
+    RED_COLOR = 3
+    GREEN_COLOR = 4
+    PURPLE_COLOR = 5
+    YELLOW_COLOR = 6
+    PINK_COLOR = 7
