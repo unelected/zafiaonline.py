@@ -11,6 +11,7 @@ from secrets import token_hex
 from msgspec.json import decode
 
 from zafiaonline.utils.md5hash import Md5
+from zafiaonline.structures.enums import MessageStyles
 from zafiaonline.structures.packet_data_keys import PacketDataKeys
 from zafiaonline.structures.models import (ModelUser, ModelServerConfig,
                                            ModelRoom, ModelFriend,
@@ -854,7 +855,7 @@ class Client(Websocket):
         await self.send_server(message_data)
 
     async def send_message_room(self, content: str, room_id: str,
-                                message_style: int = 0) -> None:
+                message_style: int = MessageStyles.NO_COLOR) -> None:
         """
         Sends a message to a room.
 
@@ -886,7 +887,7 @@ class Client(Websocket):
         await self.send_server(message_data)
 
     async def send_message_global(self, content: str,
-                                  message_style: int = 0) -> None:
+                        message_style: int = MessageStyles.NO_COLOR) -> None:
         """
         Sends a message to the global chat.
 
