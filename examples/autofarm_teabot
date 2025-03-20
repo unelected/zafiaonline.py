@@ -3,51 +3,86 @@ import asyncio
 from zafiaonline import Client
 from zafiaonline.utils.api_decorators import ApiDecorators
 
+
 class Main:
+    @staticmethod
+    async def main():
+        data_handler = DataHandle()
+        account_data = AccountData()
+        message_handler = MessagesHandle()
+        email, password = account_data.init_account_data()
+        await client.sign_in(email, password)
+        await client.join_global_chat()
+        while True:
+            result = await client.listen()
+            content = data_handler.get_data(result)
+            await message_handler.message_handle(content)
+
+
+class AccountData:
+    EMAIL = "email"
+    PASSWORD = "password"
+
+    @classmethod
+    def init_account_data(cls):
+        return cls.EMAIL, cls.PASSWORD
+
+
+class DataHandle:
+    USER_NAME = None  # Переменная класса
+
     def __init__(self):
         self.user_name = None
 
     @ApiDecorators.extract_message
-    async def rat(self, content):
-        if await self.cooldown_is_done(content):
-            await self.farm_tea()
-            await self.trolling()
+    def get_data(self, content):
+        DataHandle.USER_NAME = self.user_name
+        return content
+
+
+class MessagesHandle:
+    DELAY = .4
+    TROLL_MESSAGE = "?)"
+
+    @staticmethod
+    async def message_handle(content):
+        prepare_data = PrepareData()
+        message_handler = MessagesHandle()
+        if prepare_data.cooldown_is_done(content):
+            await prepare_data.farm_tea()
+            await message_handler.trolling()
+
+    @staticmethod
+    async def trolling():
+        message_handler = MessagesHandle()
+        for _ in range(0, 10):
+            await client.leave_from_global_chat()
+            await asyncio.sleep(message_handler.DELAY)
+            await client.join_global_chat()
+            await asyncio.sleep(message_handler.DELAY)
+        await client.send_message_global(message_handler.TROLL_MESSAGE)
+
+
+class PrepareData:
+    TEA_IS_READY_TO_TAKEN = "Новый чай готов для получения!"
+    BOT_NICKNAME = "TeaBot"
 
     @staticmethod
     async def farm_tea():
         await client.send_message_global("/фарм чая")
 
-    async def cooldown_is_done(self, content):
-        tea_is_ready_to_taken = "Новый чай готов для получения!"
-        bot_nickname = "TeaBot"
-        return (content == tea_is_ready_to_taken and
-                self.user_name == bot_nickname)
-
     @staticmethod
-    async def trolling():
-        for i in range(0, 10):
-            await client.leave_from_global_chat()
-            await asyncio.sleep(.4)
-            await client.join_global_chat()
-            await asyncio.sleep(.4)
-        await client.send_message_global("?)")
-
-    async def main(self):
-        email, password = await self.init_account_data()
-        await client.sign_in(email, password)
-        await client.join_global_chat()
-        while True:
-            result = await client.listen()
-            await self.rat(result)
-
-    @staticmethod
-    async def init_account_data():
-        email = "email"
-        password = "password"
-        return email, password
+    def cooldown_is_done(content):
+        prepare_data = PrepareData()
+        data_handle = DataHandle()
+        return (content == prepare_data.TEA_IS_READY_TO_TAKEN and
+                data_handle.USER_NAME == prepare_data.BOT_NICKNAME)
 
 
 if __name__ == "__main__":
     client = Client()
     main = Main()
-    asyncio.run(main.main())
+    try:
+        asyncio.run(main.main())
+    except KeyboardInterrupt:
+        pass
