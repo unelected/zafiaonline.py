@@ -8,31 +8,28 @@ from zafiaonline.main import Client
 
 
 class Main:
-    def __init__(self):
-        self.user_agreement = None
-        self.user_id = None
-        self.user_name = None
-
-    async def main(self):
-        await self.show_user_agreement()
+    @staticmethod
+    async def main():
+        messages_handle, user_agreement = await Main.prepare_classes()
+        user_agreement.show_user_agreement()
         await Mafia.sign_in("email", "password")
         await Mafia.join_global_chat()  # join in global chat
-        await self.chat_handle()
+        await messages_handle.chat_handle()
 
-    async def show_user_agreement(self):
-        self.user_agreement = input("[en] send messages may ban you, do you "
-                                    "accept "
-                                    "this? if "
-                                    "don't "
-                                    "accept you'll use only chat listener\n"
-                                    "if you agree, write yes: \n\n"
-                                    "[ru] отправка сообщений может "
-                                    "заблокировать аккаунт, "
-                                    "принимаешь ли ты это? если нет то "
-                                    "будет доступна только прослушка чата\n"
-                                    "если ты согласен то введи да: ")
-        print("\n\n\n")
-        
+    @staticmethod
+    async def prepare_classes():
+        user_agreement = UserAgreement()
+        messages_handle = MessagesHandle()
+        return messages_handle, user_agreement
+
+
+class MessagesHandle:
+    USER_NAME = None
+    USER_ID = None
+    def __init__(self):
+        self.user_name = None
+        self.user_id = None
+
     async def chat_handle(self):
         while True:
             try:
@@ -41,29 +38,69 @@ class Main:
                 logging.error(f"listen error {e}")
                 raise ListenExampleErrorException
 
-            await self.message_handle(result)
+            processed_result = self.message_handle(result)
+            if processed_result is not None:
+                await processed_result
 
-    @ApiDecorators.extract_message # get text message data
+
+    @ApiDecorators.extract_message  # get text message data
     async def message_handle(self, content):
-        await self.log_message(content)
-        send_content = await self.get_content_of_other_players(content)
-        if await self.user_agreement_is_confirmed() and send_content:
-                await Mafia.send_message_global(
-                    send_content)  # send message to global chat
+        user_agreement, utils = await self.prepare_classes()
+        MessagesHandle.USER_NAME = self.user_name
+        MessagesHandle.USER_ID = self.user_id
+        utils.log_message(content)
+        send_content = self.get_content_of_other_players(content)
+        if user_agreement.user_agreement_is_confirmed() and send_content:
+            await Mafia.send_message_global(
+                send_content)  # send message to global chat
 
-    async def log_message(self, content):
-        print(f"[{self.user_name}]: {content}")  # print nickname with message
+    @staticmethod
+    async def prepare_classes():
+        user_agreement = UserAgreement()
+        utils = Utils()
+        return user_agreement, utils
 
-    async def get_content_of_other_players(self, content):
-        if self.user_id != Mafia.id:  # id sameness check
+    @staticmethod
+    def get_content_of_other_players(content):
+        message_handle = MessagesHandle()
+        if message_handle.USER_ID != Mafia.user.user_id:  # id sameness check
             send_content = content  # in id with sender and you are
             # not the same content will send
         else:
             send_content = None
         return send_content
 
-    async def user_agreement_is_confirmed(self):
-        return self.user_agreement == "yes" or self.user_agreement == "да"
+
+class Utils:
+    @staticmethod
+    def log_message(content):
+        message_handle = MessagesHandle()
+        print(f"[{message_handle.USER_NAME}]: {content}") # print nickname with
+        # message
+
+
+class UserAgreement:
+    USER_AGREEMENT = None
+
+    @staticmethod
+    def show_user_agreement():
+        UserAgreement.USER_AGREEMENT = input("[en] send messages may ban "
+                                             "you, do you accept this? "
+                                    "if don't accept you'll use only "
+                                    "chat listener\n"
+                                    "if you agree, write yes: \n\n"
+                                    "[ru] отправка сообщений может "
+                                    "заблокировать аккаунт, "
+                                    "принимаешь ли ты это? если нет то "
+                                    "будет доступна только прослушка чата\n"
+                                    "если ты согласен то введи да: ")
+        print("\n\n\n")
+
+    @staticmethod
+    def user_agreement_is_confirmed():
+        user_agreement = UserAgreement()
+        return (user_agreement.USER_AGREEMENT == "yes" or
+                user_agreement.USER_AGREEMENT == "да")
 
 
 if __name__ == "__main__":
