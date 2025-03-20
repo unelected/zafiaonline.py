@@ -7,12 +7,16 @@ from zafiaonline.utils.exceptions import ListenExampleErrorException
 from zafiaonline.main import Client
 
 
+class AccountData:
+    EMAIL = "email"
+    PASSWORD = "password"
+    
 class Main:
     @staticmethod
     async def main():
         messages_handle, user_agreement = await Main.prepare_classes()
         user_agreement.show_user_agreement()
-        await Mafia.sign_in("email", "password")
+        await Mafia.sign_in(AccountData.EMAIL, AccountData.PASSWORD)
         await Mafia.join_global_chat()  # join in global chat
         await messages_handle.chat_handle()
 
@@ -46,13 +50,16 @@ class MessagesHandle:
     @ApiDecorators.extract_message  # get text message data
     async def message_handle(self, content):
         user_agreement, utils = await self.prepare_classes()
-        MessagesHandle.USER_NAME = self.user_name
-        MessagesHandle.USER_ID = self.user_id
+        await self.set_sender_data()
         utils.log_message(content)
         send_content = self.get_content_of_other_players(content)
         if user_agreement.user_agreement_is_confirmed() and send_content:
             await Mafia.send_message_global(
                 send_content)  # send message to global chat
+
+    async def set_sender_data(self):
+        MessagesHandle.USER_NAME = self.user_name
+        MessagesHandle.USER_ID = self.user_id
 
     @staticmethod
     async def prepare_classes():
