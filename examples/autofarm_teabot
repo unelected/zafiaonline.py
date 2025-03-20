@@ -1,0 +1,53 @@
+import asyncio
+
+from zafiaonline import Client
+from zafiaonline.utils.api_decorators import ApiDecorators
+
+class Main:
+    def __init__(self):
+        self.user_name = None
+
+    @ApiDecorators.extract_message
+    async def rat(self, content):
+        if await self.cooldown_is_done(content):
+            await self.farm_tea()
+            await self.trolling()
+
+    @staticmethod
+    async def farm_tea():
+        await client.send_message_global("/фарм чая")
+
+    async def cooldown_is_done(self, content):
+        tea_is_ready_to_taken = "Новый чай готов для получения!"
+        bot_nickname = "TeaBot"
+        return (content == tea_is_ready_to_taken and
+                self.user_name == bot_nickname)
+
+    @staticmethod
+    async def trolling():
+        for i in range(0, 10):
+            await client.leave_from_global_chat()
+            await asyncio.sleep(.4)
+            await client.join_global_chat()
+            await asyncio.sleep(.4)
+        await client.send_message_global("?)")
+
+    async def main(self):
+        email, password = await self.init_account_data()
+        await client.sign_in(email, password)
+        await client.join_global_chat()
+        while True:
+            result = await client.listen()
+            await self.rat(result)
+
+    @staticmethod
+    async def init_account_data():
+        email = "email"
+        password = "password"
+        return email, password
+
+
+if __name__ == "__main__":
+    client = Client()
+    main = Main()
+    asyncio.run(main.main())
