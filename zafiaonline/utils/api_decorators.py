@@ -73,7 +73,8 @@ class ApiDecorators:
     def room_participation_required(func: Callable):
         @functools.wraps(func)
         async def wrapper(self, room_id: str, *args, **kwargs) -> None:
-            if not self.requires_room_check(
+            decorators = ApiDecorators()
+            if not decorators.requires_room_check(
                     room_id):  # Проверяем, находится ли пользователь в комнате
                 raise PermissionError("User is not in the room")
 
