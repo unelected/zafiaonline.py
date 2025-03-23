@@ -672,7 +672,7 @@ class Farm:
                         for index, player in enumerate(self.conn_players()):
                             try:
                                 await player.client.send_message_room(
-                                    random.randint, self.room_id)
+                                    "{secrets.token_hex(3)}", self.room_id)
                             except Exception as e:
                                 logging.info(
                                     f"отвалился аккаунт {player.get_nickname()}. удаляем его из списка игроков: {e}")
