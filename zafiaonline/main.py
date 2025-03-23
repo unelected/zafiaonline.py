@@ -182,7 +182,7 @@ class Client(Websocket):
         except Exception as e:
             logging.error(f"Error parsing user data: {e}", exc_info=True)
 
-    @ApiDecorators.room_participation_required
+    
     async def kick_user_vote(self, room_id: str, value: bool = True) -> None:
         """
         Sends a vote request to kick a user from the room.
@@ -202,7 +202,7 @@ class Client(Websocket):
         }
         await self.send_server(vote_request)
 
-    @ApiDecorators.room_participation_required
+    
     async def kick_user(self, user_id: str, room_id: str) -> None:
         """
         Sends a request to kick a user from the specified room.
@@ -262,7 +262,7 @@ class Client(Websocket):
         }
         await self.send_server(buy_vip_request)
 
-    @ApiDecorators.room_participation_required
+    
     async def vote_player_list(self, user_id: str, room_id: str) -> None:
         """
         Sends a request to vote for a player in the given room.
@@ -530,7 +530,7 @@ class Client(Websocket):
         await self.send_server(update_sex_request)
         return await self.listen()
 
-    @ApiDecorators.room_participation_required
+    
     async def remove_player(self, room_id: str) -> None:
         """
         Removes the player from the specified room.
@@ -547,7 +547,6 @@ class Client(Websocket):
         }
         await self.send_server(leave_request)
 
-    @ApiDecorators.room_participation_required
     async def leave_room(self, room_id: str) -> None:
         """
         Leaves the specified room by removing the player.
@@ -625,7 +624,7 @@ class Client(Websocket):
         }
         await self.send_server(join_request)
 
-    @ApiDecorators.room_participation_required
+    
     async def role_action(self, user_id: str, room_id: str,
                           room_model_type: RoomModelType =
                           RoomModelType.NOT_MATCHMAKING_MODE) -> None:
@@ -653,7 +652,7 @@ class Client(Websocket):
         }
         await self.send_server(action_request, True)
 
-    @ApiDecorators.room_participation_required
+    
     async def give_up(self, room_id: str, room_model_type: RoomModelType =
     RoomModelType.NOT_MATCHMAKING_MODE) -> None:
         """
@@ -862,7 +861,7 @@ class Client(Websocket):
         }
         await self.send_server(message_data)
 
-    @ApiDecorators.room_participation_required
+    
     async def send_message_room(self, content: str, room_id: str,
                 message_style: int = MessageStyles.NO_COLOR) -> None:
         """
