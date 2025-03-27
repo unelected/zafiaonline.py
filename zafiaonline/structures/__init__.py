@@ -1,11 +1,12 @@
 from zafiaonline.structures.packet_data_keys import PacketDataKeys, Renaming
 from zafiaonline.structures.enums import (
     Sex, Roles, Languages, RatingMode, RatingType,
-    ActivityType, RoomModelType, FriendInRoomType, ProfilePhotoType
+    ActivityType, RoomModelType, FriendInRoomType, ProfilePhotoType,
+    MessageType, MessageStyles, MafiaLanguages
 )
 from zafiaonline.structures.models import (
     ModelUser, ModelServerConfig, ModelRoom,
-    ModelShortUser, ModelFriend, ModelMessage
+    ModelShortUser, ModelFriend, ModelMessage, ModelGUI
 )
 
 __all__ = (
@@ -21,6 +22,11 @@ __all__ = (
     "RoomModelType",
     "FriendInRoomType",
     "ProfilePhotoType",
+    "RatingMode",
+    "RatingType",
+    "MessageType",
+    "MessageStyles",
+    "MafiaLanguages",
 
     # Models
     "ModelUser",
@@ -29,4 +35,5 @@ __all__ = (
     "ModelShortUser",
     "ModelFriend",
     "ModelMessage",
+    "ModelGUI",
 )

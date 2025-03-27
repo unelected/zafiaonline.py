@@ -1,0 +1,80 @@
+from typing import Optional
+
+from zafiaonline import Client
+from zafiaonline.structures import PacketDataKeys
+from zafiaonline.structures.enums import MessageStyles
+from zafiaonline.utils.utils import get_user_attributes
+from zafiaonline.utils.utils_for_send_messages import Utils
+
+
+class GlobalChat:
+    def __init__(self, client: Optional["Client"] = None):
+        self.client = client
+        if self.client:
+            get_user_attributes(self.client)
+
+    async def send_server(self, data):
+        return await self.client.send_server(data)
+
+    async def join_global_chat(self) -> None:
+        """
+        Sends a request to join the global chat.
+
+        This function allows the client to enter the global chat and receive
+        messages from other users.
+
+        Returns:
+            None
+        """
+        chat_join_request: dict = {
+            PacketDataKeys.TYPE: PacketDataKeys.ADD_CLIENT_TO_CHAT
+        }
+        await self.send_server(chat_join_request)
+
+    async def leave_from_global_chat(self) -> None:
+        """
+        Sends a request to add the client to the dashboard.
+
+        This function requests the server to place the client on the
+        dashboard, typically used for accessing account-related information
+        or lobby interactions.
+
+        Returns:
+            None
+        """
+        leave_from_chat_request: dict = {
+            PacketDataKeys.TYPE: PacketDataKeys.ADD_CLIENT_TO_DASHBOARD
+        }
+        await self.send_server(leave_from_chat_request)
+
+
+    async def send_message_global(self, content: str, message_style: int =
+                                MessageStyles.NO_COLOR) -> None:
+        """
+        Sends a message to the global chat.
+
+        Parameters:
+            content (str): The text of the message to be sent.
+            message_style (int, optional): The style of the message.
+            Defaults to 0.
+
+        Returns:
+            None
+
+        Notes:
+            - If the content is empty, the function prevents sending to
+            avoid spam or bans.
+        """
+        utils = Utils()
+        if not utils.validate_message_content(content):
+            return
+        content = utils.clean_content(content)
+
+        message_data: dict = {
+            PacketDataKeys.TYPE: PacketDataKeys.CHAT_MESSAGE_CREATE,
+            PacketDataKeys.MESSAGE: {
+                PacketDataKeys.TEXT: content,
+                PacketDataKeys.MESSAGE_STYLE: message_style,
+            }
+        }
+        await self.send_server(message_data)

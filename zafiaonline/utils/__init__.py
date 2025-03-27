@@ -1,9 +1,9 @@
 from zafiaonline.utils.exceptions import (
     ListenDataException,
-    ListenExampleErrorException
+    ListenExampleErrorException, BanError
 )
 from zafiaonline.utils.md5hash import Md5
-from zafiaonline.utils.api_decorators import ApiDecorators
+from zafiaonline.utils.utils_for_send_messages import Utils
 
 
 __all__ = (
@@ -13,7 +13,8 @@ __all__ = (
     # Exceptions
     "ListenDataException",
     "ListenExampleErrorException",
+    "BanError",
 
-    #Decorators
-    "ApiDecorators",
+    # Utils
+    "Utils",
 )

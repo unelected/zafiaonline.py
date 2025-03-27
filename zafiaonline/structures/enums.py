@@ -15,8 +15,8 @@ class Sex(IntEnum):
             >>> print(user_sex.value)
             0
         """
-    WOMEN = 0
-    MEN = 1
+    MEN = 0
+    WOMEN = 1
 
 class Languages(str, Enum):
     """
@@ -47,7 +47,6 @@ class Roles(IntEnum):
     a player's function or abilities within the game.
 
     Attributes:
-        UNKNOWN (int): Default value when the role is not assigned (0).
         CIVILIAN (int): A regular player with no special abilities (1).
         DOCTOR (int): Can heal other players to protect them from
         "elimination" (2).
@@ -71,7 +70,6 @@ class Roles(IntEnum):
         >>> print(player_role.value)
         3
     """
-    UNKNOWN = 0       # Role not assigned
     CIVILIAN = 1      # Regular player with no special abilities
     DOCTOR = 2        # Can heal players
     SHERIFF = 3       # Can investigate roles
@@ -224,7 +222,7 @@ class FriendInRoomType(IntEnum):
     NO_FRIEND_IN_ROOM = 0  # No friends present in the room
     FRIEND_IN_ROOM = 1     # At least one friend is in the room
 
-class MessageType:
+class MessageType(IntEnum):
     TEXT = 1
     JOIN = 2
     LEAVE = 3
@@ -234,12 +232,12 @@ class MessageType:
     USER_IS_KILLED_MESSAGE = {3, 12}
     VOTE_MESSAGES = {9, 13}
     TERRORIST_IS_BOOM = 18
-    KICK_START = 23 # not minecraft // сообщение разделсяется знаками #=#
+    KICK_START = 23 # сообщение разделяется знаками #=#
     # первая часть - ник того кто выгоняет 2 - того которого выгоняют
     KICK_RESULTS = 24
     GIVE_UP = 27
 
-class MessageStyles:
+class MessageStyles(IntEnum):
     NO_COLOR = 0
     GREY_COLOR = 1
     BLUE_COLOR = 2
@@ -248,3 +246,7 @@ class MessageStyles:
     PURPLE_COLOR = 5
     YELLOW_COLOR = 6
     PINK_COLOR = 7
+
+class MafiaLanguages(str, Enum):
+    Russian = "RUS"
+    English = "ENG"

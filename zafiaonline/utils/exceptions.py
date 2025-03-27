@@ -1,3 +1,6 @@
+from zafiaonline.ApiClient.user_methods import Auth
+
+
 class ListenDataException(Exception):
     """
     Raised when an error occurs while receiving data from the WebSocket
@@ -18,8 +21,8 @@ class ListenExampleErrorException(Exception):
     Raised for specific test cases or example scenarios involving WebSocket
     listening errors.
 
-    This exception is useful for handling controlled test failures, debugging, or
-    identifying particular patterns in received messages that need special
+    This exception is useful for handling controlled test failures, debugging,
+    or identifying particular patterns in received messages that need special
     handling.
     """
 
@@ -33,7 +36,8 @@ class BanError(Exception):
 
         # Ensure event is not None before accessing it
         reason = event[PacketDataKeys.REASON] if event else "unknown reason"
-        username = Client().user.username if Client().user else "Unknown User"
+        username = Client().user.username if (Client().user or Auth().user.
+                                              username) else "Unknownser"
 
         message = f"{username}, You have been banned due to {reason}"
         super().__init__(message)
