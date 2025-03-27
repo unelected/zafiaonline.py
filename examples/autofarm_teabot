@@ -1,7 +1,7 @@
 import asyncio
 
 from zafiaonline import Client
-from zafiaonline.utils.api_decorators import ApiDecorators
+from zafiaonline.api_client.api_decorators import ApiDecorators
 
 
 class Main:
@@ -65,7 +65,7 @@ class MessagesHandle:
 
 class PrepareData:
     TEA_IS_READY_TO_TAKEN = "Новый чай готов для получения!"
-    BOT_NICKNAME = "TeaBot"
+    BOT_NICKNAMES = ["TeaMaf", "TeaBot", "aIwaysforeve"]
 
     @staticmethod
     async def farm_tea():
@@ -76,7 +76,7 @@ class PrepareData:
         prepare_data = PrepareData()
         data_handle = DataHandle()
         return (content == prepare_data.TEA_IS_READY_TO_TAKEN and
-                data_handle.USER_NAME == prepare_data.BOT_NICKNAME)
+                data_handle.USER_NAME in prepare_data.BOT_NICKNAMES)
 
 
 if __name__ == "__main__":
