@@ -1,6 +1,3 @@
-from zafiaonline.ApiClient.user_methods import Auth
-
-
 class ListenDataException(Exception):
     """
     Raised when an error occurs while receiving data from the WebSocket
@@ -31,6 +28,7 @@ class ListenExampleErrorException(Exception):
 
 class BanError(Exception):
     def __init__(self, event=None):
+        from zafiaonline.api_client.user_methods import Auth
         from zafiaonline import Client  # Ensure correct import
         from zafiaonline.structures.packet_data_keys import PacketDataKeys
 

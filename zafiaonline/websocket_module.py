@@ -3,9 +3,10 @@ import asyncio
 import websockets
 
 from websockets import ConnectionClosedOK, connect, ConnectionClosed
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
-from zafiaonline import Client
+if TYPE_CHECKING:
+    from zafiaonline.main import Client
 from zafiaonline.structures import PacketDataKeys
 from zafiaonline.utils.exceptions import BanError
 from zafiaonline.utils.logging_config import logger

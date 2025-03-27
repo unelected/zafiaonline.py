@@ -222,7 +222,7 @@ class FriendInRoomType(IntEnum):
     NO_FRIEND_IN_ROOM = 0  # No friends present in the room
     FRIEND_IN_ROOM = 1     # At least one friend is in the room
 
-class MessageType(IntEnum):
+class MessageType:
     TEXT = 1
     JOIN = 2
     LEAVE = 3

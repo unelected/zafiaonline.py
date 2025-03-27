@@ -1,9 +1,9 @@
 class Client:
     def __init__(self):
-        from zafiaonline.ApiClient.player_methods import Players
-        from zafiaonline.ApiClient.global_chat_methods import GlobalChat
-        from zafiaonline.ApiClient.user_methods import Auth, User
-        from zafiaonline.ApiClient.room_methods import Room, MatchMaking
+        from zafiaonline.api_client.player_methods import Players
+        from zafiaonline.api_client.global_chat_methods import GlobalChat
+        from zafiaonline.api_client.user_methods import Auth, User
+        from zafiaonline.api_client.room_methods import Room, MatchMaking
 
         self.auth = Auth(client = self)
 

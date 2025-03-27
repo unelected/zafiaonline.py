@@ -1,17 +1,17 @@
 import zafiaonline.utils as utils
 import zafiaonline.structures as structures
-import zafiaonline.ApiClient as ApiClient
+import zafiaonline.api_client as api_client
 
 from zafiaonline.main import Client
 from zafiaonline.websocket_module import Websocket
 
 __all__ = (
-    # Files
+    # Classes
     "Client",
     "Websocket",
 
-    # Directory's
+    # Directories
     "utils",
     "structures",
-    "ApiClient",
+    "api_client",
 )
