@@ -2,7 +2,7 @@
 import asyncio
 import logging
 
-from zafiaonline.utils import ApiDecorators
+from zafiaonline.api_client.api_decorators import ApiDecorators
 from zafiaonline.utils.exceptions import ListenExampleErrorException
 from zafiaonline.main import Client
 
@@ -10,7 +10,7 @@ from zafiaonline.main import Client
 class AccountData:
     EMAIL = "email"
     PASSWORD = "password"
-    
+
 class Main:
     @staticmethod
     async def main():
@@ -116,4 +116,4 @@ if __name__ == "__main__":
     try:
         asyncio.run(main.main())
     except KeyboardInterrupt:
-        logging.info("программа завершена выходом из программы")
+        pass
