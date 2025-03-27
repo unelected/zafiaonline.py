@@ -1,5 +1,6 @@
 import asyncio
 import random
+import secrets
 import time
 import json
 import string
@@ -10,7 +11,7 @@ from typing import List, Optional, Union
 
 from zafiaonline.structures import PacketDataKeys
 from zafiaonline.main import Client
-from zafiaonline.main import Roles
+from zafiaonline.structures.enums import Roles
 
 UPTIME: int = int(time.time())
 
@@ -268,7 +269,8 @@ class Farm:
             listeners = self.get_who_civs
         if current_listener:
             listeners = list(filter(
-                lambda x: x.client.id != current_listener.id, listeners))
+                lambda x: x.client.user_id != current_listener.user_id,
+                listeners))
         return random.choice(list(
             filter(lambda x: not x.disconn, listeners))).client
 
@@ -392,7 +394,7 @@ class Farm:
                             await self.rehost()
                             break
                         self.players[index].role = role
-                        if account.client.id == self.mafia_main.id:
+                        if account.client.user_id == self.mafia_main.user_id:
                             self.self_role = role
 
                             logging.info(f"Номер твоей роли"
@@ -400,7 +402,8 @@ class Farm:
                                          f" {self.self_role}")
                         else:
                             if (role in DISABLED_ROLES and
-                                    account.client.id != self.mafia_main.id):
+                                    account.client.user_id !=
+                                    self.mafia_main.user_id):
                                 await account.client.disconnect()
                                 self.players[index].disconn = True
                                 logging.info("отключаем:")
@@ -408,7 +411,7 @@ class Farm:
                                          f" роль: {role}")
                     if MODE == 4 or (not FORCE and MODE in [1, 2]):
                         logging.info(f"Убиваем: "
-                                     f"{'МАФОВ' if self.is_killing_mafia else 'МИРОВ'}")
+                        f"{'МАФОВ' if self.is_killing_mafia else 'МИРОВ'}")
 
                     elif ((ROLE and self.self_role not in ROLE) or
                           (not ROLE and FORCE and MODE != 3 and (
@@ -483,7 +486,7 @@ class Farm:
                             if loving_list and lover:
                                 loved = random.choice(loving_list)
                                 await lover[0].client.role_action(
-                                    loved.client.id, self.room_id)
+                                    loved.client.user_id, self.room_id)
                                 logging.info(f"любовница на "
                                              f"{loved.get_nickname()}")
                         except Exception as e:
@@ -501,8 +504,8 @@ class Farm:
                                 self.players[ind].alive = False
                         if REMOVE_FROM_SERVER_KILLED:
                             if (not removed_player[0].disconn and
-                                    removed_player[0].client.id !=
-                                    self.mafia_main.id):
+                                    removed_player[0].client.user_id !=
+                                    self.mafia_main.user_id):
                                 await removed_player[0].client.disconnect()
                                 logging.info("удаляем труп с сервера")
                             self.players.remove(removed_player[0])
@@ -519,9 +522,10 @@ class Farm:
                                         self.players[ind].alive = False
                                 if REMOVE_FROM_SERVER_KILLED:
                                     if (not removed_player[0].disconn and
-                                            removed_player[0].client.id !=
-                                            self.mafia_main.id):
-                                        await removed_player[0].client.disconnect()
+                                            removed_player[0].client.user_id !=
+                                            self.mafia_main.user_id):
+                                        await (removed_player[0]
+                                               .client.disconnect())
                                         logging.info("удаляем труп от терра с "
                                                      "сервера")
                                     self.players.remove(removed_player[0])
@@ -540,13 +544,15 @@ class Farm:
                             killed = random.choice(killing_list)
                             for mafia in list(filter(lambda x: not x.disconn,
                                                      self.get_who_mafia)):
-                                if mafia.client.id == killed.client.id:
+                                if (mafia.client.user_id ==
+                                        killed.client.user_id):
                                     await (mafia.client.role_action
                                            (random.choice(self.get_who_civs)
-                                            .client.id, self.room_id))
+                                            .client.user_id, self.room_id))
                                 else:
                                     await (mafia.client.role_action
-                                           (killed.client.id, self.room_id))
+                                           (killed.client.user_id,
+                                            self.room_id))
                         except Exception as e:
                             logging.error(f"Ошибка при убийстве?????? {e}")
                             #raise
@@ -563,7 +569,8 @@ class Farm:
 
                                     await (journalist[0].client.
                                            role_action(
-                                        checkering.client.id, self.room_id))
+                                        checkering.client.user_id,
+                                        self.room_id))
                         except Exception as e:
                             logging.error(f"!!! Ошибка при журе?????? {e}")
                             #raise
@@ -579,7 +586,7 @@ class Farm:
                                          (Roles.SHERIFF))
 
                                 await (sheriff[0].client.role_action
-                                       (checked.client.id, self.room_id))
+                                       (checked.client.user_id, self.room_id))
                                 logging.info(f"Чекнул "
                                              f"{checked.get_nickname()}")
                         except Exception as e:
@@ -590,7 +597,7 @@ class Farm:
                             for doctor in doctors:
                                 checked = random.choice(checked_list)
                                 await (doctor.client.role_action
-                                       (checked.client.id, self.room_id))
+                                       (checked.client.user_id, self.room_id))
                                 logging.info(f"Вылечил "
                                              f"{checked.get_nickname()}")
                         except Exception as e:
@@ -611,33 +618,35 @@ class Farm:
                         ignore = []
                         if terr and boomeds:
                             boomed = random.choice(boomeds)
-                            ignore = [terr[0].client.id, boomed.client.id]
+                            ignore = [terr[0].client.user_id,
+                                      boomed.client.user_id]
                             try:
                                 await (terr[0].client.role_action
-                                       (boomed.client.id, self.room_id))
+                                       (boomed.client.user_id, self.room_id))
                             except Exception as e:
                                 terr[0].disconn = True
                                 logging.info("терр откинулся", e)
                             await asyncio.sleep(.4)
 
                         who_may_killed = list(filter
-                                              (lambda x: x.client.id
+                                              (lambda x: x.client.user_id
                                                          not in ignore,
                                                self.get_who_civ_may_kill()))
                         if who_may_killed:
                             who_killed = random.choice(who_may_killed)
                             for player in self.conn_players():
                                 try:
-                                    if (player.client.id ==
-                                            who_killed.client.id):
+                                    if (player.client.user_id ==
+                                            who_killed.client.user_id):
                                         await player.client.role_action(
                                             random.choice
                                             (self.get_who_civ_may_kill
-                                             (player.role)).client.id,
+                                             (player.role)).client.user_id,
                                             self.room_id)
                                     else:
                                         await player.client.role_action(
-                                            who_killed.client.id, self.room_id)
+                                            who_killed.client.user_id,
+                                            self.room_id)
                                 except Exception as e:
                                     logging.error({e})
 
@@ -672,10 +681,12 @@ class Farm:
                         for index, player in enumerate(self.conn_players()):
                             try:
                                 await player.client.send_message_room(
-                                    "{secrets.token_hex(3)}", self.room_id)
+                                    secrets.token_hex(3), self.room_id)
                             except Exception as e:
                                 logging.info(
-                                    f"отвалился аккаунт {player.get_nickname()}. удаляем его из списка игроков: {e}")
+                                    f"отвалился аккаунт"
+                                    f" {player.get_nickname()}."
+                                    f" удаляем его из списка игроков: {e}")
                                 self.players[index].disconn = True
                                 size_disabled_accounts = len(self.
                                                              disconn_players)
@@ -685,7 +696,8 @@ class Farm:
                                                  "5 акков, делаем рехост")
                                     stopers += 1
                                     await self.rehost()
-                        logging.info(f">> [⌚] {data.get(PacketDataKeys.MESSAGE_TYPE)}")
+                        logging.info(f">> [⌚] "
+                                f"{data.get(PacketDataKeys.MESSAGE_TYPE)}")
 
 
 farm = Farm()
