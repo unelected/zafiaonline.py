@@ -34,12 +34,7 @@ class GlobalChat:
 
     async def leave_from_global_chat(self) -> None:
         """
-        Sends a request to add the client to the dashboard.
-
-        This function requests the server to place the client on the
-        dashboard, typically used for accessing account-related information
-        or lobby interactions.
-
+        Sends a request to leave from chat
         Returns:
             None
         """
