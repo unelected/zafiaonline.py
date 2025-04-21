@@ -19,8 +19,8 @@ class Room:
         if self.client:
             get_user_attributes(self.client)
 
-    async def send_server(self, data):
-        return await self.client.send_server(data)
+    async def send_server(self, data, remove_token_from_object = False):
+        return await self.client.send_server(data, remove_token_from_object)
 
     async def get_data(self, data):
         return await self.client.get_data(data)
