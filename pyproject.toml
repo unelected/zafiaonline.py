@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "zafiaonline"
+version = "3.0.11"
+description = "A Python API library for interacting with Mafia Online game."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "LGPL-2.1" }
+authors = [
+    { name = "unelected" }
+]
+dependencies = [
+    "websockets",
+    "msgspec",
+    "sphinx"
+]
+urls = { 
+    Homepage = "https://github.com/unelected/zafiaonline.py"
+}
+
+[tool.setuptools.packages.find]
+include = ["zafiaonline", "zafiaonline.*"]
+
+[project.classifiers]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: GNU Lesser General Public License v2 or later (LGPLv2+)",
+    "Operating System :: OS Independent"
+]
