@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -17,13 +17,11 @@ dependencies = [
     "msgspec",
     "sphinx"
 ]
-urls = [
-{homepage = "https://github.com/unelected/zafiaonline.py"}
-]
 
 [tool.setuptools.packages.find]
 include = ["zafiaonline", "zafiaonline.*"]
 
+[project.classifiers]
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: GNU Lesser General Public License v2 or later (LGPLv2+)",
