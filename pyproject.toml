@@ -17,9 +17,9 @@ dependencies = [
     "msgspec",
     "sphinx"
 ]
-urls = { 
-    homepage = "https://github.com/unelected/zafiaonline.py"
-}
+urls = [
+{homepage = "https://github.com/unelected/zafiaonline.py"}
+]
 
 [tool.setuptools.packages.find]
 include = ["zafiaonline", "zafiaonline.*"]
