@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 setup(
     name="zafiaonline",
     version="3.0.11",
-    license='GPL-3.0',
+    license='Apache License 2.0',
     packages=find_packages(include=["zafiaonline", "zafiaonline.*"]),
     install_requires=["websockets", "msgspec", "sphinx"],
     description="A Python API library for interacting with Mafia Online game.",
