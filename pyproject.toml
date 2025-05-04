@@ -18,7 +18,7 @@ dependencies = [
     "sphinx"
 ]
 urls = { 
-    "homepage" = "https://github.com/unelected/zafiaonline.py"
+    homepage = "https://github.com/unelected/zafiaonline.py"
 }
 
 [tool.setuptools.packages.find]
