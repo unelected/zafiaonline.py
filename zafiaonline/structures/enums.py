@@ -222,22 +222,92 @@ class FriendInRoomType(IntEnum):
     NO_FRIEND_IN_ROOM = 0  # No friends present in the room
     FRIEND_IN_ROOM = 1     # At least one friend is in the room
 
-class MessageType:
-    TEXT = 1
-    JOIN = 2
-    LEAVE = 3
-    MAFIA_IN_CHAT = 5
-    MAFIA_CHOOSES_A_VICTIM = 6
-    DAYTIME_VOTING = 8
-    USER_IS_KILLED_MESSAGE = {3, 12}
-    VOTE_MESSAGES = {9, 13}
-    TERRORIST_IS_BOOM = 18
-    KICK_START = 23 # сообщение разделяется знаками #=#
-    # первая часть - ник того кто выгоняет 2 - того которого выгоняют
-    KICK_RESULTS = 24
+class MessageType(IntEnum):
+    """
+    A class containing message type constants for the Mafia game chat.
+
+    Message Types:
+        MAIN_TEXT: 1 — "%s", color: main_text (dark in mafia, white in zafia)
+        USER_HAS_ENTERED: 2 — "%s %s %s", color: green
+        USER_HAS_LEFT: 3 — "%s %s %s", color: red
+        GAME_HAS_STARTED: 4 — "%s", color: main_text
+        NIGHT_COME_MAFIA_IN_CHAT: 5 — "%s", color: blue
+        NIGHT_MAFIA_CHOOSE_VICTIM: 6 — "%s", color: blue
+        DAY_COME_EVERYONE_IN_CHAT: 7 — "%s", color: orange
+        DAY_CIVILIANS_VOTING: 8 — "%s", color: orange
+        VOTES_FOR: 9 — "%s [%s]", color: green
+        MAIN_TEXT10: 10 — "%s", color: main_text, useless
+        KILLED_PLAYER_MESSAGE: 11 — "%s", color: gray
+        PLAYER_KILLED: 12 — "%s [%s] %s", color: red
+        VOTES_FOR13: 13 — "%s [%s]", color: green, useless
+        NOBODY_KILLED: 14 — "%s", color: green
+        GAME_FINISHED_CIVILIANS_WON: 15 — "%s", color: green
+        GAME_FINISHED_MAFIA_WON: 16 — "%s", color: green
+        KILLED_USER_MESSAGE: 17 — "%s", color: gray (#ff6d6a96)
+        TERRORIST_BOMBED: 18 — "%s [%s]", color: red
+        BREAKING_NEWS_PLAYING_THE_SAME_TEAM: 19 — split("[#][=][#]"), "%s [%s] %s [%s] %s", color: red
+        BREAKING_NEWS_PLAYING_DIFFERENT_TEAMS: 20 — split("[#][=][#]"), "%s [%s] %s [%s] %s", color: red
+        TERRORIST_BOMBED_USER_WAS_UNDER_GUARDIAN: 21 — "%s [%s], %s" "%s", color: red
+        GAME_FINISHED_IN_DRAW: 22 — "%s", color: green
+        STARTED_VOTING_TO_KICK_USER: 23 — split("[#][=][#]"), "[%s] %s [%s] %s", color: blue
+            First part is the nickname of the initiator, second is the target.
+        KICK_VOTING_HAS_FINISHED: 24 — split("[|]"), "%s\n%s:\n%s: %s\n%s: %s", color: blue
+        MAIN_TEXT25: 25 — "%s", color: main_text, useless
+        VOTES_FOR26: 26 — "%s [%s]", color: green, useless
+        GIVE_UP: 27 — "%s", color: red
+
+    Notes:
+        Format strings are indicated in comments for each message type.
+        The color defines how the message should appear in the game interface.
+        Do not modify the numeric values as they are fixed by the external API.
+    """
+
+    MAIN_TEXT = 1
+    USER_HAS_ENTERED = 2
+    USER_HAS_LEFT = 3
+    GAME_HAS_STARTED = 4
+    NIGHT_COME_MAFIA_IN_CHAT = 5
+    NIGHT_MAFIA_CHOOSE_VICTIM = 6
+    DAY_COME_EVERYONE_IN_CHAT = 7
+    DAY_CIVILIANS_VOTING = 8
+    VOTES_FOR = 9
+    MAIN_TEXT10 = 10
+    KILLED_PLAYER_MESSAGE = 11
+    PLAYER_KILLED = 12
+    VOTES_FOR13 = 13
+    NOBODY_KILLED = 14
+    GAME_FINISHED_CIVILIANS_WON = 15
+    GAME_FINISHED_MAFIA_WON = 16
+    KILLED_USER_MESSAGE = 17
+    TERRORIST_BOMBED = 18
+    BREAKING_NEWS_PLAYING_THE_SAME_TEAM = 19
+    BREAKING_NEWS_PLAYING_DIFFERENT_TEAMS = 20
+    TERRORIST_BOMBED_USER_WAS_UNDER_GUARDIAN = 21
+    GAME_FINISHED_IN_DRAW = 22
+    STARTED_VOTING_TO_KICK_USER = 23
+    KICK_VOTING_HAS_FINISHED = 24
+    MAIN_TEXT25 = 25
+    VOTES_FOR26 = 26
     GIVE_UP = 27
 
 class MessageStyles(IntEnum):
+    """
+    Enum for message color styles used in the Mafia game chat.
+
+    Values:
+        NO_COLOR (int): 0 — No color applied.
+        GREY_COLOR (int): 1 — Grey color style.
+        BLUE_COLOR (int): 2 — Blue color style.
+        RED_COLOR (int): 3 — Red color style.
+        GREEN_COLOR (int): 4 — Green color style.
+        PURPLE_COLOR (int): 5 — Purple color style.
+        YELLOW_COLOR (int): 6 — Yellow color style.
+        PINK_COLOR (int): 7 — Pink color style.
+
+    Notes:
+        These styles define the appearance of chat messages based on their type.
+        Values correspond to predefined color codes in the game’s client UI.
+    """
     NO_COLOR = 0
     GREY_COLOR = 1
     BLUE_COLOR = 2
@@ -248,5 +318,29 @@ class MessageStyles(IntEnum):
     PINK_COLOR = 7
 
 class MafiaLanguages(str, Enum):
+    """
+    Enum for supported language codes in the Mafia game.
+
+    Values:
+        Russian (str): "RUS" — Russian language.
+        English (str): "ENG" — English language.
+
+    Notes:
+        These codes are used for localizing game content and messages.
+    """
     Russian = "RUS"
     English = "ENG"
+
+class MethodGetFavourites(IntEnum):
+    """
+    Enum for methods of retrieving favourite players in the Mafia game.
+
+    Values:
+        FriendMethod (int): 0 — Retrieve favourites from the friend list.
+        InviteMethod (int): 1 — Retrieve favourites from the invite list.
+
+    Notes:
+        Used to specify the source of a player's favourites when making a request.
+    """
+    FriendMethod = 0
+    InviteMethod = 1

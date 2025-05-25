@@ -20,8 +20,8 @@ class Players:
         if self.client:
             get_user_attributes(self.client)
 
-    async def send_server(self, data):
-        return await self.client.send_server(data)
+    async def send_server(self, data, remove_token_from_object = False):
+        return await self.client.send_server(data, remove_token_from_object)
 
     async def listen(self):
         return await self.client.listen()
@@ -195,7 +195,8 @@ class Players:
 
         return messages
 
-    async def get_rating(self, rating_type: RatingType = RatingType.AUTHORITY,
+    async def get_rating(self, rating_type: RatingType =
+    RatingType.AUTHORITY,
                      rating_mode: RatingMode = RatingMode.ALL_TIME) -> dict:
         """
         Retrieves the player rating based on the specified type and mode.

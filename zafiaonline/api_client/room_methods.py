@@ -4,6 +4,8 @@ import json
 from typing import Optional, List, TYPE_CHECKING
 from msgspec.json import decode
 
+from zafiaonline.utils import Md5
+
 if TYPE_CHECKING:
     from zafiaonline.main import Client
 from zafiaonline.utils.utils_for_send_messages import Utils
@@ -18,16 +20,13 @@ class Room:
         self.client = client
         if self.client:
             get_user_attributes(self.client)
+        self.md5hash = Md5()
 
     async def send_server(self, data, remove_token_from_object = False):
         return await self.client.send_server(data, remove_token_from_object)
 
     async def get_data(self, data):
         return await self.client.get_data(data)
-
-    @property
-    def md5hash(self):
-        return self.client.md5hash
 
     @property
     def device_id(self):
@@ -123,7 +122,7 @@ class Room:
                 PacketDataKeys.PASSWORD: self.md5hash.md5salt(password)
                 if password is not None else "",
                 PacketDataKeys.SELECTED_ROLES: selected_roles,
-                PacketDataKeys.TITLE: title.strip()[:15],
+                PacketDataKeys.TITLE: title.strip()[:15] if title else "",
                 PacketDataKeys.VIP_ENABLED: vip_enabled,
             },
         }
@@ -397,8 +396,8 @@ class MatchMaking:
         if self.client:
             get_user_attributes(self.client)
 
-    async def send_server(self, data):
-        return await self.client.send_server(data)
+    async def send_server(self, data, remove_token_from_object = False):
+        return await self.client.send_server(data, remove_token_from_object)
 
     async def get_data(self, data):
         return await self.client.get_data(data)

@@ -14,8 +14,8 @@ class GlobalChat:
         if self.client:
             get_user_attributes(self.client)
 
-    async def send_server(self, data):
-        return await self.client.send_server(data)
+    async def send_server(self, data, remove_token_from_object = False):
+        return await self.client.send_server(data, remove_token_from_object)
 
     async def join_global_chat(self) -> None:
         """
@@ -34,7 +34,12 @@ class GlobalChat:
 
     async def leave_from_global_chat(self) -> None:
         """
-        Sends a request to leave from chat
+        Sends a request to add the client to the dashboard.
+
+        This function requests the server to place the client on the
+        dashboard, typically used for accessing account-related information
+        or lobby interactions.
+
         Returns:
             None
         """

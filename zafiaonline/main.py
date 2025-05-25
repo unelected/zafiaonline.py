@@ -1,4 +1,5 @@
 class Client:
+    #TODO улучшить наследование
     def __init__(self):
         from zafiaonline.api_client.player_methods import Players
         from zafiaonline.api_client.global_chat_methods import GlobalChat

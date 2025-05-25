@@ -10,7 +10,7 @@ if TYPE_CHECKING:
 from zafiaonline.structures import PacketDataKeys
 from zafiaonline.api_client.api_decorators import ApiDecorators
 from zafiaonline.utils.logging_config import logger
-from zafiaonline.websocket_module import Websocket
+from zafiaonline.transport.websocket_module import Websocket
 from zafiaonline.utils.md5hash import Md5
 from zafiaonline.structures.models import ModelUser, ModelServerConfig
 from zafiaonline.structures.enums import Languages, Sex, MafiaLanguages
@@ -173,8 +173,8 @@ class User:
         if self.client:
             get_user_attributes(self.client)
 
-    async def send_server(self, data):
-        return await self.client.send_server(data)
+    async def send_server(self, data, remove_token_from_object = False):
+        return await self.client.send_server(data, remove_token_from_object)
 
     async def listen(self):
         return await self.client.listen()
@@ -215,7 +215,7 @@ class User:
     async def buy_vip(self, app_language = MafiaLanguages.Russian):
         buy_vip_request: dict = {
             PacketDataKeys.TYPE: PacketDataKeys.BUY_MARKET_ITEM,
-            PacketDataKeys.APP_LANGUAGE: app_language,
+            PacketDataKeys.APP_LANGUAGE: app_language.value,
             PacketDataKeys.OBJECT_ID: "vip_account"
         }
         await self.send_server(buy_vip_request)

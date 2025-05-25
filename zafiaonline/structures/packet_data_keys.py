@@ -269,6 +269,23 @@ class PacketDataKeys(str, Enum):
     MATH_MAKING_ADD_USER = "mmauk"
     ROOM_STATISTICS = "rst"
 
+class Endpoints(str, Enum):
+    CHANGE_FAVORITE_STATUS = "cfs"
+    CHANGE_VISIBLE_TOP = "cvt"
+    GET_FAVORITES_LIST = "gfl"
+    CHECK_PROFILE = "cpr"
+    GET_TOP = "gt"
+    GET_VERIFICATIONS = "vf"
+    REMOVE_ACCOUNT = "user/remove"
+    PROFILE_PHOTO = "mafia/profile_photo/{user_id}.jpg"
+    CLIENT_CONFIG = "mafia/clientConfig{version}.txt"
+    CLIENT_FEATURE_CONFIG = "client_feature_config"
+    USER_SIGN_OUT = "user/sign_out"
+    USER_SIGN_UP = "user/sign_up"
+
+    def format(self, **kwargs):
+        return self.value.format(**kwargs)
+
 
 class Renaming(dict, Enum):
     USER = {"user_id": "o", "username": "u",

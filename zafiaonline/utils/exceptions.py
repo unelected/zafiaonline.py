@@ -27,18 +27,25 @@ class ListenExampleErrorException(Exception):
         super().__init__(message)
 
 class BanError(Exception):
-    def __init__(self, event=None):
-        from zafiaonline.api_client.user_methods import Auth
-        from zafiaonline import Client  # Ensure correct import
+    def __init__(self, data = None, client = None, auth = None):
         from zafiaonline.structures.packet_data_keys import PacketDataKeys
 
-        # Ensure event is not None before accessing it
-        reason = event[PacketDataKeys.REASON] if event else "unknown reason"
-        username = Client().user.username if (Client().user or Auth().user.
-                                              username) else "Unknownser"
 
-        message = f"{username}, You have been banned due to {reason}"
+        self.client = client
+        self.auth = auth
+
+        # Ensure data is not None before accessing it
+        reason = data[PacketDataKeys.REASON.value] if data else ("unknown "
+                                                                 "reason")
+
+        username = (self.client.user.username or self.auth.user.username or
+                    "UnknownUser")
+
+        ban_time_seconds: int = int(data[
+                                      PacketDataKeys.TIME_SEC_REMAINING.value])
+
+        ban_time = round(ban_time_seconds / 3600, 1)
+
+        message = (f"{username} have been banned due to {reason}, "
+                   f"remaining lockout {ban_time} hours")
         super().__init__(message)
-
-        # Disconnect the client
-        Client().disconnect()

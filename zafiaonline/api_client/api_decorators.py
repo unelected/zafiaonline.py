@@ -95,7 +95,7 @@ class ApiDecorators:
                 message = result.get(PacketDataKeys.MESSAGE, {})
                 message_type = message.get(PacketDataKeys.MESSAGE_TYPE)
 
-                if message_type == MessageType.TEXT:
+                if message_type == MessageType.MAIN_TEXT:
                     user = message.get(PacketDataKeys.USER, {})
                     content = message.get(PacketDataKeys.TEXT, "")
 
