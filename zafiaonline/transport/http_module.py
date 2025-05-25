@@ -1,6 +1,8 @@
 import base64
 import string
 import random
+import uuid
+
 import aiohttp
 import re
 
@@ -49,15 +51,15 @@ class Http:
 
     async def mafia_request(self, method: Literal["get", "post", "put",
                             "delete"], endpoint: str,
-                            params:Optional[dict[str,Any]]=None,
-                            headers:Optional[dict[str, str]] = None):
+                            params:Optional[dict[str,Any]]=None):
+        headers = self.__build_mafia_headers()
         return await (self.__mafia_request(
             self.mafia_url, method, endpoint, params, headers))
 
     async def api_mafia_request(self, method: Literal["get", "post", "put",
                             "delete"], endpoint: str,
-                            params:Optional[dict[str,Any]]=None,
-                            headers:Optional[dict[str, str]] = None):
+                            params:Optional[dict[str,Any]]=None):
+        headers = self.__build_api_mafia_headers()
         return await (self.__mafia_request(
             self.api_mafia_url, method, endpoint, params, headers))
 
@@ -71,30 +73,42 @@ class Http:
 
     def __build_headers(self, endpoint: Endpoints, user_id:
     str, headers) -> tuple[str, Dict[str, str]]:
+        url, boolean = self.__create_url(endpoint)
+        if boolean is True:
+            return url, headers
+        headers = self.__create_headers(headers, user_id)
+        return url, headers
+
+    def __create_url(self, endpoint):
         url = urljoin(self.zafia_url, endpoint.value)
         if endpoint == Endpoints.GET_VERIFICATIONS.value:
-            return url, headers
+            return url, True
+        return url
+
+    def __create_headers(self, headers, user_id):
         token = self.__generate_random_token()
         auth_raw = f"{user_id}=:={token}"
         auth_token = base64.b64encode(auth_raw.encode()).decode()
         headers["Authorization"] = auth_token
-        return url, headers
+        return headers
 
     def __build_zafia_headers(self, endpoint: Endpoints, user_id:
-    str) -> tuple[str, Dict[str, str]]:
+    str = uuid.uuid4()) -> tuple[str, Dict[str, str]]:
         headers = self.zafia_headers.copy()
         self.__build_headers(endpoint, user_id, headers)
 
-    def __build_mafia_headers(self, endpoint: Endpoints, user_id:
-    str) -> tuple[str, Dict[str, str]]:
+    def __build_mafia_headers(self, user_id:
+    str = uuid.uuid4()) -> tuple[str, Dict[str, str]]:
         headers = self.mafia_headers.copy()
-        self.__build_headers(endpoint, user_id, headers)
+        headers = self.__create_headers(headers, user_id)
+        return headers
 
-    def __build_api_afia_headers(self, endpoint: Endpoints, user_id:
-    str) -> tuple[str, Dict[str, str]]:
+    def __build_api_mafia_headers(self, user_id:
+    str = uuid.uuid4()) -> tuple[str, Dict[str, str]]:
         #TODO: add new headers
         headers = self.mafia_headers.copy()
-        self.__build_headers(endpoint, user_id, headers)
+        headers = self.__create_headers(headers, user_id)
+        return headers
 
     @staticmethod
     async def __send_request(method: Literal["get", "post", "put", "delete"]
@@ -106,7 +120,12 @@ class Http:
             try:
                 async with getattr(session, method)(url, params = params
                                                     ) as response:
-                    data = await response.json()
+                    if response.content_type == 'application/json':
+                        data = await response.json()
+                    else:
+                        text = await response.text()
+                        logger.warning(f"Response from {url}: {text}")
+                        data = {'error': text}
                     return data
             except ClientError as e:
                 logger.error(
