@@ -1,4 +1,0 @@
-msgspec
-websockets
-sphinx
-sphinx-rtd-theme
