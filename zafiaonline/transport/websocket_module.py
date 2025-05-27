@@ -48,7 +48,6 @@ class Websocket:
         self.ws_lock = asyncio.Lock()
         self.user_id = None
         self.token = None
-        self.ssl_context = None
 
     def update_auth_data(self):
         """Обновляет user_id и token в Websocket после авторизации."""
