@@ -16,7 +16,7 @@ from zafiaonline.utils.logging_config import logger
 class Config:
     #TODO сделать env
     address = "dottap.com"
-    port = 7090
+    port = 7091
 
 class Websocket:
     #TODO сделать метакласс, transfer to https
@@ -43,11 +43,12 @@ class Websocket:
         self.data_queue = asyncio.Queue()
         self.alive: Optional[bool] = None
         self.ws = None
-        self.uri = f"ws://{Config.address}:{Config.port}"
+        self.uri = f"wss://{Config.address}:{Config.port}"
         self.listener_task: Optional[asyncio.Task] = None
         self.ws_lock = asyncio.Lock()
         self.user_id = None
         self.token = None
+        self.ssl_context = None
 
     def update_auth_data(self):
         """Обновляет user_id и token в Websocket после авторизации."""
