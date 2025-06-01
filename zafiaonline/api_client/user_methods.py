@@ -1,7 +1,7 @@
 import base64
 import json
 
-from typing import  Optional, List, Union, TYPE_CHECKING
+from typing import  Optional, List, TYPE_CHECKING
 from secrets import token_hex
 from msgspec.json import decode
 
@@ -41,8 +41,7 @@ class Auth(Websocket):
 
     @ApiDecorators.login_required
     async def sign_in(self, email: str = "", password: str = "",
-                      token: str = "", user_id: str = "") -> Union[
-        ModelUser, bool]:
+                      token: str = "", user_id: str = "") -> ModelUser | bool:
         """
         Signs in a user.
 
@@ -107,7 +106,7 @@ class Auth(Websocket):
         Returns:
             dict: The authentication payload.
         """
-        self.device_id = token_hex(10)
+        self.device_id = token_hex(8)
         return {
             PacketDataKeys.DEVICE_ID: self.device_id,
             # Generates a random device ID
@@ -119,7 +118,7 @@ class Auth(Websocket):
             PacketDataKeys.TOKEN: token,
         }
 
-    async def _process_auth_response(self) -> Union[ModelUser, bool]:
+    async def _process_auth_response(self) -> ModelUser | bool:
         """
         Processes the server response after attempting to sign in.
 
@@ -174,7 +173,7 @@ class User:
             get_user_attributes(self.client)
 
     async def send_server(self, data, remove_token_from_object = False):
-        return await self.client.send_server(data, remove_token_from_object)
+        await self.client.send_server(data, remove_token_from_object)
 
     async def listen(self):
         return await self.client.listen()
@@ -216,7 +215,7 @@ class User:
         buy_vip_request: dict = {
             PacketDataKeys.TYPE: PacketDataKeys.BUY_MARKET_ITEM,
             PacketDataKeys.APP_LANGUAGE: app_language.value,
-            PacketDataKeys.OBJECT_ID: "vip_account"
+            PacketDataKeys.OBJECT_ID: PacketDataKeys.VIP_ACCOUNT
         }
         await self.send_server(buy_vip_request)
 

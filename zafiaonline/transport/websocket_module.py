@@ -19,7 +19,7 @@ class Config:
     port = 7091
 
 class Websocket:
-    #TODO сделать метакласс, transfer to https
+    #TODO сделать метакласс
     def __init__(self, client: Optional["Client"] = None) -> None:
         """
         Initializes the WebSocket client for handling real-time communication.
@@ -113,7 +113,10 @@ class Websocket:
 
     async def _connect(self) -> None:
         """Creates a WebSocket connection to the server."""
-        self.ws = await connect(self.uri)
+        headers = {
+            "User-Agent": "okhttp/4.12.0"
+        }
+        self.ws = await connect(self.uri, user_agent_header=headers)
         self.alive = True
 
     async def _post_connect_setup(self) -> None:
@@ -224,7 +227,7 @@ class Websocket:
             await self._reconnect()
             if not self.alive:
                 logger.error("Reconnection failed. Dropping message.")
-                return
+                return None
 
         if not remove_token_from_object:
             data[PacketDataKeys.TOKEN] = self.token
@@ -241,6 +244,7 @@ class Websocket:
             logger.error(
                 "WebSocket closed while sending data. Reconnecting...")
             asyncio.create_task(self._reconnect())
+        return None
 
     async def listen(self) -> dict:
         """

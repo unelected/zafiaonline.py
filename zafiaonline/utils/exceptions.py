@@ -49,3 +49,6 @@ class BanError(Exception):
         message = (f"{username} have been banned due to {reason}, "
                    f"remaining lockout {ban_time} hours")
         super().__init__(message)
+
+class LoginError(Exception):
+    pass

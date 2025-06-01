@@ -8,7 +8,7 @@ from zafiaonline.utils import Md5
 
 if TYPE_CHECKING:
     from zafiaonline.main import Client
-from zafiaonline.utils.utils_for_send_messages import Utils
+from zafiaonline.utils.utils_for_send_messages import Utils, SentMessages
 from zafiaonline.structures import PacketDataKeys, ModelRoom
 from zafiaonline.structures.enums import MessageStyles, RoomModelType, Roles
 from zafiaonline.utils.logging_config import logger
@@ -20,10 +20,11 @@ class Room:
         self.client = client
         if self.client:
             get_user_attributes(self.client)
+        self.sent_messages = SentMessages()
         self.md5hash = Md5()
 
     async def send_server(self, data, remove_token_from_object = False):
-        return await self.client.send_server(data, remove_token_from_object)
+        await self.client.send_server(data, remove_token_from_object)
 
     async def get_data(self, data):
         return await self.client.get_data(data)
@@ -360,8 +361,13 @@ class Room:
         """
         utils = Utils()
         if not utils.validate_message_content(content):
-            return
+            return None
         content = utils.clean_content(content)
+        self.sent_messages.add_message(content)
+        utils.auto_delete_first_message(self.sent_messages)
+        if utils.is_ban_risk_message(self.sent_messages) is True:
+            await asyncio.sleep(5)
+            return None
 
         message_data: dict = {
             PacketDataKeys.TYPE: PacketDataKeys.ROOM_MESSAGE_CREATE,
@@ -372,6 +378,7 @@ class Room:
             PacketDataKeys.ROOM_OBJECT_ID: room_id
         }
         await self.send_server(message_data)
+        return None
 
     async def add_client_to_room_list(self) -> None:
         """
@@ -397,7 +404,7 @@ class MatchMaking:
             get_user_attributes(self.client)
 
     async def send_server(self, data, remove_token_from_object = False):
-        return await self.client.send_server(data, remove_token_from_object)
+        await self.client.send_server(data, remove_token_from_object)
 
     async def get_data(self, data):
         return await self.client.get_data(data)
@@ -418,7 +425,7 @@ class MatchMaking:
         }
         await self.send_server(status_request)
         await asyncio.sleep(.01)
-        return await self.get_data("mmms")
+        return await self.get_data(PacketDataKeys.MATCH_MAKING_MATCH_STATUS)
 
     async def users_waiting_count(self, players_size: int = 8) -> dict:
         """
@@ -438,12 +445,14 @@ class MatchMaking:
             - Waits for and returns the response from the server.
         """
         users_in_wait_request: dict = {
-            PacketDataKeys.TYPE: "mmguiabk",
-            "mmbpa": players_size
+            PacketDataKeys.TYPE: PacketDataKeys.
+            GET_MATCH_MAKING_USERS_IN_QUEUE_INTERVAL,
+            PacketDataKeys.MATCH_MAKING_BASE_PLAYERS_AMOUNT: players_size
         }
         await self.send_server(users_in_wait_request)
         await asyncio.sleep(.01)
-        return await self.get_data("mmuiabk")
+        return await self.get_data(PacketDataKeys.
+                                   GET_MATCH_MAKING_USERS_IN_QUEUE_INTERVAL)
 
     async def match_making_add_user(self, players_size: int = 8) -> None:
         """
@@ -463,7 +472,7 @@ class MatchMaking:
         """
         add_user_request: dict = {
             PacketDataKeys.TYPE: PacketDataKeys.MATCH_MAKING_ADD_USER,
-            "mmbpa": players_size
+            PacketDataKeys.MATCH_MAKING_BASE_PLAYERS_AMOUNT: players_size
         }
         await self.send_server(add_user_request)
 

@@ -22,7 +22,6 @@ class PacketDataKeys(str, Enum):
     ALIVE = "a"
     APP_LANGUAGE = "alc"
     ASPIRIN = "a"
-    AUTHORITY = "a"
     BACKPACK = "bp"
     BILLING_APP_PACKAGE = "bapckg"
     BILLING_PRODUCT_ID = "bpid"
@@ -34,7 +33,7 @@ class PacketDataKeys(str, Enum):
     BONUSES_ENABLED = "bns"
     BONUS_PRICE = "bp"
     BRIBE = "b"
-    BUY_BILLING_MARKET_ITEM = "bbmrkti"
+    BUY_BILLING_MARKET_ITEM = "mrktgg"
     BUY_BILLING_MARKET_SUCCESS_ITEM = "bbmrktis"
     BUY_MARKET_ITEM = "bmrkti"
     BUY_MARKET_ITEM_SUCCESS = "bmrktis"
@@ -48,6 +47,8 @@ class PacketDataKeys(str, Enum):
     COMPLAINT = "cmp"
     CONDOM = "cm"
     CONFESSION = "cn"
+    CONNECTION_CHECKER_PERIOD = "ccp"
+    CONNECTION_INACTIVE_TIMEOUT = "cit"
     CREATED = "c"
     CREATE_PLAYER = "cp"
     CREATOR_BLOCKED = "crb"
@@ -88,6 +89,8 @@ class PacketDataKeys(str, Enum):
     GET_RATING = "gr"
     GET_SENT_FRIEND_REQUESTS_LIST = "gsfrl"
     GET_USER_PROFILE = "gup"
+    GET_MATCH_MAKING_USERS_IN_QUEUE_INTERVAL = "mmguiabk"
+    GIVE_UP = "agu"
     GIFT_MARKET_ITEMS = "gmrkti"
     GOLD = "g"
     GOOGLE_SIGN_IN = "gsin"
@@ -120,6 +123,10 @@ class PacketDataKeys(str, Enum):
     MAFIA_ALIVE = "m"
     MAFIA_ALL = "ma"
     MAKE_COMPLAINT = "mc"
+    MATCH_MAKING_MATCH_STATUS = "mmms"
+    MATCH_MAKING_BASE_PLAYERS_AMOUNT = "mmbpa"
+    MATCH_MAKING_GET_STATUS = "mmgsk"
+    MATH_MAKING_ADD_USER = "mmauk"
     MARKET_ITEMS = "mrkti"
     MAXIMUM_PLAYERS = "mxmp"
     MAX_PLAYERS = "mxp"
@@ -127,6 +134,7 @@ class PacketDataKeys(str, Enum):
     MESSAGE = "m"
     MESSAGE_STYLE = "mstl"
     MESSAGE_TYPE = "t"
+    MESSAGE_STICKER = "mstk"
     MIN_LEVEL = "mnl"
     MIN_PLAYERS = "mnp"
     MONEY = "mo"
@@ -173,6 +181,8 @@ class PacketDataKeys(str, Enum):
     ROOM_CREATED = "rcd"
     ROOM_CREATE = "rc"
     ROOM_ENTER = "re"
+    ROOM_MODEL_TYPE = "rmt"
+    ROOM_STATISTICS = "rst"
     ROOM_IN_LOBBY_STATE = "rils"
     ROOM = "rr"
     ROOM_MESSAGE_CREATE = "rmc"
@@ -189,7 +199,10 @@ class PacketDataKeys(str, Enum):
     SERVER_CONFIG = "scfg"
     SERVER_LANGUAGE_CHANGE_TIME = "slct"
     SERVER_LANGUAGE = "slc"
+    SERVER_ROOM_TITLE_MINIMAL_LEVEL = "srtml"
+    SERVER_ROOM_PASSWORD_MINIMAL_LEVEL = "srpml"
     SET_ROOM_PASSWORD_MIN_AUTHORITY = "srpma"
+    SET_PROFILE_PHOTO_MINIMAL_LEVEL = "sppml"
     SET_SERVER_LANGUAGE_TIME_ERROR = "sslte"
     SEX = "s"
     SHOW_PASSWORD_ROOM_INFO_BUTTON = "sprib"
@@ -247,6 +260,7 @@ class PacketDataKeys(str, Enum):
     VEST = "v"
     VIP_ENABLED = "venb"
     VIP = "v"
+    VIP_ACCOUNT = "vip_account"
     VIP_UPDATED = "vupd"
     VOTES = "v"
     VOTE = "v"
@@ -261,27 +275,73 @@ class PacketDataKeys(str, Enum):
     MATCH_MAKING_SCORE = "mmscr"
     MATCH_MAKING_ADD_USER = "mmauk"
     MATCH_MAKING_REMOVE_USER = "mmruk"
+    MATCH_MAKING_BUCKET_RESPONSE_PLAYERS_AMOUNT = "mmbpa"
     VOTE_PLAYER_LIST = "vpl"
     PRIVATE_CHAT_LIST_MESSAGES = "pclms"
-    GIVE_UP = "agu"
-    ROOM_MODEL_TYPE = "rmt"
-    MATCH_MAKING_GET_STATUS = "mmgsk"
-    MATH_MAKING_ADD_USER = "mmauk"
-    ROOM_STATISTICS = "rst"
+    PROFILE_USER_DATA = "pud"
+    USER_ACCOUNT_COINS = "uac"
+    SILVER_COINS = "scns"
+    GOLD_COINS = "gcns"
+    DECORATORS = "dcrs"
+
+
+    # MARKET
+    UNKNOWN1 = "mbt"
+    UNKNOWN2 = "mrktgg"
+    UNKNOWN3 = "mrktg"
+
+
+
+class HttpsApiKeys(str, Enum):
+    LANGUAGE = "lang"
+    NEW_EMAIL = "newEmail"
+    DEVICE_ID = "deviceId"
+    USER_OBJECT_ID = "userObjectId"
+    EMAIL = "email"
+    USERNAME = "username"
+    PASSWORD = "password"
+    CURRENT_PASSWORD = "currentPassword"
+    VERIFICATION_CODE = "verificationCode"
+
+
+class ZafiaApiKeys(str, Enum):
+    USER_ID = "userId"
+    FAVORITE_ID = "favoriteId"
+    SHOW = "show"
+    FROM_TYPE = "fromType"
+    CHECK_ID = "checkId"
+    USER_NICKNAME = "userNickname"
+    CHECK_NICKNAME = "checkNickname"
+    TYPE = "type"
+    VERSION = "version"
+    DEVICE_ID = "deviceId"
+
 
 class Endpoints(str, Enum):
-    CHANGE_FAVORITE_STATUS = "cfs"
-    CHANGE_VISIBLE_TOP = "cvt"
-    GET_FAVORITES_LIST = "gfl"
-    CHECK_PROFILE = "cpr"
-    GET_TOP = "gt"
-    GET_VERIFICATIONS = "vf"
+    # Mafia Online
     REMOVE_ACCOUNT = "user/remove"
     PROFILE_PHOTO = "mafia/profile_photo/{user_id}.jpg"
     CLIENT_CONFIG = "mafia/clientConfig{version}.txt"
     CLIENT_FEATURE_CONFIG = "client_feature_config"
     USER_SIGN_OUT = "user/sign_out"
     USER_SIGN_UP = "user/sign_up"
+    USER_EMAIL_VERIFY = "user/email/verify"
+    USER_CHANGE_EMAIL = "user/change/email"
+    USER_EMAIL_VERIFICATION = "user/email/verification"
+    USER_GET = "user/get"
+    BACKPACK_GET = "backpack/get"
+    BACKPACK_GET_BONUS_PRICES = "backpack/get_bonus_prices"
+
+
+class ZafiaEndpoints(str, Enum):
+    # Zafia Online
+    CHANGE_FAVORITE_STATUS = "cfs"
+    CHANGE_VISIBLE_TOP = "cvt"
+    CHECK_PROFILE = "cpr"
+    GET_FAVORITES_LIST = "gfl"
+    GET_TOP = "gt"
+    GET_VERIFICATIONS = "vf"
+
 
     def format(self, **kwargs):
         return self.value.format(**kwargs)
@@ -297,10 +357,11 @@ class Renaming(dict, Enum):
             "played_games": "pg", "score": "sc",
             "sex": "s", "wins_as_killer": "wik",
             "wins_as_mafia": "wim", "wins_as_peaceful": "wip",
-            "token": "t", "accept_messages": "ac",
-            "rank": "r", "selected_language": "slc",
+            "token": "t", "active": "ac",
+            "role": "r", "selected_language": "slc",
             "online": "on", "player_role_statistics": "prst",
-            "match_making_score": "mmscr"
+            "match_making_score": "mmscr", "device_id": "d",
+
             }
     SERVER_CONFIG = {"kick_user_price": "kup",
                      "set_room_password_min_authority": "srpma",

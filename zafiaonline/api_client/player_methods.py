@@ -10,7 +10,7 @@ from zafiaonline.structures.packet_data_keys import PacketDataKeys
 from zafiaonline.structures.models import ModelFriend, ModelMessage
 from zafiaonline.structures.enums import RatingMode, RatingType
 from zafiaonline.utils.utils import get_user_attributes
-from zafiaonline.utils.utils_for_send_messages import Utils
+from zafiaonline.utils.utils_for_send_messages import Utils, SentMessages
 from zafiaonline.utils.logging_config import logger
 
 
@@ -19,9 +19,10 @@ class Players:
         self.client = client
         if self.client:
             get_user_attributes(self.client)
+        self.sent_messages = SentMessages()
 
     async def send_server(self, data, remove_token_from_object = False):
-        return await self.client.send_server(data, remove_token_from_object)
+        await self.client.send_server(data, remove_token_from_object)
 
     async def listen(self):
         return await self.client.listen()
@@ -236,8 +237,13 @@ class Players:
         """
         utils = Utils()
         if not utils.validate_message_content(content):
-            return
+            return None
         content = utils.clean_content(content)
+        self.sent_messages.add_message(content)
+        utils.auto_delete_first_message(self.sent_messages)
+        if utils.is_ban_risk_message(self.sent_messages) is True:
+            await asyncio.sleep(5)
+            return None
 
         message_data: dict = {
             PacketDataKeys.TYPE: PacketDataKeys.PRIVATE_CHAT_MESSAGE_CREATE,
@@ -247,6 +253,7 @@ class Players:
             }
         }
         await self.send_server(message_data)
+        return None
 
     async def get_user(self, user_id: str) -> Optional[dict]:
         """
@@ -268,7 +275,8 @@ class Players:
         """
         user_payload: Dict[str, Any] = {
             PacketDataKeys.TYPE: PacketDataKeys.GET_USER_PROFILE,
-            PacketDataKeys.USER_OBJECT_ID: user_id
+            PacketDataKeys.USER_RECEIVER: user_id,
+            PacketDataKeys.USER_OBJECT_ID: self.client.user.user_id,
         }
         await self.send_server(user_payload)
 

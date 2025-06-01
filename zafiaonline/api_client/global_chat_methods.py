@@ -1,9 +1,10 @@
+import asyncio
 from typing import Optional, TYPE_CHECKING
 
 from zafiaonline.structures import PacketDataKeys
 from zafiaonline.structures.enums import MessageStyles
 from zafiaonline.utils.utils import get_user_attributes
-from zafiaonline.utils.utils_for_send_messages import Utils
+from zafiaonline.utils.utils_for_send_messages import Utils, SentMessages
 
 
 class GlobalChat:
@@ -13,9 +14,10 @@ class GlobalChat:
         self.client = client
         if self.client:
             get_user_attributes(self.client)
+        self.sent_messages = SentMessages()
 
     async def send_server(self, data, remove_token_from_object = False):
-        return await self.client.send_server(data, remove_token_from_object)
+        await self.client.send_server(data, remove_token_from_object)
 
     async def join_global_chat(self) -> None:
         """
@@ -68,8 +70,13 @@ class GlobalChat:
         """
         utils = Utils()
         if not utils.validate_message_content(content):
-            return
+            return None
         content = utils.clean_content(content)
+        self.sent_messages.add_message(content)
+        utils.auto_delete_first_message(self.sent_messages)
+        if utils.is_ban_risk_message(self.sent_messages) is True:
+            await asyncio.sleep(5)
+            return None
 
         message_data: dict = {
             PacketDataKeys.TYPE: PacketDataKeys.CHAT_MESSAGE_CREATE,
@@ -79,3 +86,4 @@ class GlobalChat:
             }
         }
         await self.send_server(message_data)
+        return None

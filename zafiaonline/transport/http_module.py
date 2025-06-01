@@ -11,7 +11,7 @@ from urllib.parse import urljoin
 from aiohttp import ClientError
 from PyBookAgents import dalvik_ugen
 
-from zafiaonline.structures.packet_data_keys import Endpoints
+from zafiaonline.structures.packet_data_keys import Endpoints, ZafiaEndpoints
 from zafiaonline.utils.logging_config import logger
 
 class Http:
@@ -43,7 +43,7 @@ class Http:
 
     async def zafia_request(self, method:
                             Literal["get", "post", "put", "delete"],
-                            endpoint:Endpoints, params: dict[str, Any],
+                            endpoint: ZafiaEndpoints, params: dict[str, Any],
                             user_id: str) -> Dict[str, Any]:
         url, headers = self.__build_zafia_headers(endpoint, user_id)
         return await self.__send_request(method = method, url = url,
@@ -71,7 +71,7 @@ class Http:
         url = urljoin(url, endpoint.value)
         return await self.__send_request(method, url, params, headers)
 
-    def __build_headers(self, endpoint: Endpoints, user_id:
+    def __build_headers(self, endpoint: ZafiaEndpoints, user_id:
     str, headers) -> tuple[str, Dict[str, str]]:
         url, boolean = self.__create_url(endpoint)
         if boolean is True:
@@ -81,7 +81,7 @@ class Http:
 
     def __create_url(self, endpoint):
         url = urljoin(self.zafia_url, endpoint.value)
-        if endpoint == Endpoints.GET_VERIFICATIONS.value:
+        if endpoint == ZafiaEndpoints.GET_VERIFICATIONS.value:
             return url, True
         return url
 
@@ -92,7 +92,7 @@ class Http:
         headers["Authorization"] = auth_token
         return headers
 
-    def __build_zafia_headers(self, endpoint: Endpoints, user_id:
+    def __build_zafia_headers(self, endpoint: ZafiaEndpoints, user_id:
     str = uuid.uuid4()) -> tuple[str, Dict[str, str]]:
         headers = self.zafia_headers.copy()
         self.__build_headers(endpoint, user_id, headers)
