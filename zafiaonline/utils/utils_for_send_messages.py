@@ -6,7 +6,7 @@ from zafiaonline.utils.logging_config import logger
 
 
 class Message(TypedDict):
-    message_time: str
+    message_time: datetime
     text: str
 
 class SentMessages:
@@ -29,15 +29,15 @@ class SentMessages:
     def get_time() -> datetime:
         return datetime.now()
 
-    def get_last_messages(self) -> List[Message]:
+    def get_messages(self) -> List[Message]:
         return self.messages
 
-    def clear_last_messages(self) -> None:
+    def clear_messages(self) -> None:
         self.messages.clear()
 
-    def get_length_last_messages(self) -> int:
+    def get_length_last_messages(self, max_len=6) -> int:
         if self.messages:
-            return len(self.messages)
+            return len(self.messages[-max_len:])
         raise ValueError("List messages is None")
 
     def delete_first_message_in_list(self) -> None:
@@ -97,16 +97,17 @@ class Utils:
     def auto_delete_first_message(self, handler: SentMessages) -> None:
         average_time = self.get_average_time(handler)
         len_messages = handler.get_length_last_messages()
-        if len_messages >= 6:
+        if len_messages >= 10:
             handler.delete_first_message_in_list()
         elif average_time >= 20 and len_messages >= 3:
-            handler.clear_last_messages()
+            handler.clear_messages()
         return None
 
-    def get_average_time(self, handler: SentMessages) -> float:
+    def get_average_time(self, handler: SentMessages, max_len = 6) -> float:
         messages =  handler.messages
         time_messages = self.get_time_of_messages(messages)
-        current_time = self.get_current_time_of_messages(time_messages)
+        current_time = self.get_current_time_of_messages(time_messages[
+                                                         -max_len:])
         average_time = sum(current_time) / len(current_time)
         return average_time
 
@@ -114,8 +115,11 @@ class Utils:
         messages = sent_messages_class.messages
         if not messages:
             return False
-        time = self.get_average_time(sent_messages_class)
-        if sent_messages_class.get_length_last_messages() >= 6 and time <= 2.1:
+        short_time = self.get_average_time(sent_messages_class)
+        long_time = self.get_average_time(sent_messages_class, max_len = 9)
+        if (sent_messages_class.get_length_last_messages() >= 6 and short_time <=
+                2.1) or (sent_messages_class.get_length_last_messages(
+            max_len=20) >= 9 and long_time <= 3):
             logger.warning("AntiBanProtection prevented autoban")
             return True
         return False

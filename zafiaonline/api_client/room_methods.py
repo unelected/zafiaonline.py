@@ -366,6 +366,7 @@ class Room:
         self.sent_messages.add_message(content)
         utils.auto_delete_first_message(self.sent_messages)
         if utils.is_ban_risk_message(self.sent_messages) is True:
+            await asyncio.sleep(5)
             return None
 
         message_data: dict = {
