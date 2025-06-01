@@ -1,7 +1,7 @@
 from secrets import token_hex
 
 from zafiaonline.structures import MafiaLanguages
-from zafiaonline.structures.packet_data_keys import Endpoints
+from zafiaonline.structures.packet_data_keys import Endpoints, HttpsApiKeys
 from zafiaonline.transport.http_module import Http
 from zafiaonline.utils.md5hash import Md5
 
@@ -10,14 +10,14 @@ class HttpsApi(Http):
     async def remove_user_account_request(self, language: MafiaLanguages =
                                           MafiaLanguages.English) -> dict:
         endpoint = Endpoints.REMOVE_ACCOUNT
-        data = {'lang': language.value}
+        data = {HttpsApiKeys.LANGUAGE: language.value}
         return await self.api_mafia_request("POST", endpoint, data)
 
     async def get_profile_photo_request(self, user_id: str) -> bytes:
         endpoint = Endpoints.PROFILE_PHOTO.format(user_id)
         return await self.mafia_request("GET", endpoint)
 
-    async def get_client_config(self, version: int = 48) -> dict:
+    async def get_client_config(self, version: int = 50) -> dict:
         endpoint = Endpoints.CLIENT_CONFIG.format(version)
         return await self.mafia_request("GET", endpoint)
 
@@ -35,19 +35,19 @@ class HttpsApi(Http):
         md5hash = Md5()
         endpoint = Endpoints.USER_SIGN_UP
         data:dict = {
-            'email': email,
-            'username': username,
-            'password': md5hash.md5salt(password),
-            'deviceId': token_hex(8),
-            'lang': language
+            HttpsApiKeys.EMAIL: email,
+            HttpsApiKeys.USERNAME: username,
+            HttpsApiKeys.PASSWORD: md5hash.md5salt(password),
+            HttpsApiKeys.DEVICE_ID: token_hex(8),
+            HttpsApiKeys.LANGUAGE: language
         }
         return await self.api_mafia_request("POST", endpoint, data)
 
     async def verify_email(self, language: MafiaLanguages =
     MafiaLanguages.English.value) -> dict:
-        endpoint = "user/email/verify"
+        endpoint = Endpoints.USER_EMAIL_VERIFY
         data:dict = {
-            'lang': language
+            HttpsApiKeys.LANGUAGE: language
         }
         return await self.api_mafia_request("POST", endpoint, data)
 
@@ -55,32 +55,32 @@ class HttpsApi(Http):
                            language: MafiaLanguages =
                            MafiaLanguages.English.value) -> dict:
         md5hash = Md5()
-        endpoint = "user/change/email"
+        endpoint = Endpoints.USER_CHANGE_EMAIL
         data = {
-            'newEmail': new_email,
-            'currentPassword': md5hash.md5salt(password),
-            'lang': language
+            HttpsApiKeys.NEW_EMAIL: new_email,
+            HttpsApiKeys.CURRENT_PASSWORD: md5hash.md5salt(password),
+            HttpsApiKeys.LANGUAGE: language
         }
         return await self.api_mafia_request("POST", endpoint, data)
 
     async def email_verification(self, verification_code: str) -> dict:
-        endpoint = "user/email/verification"
+        endpoint = Endpoints.USER_EMAIL_VERIFICATION
         data = {
-            'verificationCode': verification_code
+            HttpsApiKeys.VERIFICATION_CODE: verification_code
         }
         return await self.api_mafia_request("POST", endpoint, data)
 
     async def user_get(self, user_id):
-        endpoint = "user/get"
+        endpoint = Endpoints.USER_GET
         data = {
-            'userObjectId': user_id
+            HttpsApiKeys.USER_OBJECT_ID: user_id
         }
         return await self.api_mafia_request("POST", endpoint, data)
 
     async def backpack_get(self):
-        endpoint = "backpack/get"
+        endpoint = Endpoints.BACKPACK_GET
         return await self.api_mafia_request("POST", endpoint)
 
     async def backpack_get_bonus_prices(self):
-        endpoint = "backpack/get_bonus_prices"
+        endpoint = Endpoints.BACKPACK_GET_BONUS_PRICES
         return await self.api_mafia_request("POST", endpoint)

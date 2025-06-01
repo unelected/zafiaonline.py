@@ -179,14 +179,14 @@ class RoomModelType(IntEnum):
     NOT_MATCHMAKING_MODE = 0  # Regular room without matchmaking
     MATCHMAKING_MODE = 1      # Room with matchmaking enabled
 
-class ProfilePhotoType(IntEnum):
+class ProfilePhotoType(str, Enum):
     """
     Enumeration representing the profile photo status of a user.
 
     This enum is used to determine whether a user has uploaded a profile photo.
 
     Attributes:
-        NO_PHOTO (int): The user has not uploaded a profile photo (value = 0).
+        NO_PHOTO (int): The user has not uploaded a profile photo (value = "").
         PHOTO_ADDED (int): The user has uploaded a profile photo (value = 1).
 
     Usage example:
@@ -196,8 +196,8 @@ class ProfilePhotoType(IntEnum):
         >>> print(photo_status.value)
         1
     """
-    NO_PHOTO = 0      # No profile photo uploaded
-    PHOTO_ADDED = 1   # Profile photo has been added
+    NO_PHOTO = ""      # No profile photo uploaded
+    PHOTO_ADDED = ""   # Profile photo has been added
 
 class FriendInRoomType(IntEnum):
     """

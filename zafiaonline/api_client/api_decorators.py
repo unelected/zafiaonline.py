@@ -4,6 +4,7 @@ from typing import Callable, Union
 
 from zafiaonline.structures import ModelUser
 from zafiaonline.structures.enums import MessageType
+from zafiaonline.utils.exceptions import LoginError
 from zafiaonline.utils.logging_config import logger
 
 
@@ -41,9 +42,10 @@ class ApiDecorators:
             token = kwargs.get("token", "")
             user_id = kwargs.get("user_id", "")
 
-            if not ((email and password) or not (token and user_id)):
-                logger.error("Not all login details have been entered")
-                return False
+            if not email and password:
+                if not token and user_id:
+                    logger.error("Not all login details have been entered")
+                    raise LoginError
 
             return func(self, *args, **kwargs)
 
@@ -51,7 +53,8 @@ class ApiDecorators:
 
     @staticmethod
     def requires_room_check(func: Callable):
-        from zafiaonline.api_client.player_methods import Players, PacketDataKeys
+        from zafiaonline.api_client.player_methods import (Players,
+                                                           PacketDataKeys)
         players = Players()
         @functools.wraps(func)
         async def wrapper(self, room_id: str, *args, **kwargs):
