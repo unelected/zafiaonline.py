@@ -6,6 +6,15 @@
 
 ![Python version](https://img.shields.io/badge/python-3.9+-blue.svg)
 
+## ⚠️ Important Update: Repository Archived
+
+This repository is archived indefinitely. No further development or updates are planned.
+
+It remains available in read-only mode for reference and historical purposes.
+Feel free to fork it if you'd like to continue development independently.
+
+Thanks to everyone who used the project!
+
 ## ⚠️ Important Update: API Changes!
 
 The original app developer suddenly **changed their API**, which means **most of the requests through the old wrapper are now broken**. Yeah… we weren’t ready for that either.
@@ -17,7 +26,7 @@ If you don’t have root access on your device, you can still try to **sniff the
 
 We’ll do our best to keep things up to date. Stay tuned for updates!
 
-P.S. If you run into bugs — feel free to open an Issue.
+P.S. If you run into bugs — feel free to fork ths repository.
 
 
 # Install
