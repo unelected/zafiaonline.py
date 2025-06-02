@@ -251,7 +251,7 @@ class Farm:
     async def shuher(self, user_id: str = "user_57e6cce718056") -> Optional[
         bool]:
         result = await self.mafia_main.get_user(user_id)
-        profile = result[PacketDataKeys.USER]
+        profile = result.get(PacketDataKeys.USER_PROFILE)[PacketDataKeys.PROFILE_USER_DATA]
         if profile[PacketDataKeys.IS_ONLINE] == 1:
             return profile[PacketDataKeys.SERVER_LANGUAGE]
         return None
