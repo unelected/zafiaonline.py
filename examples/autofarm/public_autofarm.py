@@ -252,7 +252,7 @@ class Farm:
         bool]:
         result = await self.mafia_main.get_user(user_id)
         profile = result.get(PacketDataKeys.USER_PROFILE)[PacketDataKeys.PROFILE_USER_DATA]
-        if profile[PacketDataKeys.IS_ONLINE] == 1:
+        if profile[PacketDataKeys.IS_ONLINE] == True:
             return profile[PacketDataKeys.SERVER_LANGUAGE]
         return None
 
@@ -441,7 +441,7 @@ class Farm:
                         f"[🏆] {number_of_games} игра закончилась\n[⏳]"
                         f" {int(time.time() - room_time)} секунд\n"
                         f"[👤] роль: {self.self_role}\n[🔎] +"
-                        f"{data[PacketDataKeys.AUTHORITY]} авторитета,"
+                        f"{data[PacketDataKeys.SILVER_COINS]} авторитета,"
                         f" +{data[PacketDataKeys.EXPERIENCE]} опыта\n"
                         f"[⏰] ~{of_days} за сутки\n[⏰] "
                         f"~{of_hours} за час\n"
