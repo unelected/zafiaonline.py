@@ -22,20 +22,10 @@ P.S. If you run into bugs — feel free to fork ths repository.
 
 # Install
 
-To install the package, you can either use `pip` directly or clone the repository and install it manually:
-
-## Option 1: Using pip (recommended)
-```bash
-pip install git+https://github.com/unelected/zafiaonline.py.git
-```
-
-## Option 2: Manual installation
-If you prefer to clone the repository and install it manually, follow these steps:
+To install the package from [PyPI](https://pypi.org/project/zafiaonline/), use:
 
 ```bash
-git clone https://github.com/unelected/zafiaonline.py.git
-cd zafiaonline.py
-pip install .
+pip install zafiaonline
 ```
 
 
