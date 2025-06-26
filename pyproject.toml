@@ -17,5 +17,6 @@ dependencies = [
     "msgspec",
     "sphinx",
     "PyBookAgents",
-    "aiohttp"
+    "aiohttp",
+    "pyyaml",
 ]
