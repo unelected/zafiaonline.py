@@ -53,12 +53,12 @@ class Config:
             - 7090 for 'ws'
             - 7091 for 'wss'
     """
-    def __init__(self, path: str = "ws_conf.yaml") -> None:
+    def __init__(self, path: str = "ws_config.yaml") -> None:
         """
         Initializes the Config instance by loading settings from a YAML file.
 
         Args:
-            path (str, optional): Path to the YAML configuration file. Defaults to 'ws_conf.yaml'.
+            path (str, optional): Path to the YAML configuration file. Defaults to 'ws_config.yaml'.
 
         Raises:
             FileNotFoundError: If the YAML file does not exist.
