@@ -1,0 +1,17 @@
+{
+    "commands": {
+        "!yeet": {
+            "cancel_tasks": true,
+            "message": "Bot has exited."
+        },
+        "!rejoin": {
+            "rejoin": true
+        }
+    },
+    "phrases": {
+        "привет юзербот": [
+            {"text":"{input}"},
+            {"text":"🤖UserBot🤖: привет"},
+        ],
+    }
+}

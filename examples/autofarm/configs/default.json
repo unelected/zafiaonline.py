@@ -1,0 +1,55 @@
+
+{
+  "main": ["nickname", "password"],
+  "host": "nickname",
+  "max_players":9,
+  "mode": 1,
+  "force": false,
+  "role": [1,2,3],
+  "min_level": 1,
+  "room_password": "room_password",
+  "vip_enabled": false,
+  "shuffle_accounts": true,
+  "remove_from_server_killed": true,
+  "connect_disabled_roles": false,
+  "max_games": 0,
+  "max_accounts_games": 0,
+  "role_accounts": [
+    "nickname",
+    "nickname"
+  ],
+  "roles_for_role_accounts": [11],
+  "accounts": {
+    "8": [
+      "nickname:password",
+      ":",
+      ":",
+      ":",
+      ":",
+      ":",
+      ":"
+    ],
+    "9": [
+      ":",
+      ":",
+      ":",
+      ":",
+      ":",
+      ":",
+      ":",
+      ":"
+    ],
+    "11": [
+      ":",
+      ":",
+      ":",
+      ":",
+      ":",
+      ":",
+      ":",
+      ":",
+      ":",
+      ":"
+    ]
+  }
+}

@@ -1,5 +1,8 @@
 import asyncio
+import os
+import logging
 
+from dotenv import load_dotenv
 from zafiaonline import Client
 from zafiaonline.api_client.api_decorators import ApiDecorators
 
@@ -15,13 +18,16 @@ class Main:
         await client.join_global_chat()
         while True:
             result = await client.listen()
+            if not result:
+                raise AttributeError
             content = data_handler.get_data(result)
             await message_handler.message_handle(content)
 
 
 class AccountData:
-    EMAIL = "email"
-    PASSWORD = "password"
+    load_dotenv("data.env")
+    EMAIL = os.getenv("EMAIL")
+    PASSWORD = os.getenv("PASSWORD")
 
     @classmethod
     def init_account_data(cls):
@@ -41,8 +47,9 @@ class DataHandle:
 
 
 class MessagesHandle:
-    DELAY = .4
-    TROLL_MESSAGE = "?)"
+    load_dotenv("data.env")
+    DELAY: float = float(os.getenv("DELAY") or .4)
+    TROLL_MESSAGE = os.getenv("TROLL_MESSAGE")
 
     @staticmethod
     async def message_handle(content):
@@ -64,8 +71,9 @@ class MessagesHandle:
 
 
 class PrepareData:
-    TEA_IS_READY_TO_TAKEN = "Новый чай готов для получения!"
-    BOT_NICKNAMES = ["TeaMaf", "TeaBot", "aIwaysforeve"]
+    load_dotenv("data.env")
+    TEA_IS_READY_TO_BE_TAKEN = os.getenv("TEA_IS_READY_TO_BE_TAKEN", "Новый чай готов для получения!")
+    BOT_NICKNAMES = os.getenv("BOT_NICKNAMES", "").split(",")
 
     @staticmethod
     async def farm_tea():
@@ -75,11 +83,14 @@ class PrepareData:
     def cooldown_is_done(content):
         prepare_data = PrepareData()
         data_handle = DataHandle()
-        return (content == prepare_data.TEA_IS_READY_TO_TAKEN and
+        return (content == prepare_data.TEA_IS_READY_TO_BE_TAKEN and
                 data_handle.USER_NAME in prepare_data.BOT_NICKNAMES)
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level = logging.INFO,
+                            format = "%(asctime)s - %(levelname)s - %(message)s",
+                            datefmt = "%H:%M:%S")
     client = Client()
     main = Main()
     try:

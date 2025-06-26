@@ -1,15 +1,18 @@
 # simple mafia online bot
 import asyncio
 import logging
+import os
 
+from dotenv import load_dotenv
 from zafiaonline.api_client.api_decorators import ApiDecorators
 from zafiaonline.utils.exceptions import ListenExampleErrorException
 from zafiaonline.main import Client
 
 
-class AccountData:
-    EMAIL = "email"
-    PASSWORD = "password"
+class AccountData: 
+    load_dotenv("example.env")
+    EMAIL = os.getenv("EMAIL")
+    PASSWORD = os.getenv("PASSWORD")
 
 class Main:
     @staticmethod
@@ -42,7 +45,7 @@ class MessagesHandle:
                 logging.error(f"listen error {e}")
                 raise ListenExampleErrorException
 
-            processed_result = self.message_handle(result)
+            processed_result = self.message_handle(content = result)
             if processed_result is not None:
                 await processed_result
 

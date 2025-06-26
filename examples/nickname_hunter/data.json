@@ -1,0 +1,25 @@
+
+{
+  "entertainers": [
+    ["email", "password"],
+    ["email", "password"],
+    [
+      "email",
+      "password"
+    ],
+    [
+      "email",
+      "password"
+    ],
+    [
+      "email",
+      "password"
+    ]
+  ],
+  "trackeds": [
+    ["id", ""],
+    ["id", ""],
+    ["id", ""],
+    ["id", ""]
+  ]
+}

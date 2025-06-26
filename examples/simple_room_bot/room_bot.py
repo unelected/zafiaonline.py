@@ -80,6 +80,11 @@ class RoomBot:
         await client.remove_player(self.room_id)
         await asyncio.sleep(2)
         await self.create_room_and_join()
+        asyncio.create_task(self.clear_past_players())
+
+    async def clear_past_players(self):
+        await asyncio.sleep(30)
+        self.past_players.clear()
 
     async def create_room_and_join(self):
         room = await client.create_room(
@@ -114,6 +119,7 @@ class RoomBot:
         elif my_message.startswith("/унмут"):
             await self.unmute_handle(my_message)
             return True
+        return None
 
     async def mute_handle(self, my_message):
         parts = my_message.split(maxsplit=1)
@@ -129,26 +135,29 @@ class RoomBot:
             self.muted_players.remove(nickname)
             logging.info(f"игрок {nickname} больше не в муте")
 
-    async def delayed_send(self, response, delay):
+    async def delayed_send(self, response, delay, nickname = None):
         await asyncio.sleep(delay)
-        await client.send_message_room(response, self.room_id, 
-                                       message_style = MessageStyleData.style)
+        if self.check_player(nickname):
+            await client.send_message_room(response, self.room_id,
+                                           message_style =
+                                           MessageStyleData.style)
 
     async def get_messages(self, result):
         if result[PacketDataKeys.TYPE] == PacketDataKeys.MESSAGE:
             message, message_type = await self.prepare_message_data(result)
 
-            if message_type == MessageType.TEXT:
+            if message_type == MessageType.MAIN_TEXT:
                 return await self.text_message_handle(message)
 
-            if message_type == MessageType.JOIN:
+            if message_type == MessageType.USER_HAS_ENTERED:
                 await self.join_message_handle(message)
 
-            if message_type == MessageType.LEAVE:
+            if message_type == MessageType.USER_HAS_LEFT:
                 await self.leave_message_handle(message)
 
-            if message_type == MessageType.KICK_RESULTS:
+            if message_type == MessageType.KICK_VOTING_HAS_FINISHED:
                 await self.kick_results_message_handle(message)
+        return None
 
     @staticmethod
     async def prepare_message_data(result):
@@ -176,8 +185,19 @@ class RoomBot:
                 and nickname not in self.muted_players
                 and nickname != self.bot_username):
             delay = random.randint(2, 5)
-            asyncio.create_task(
-                self.delayed_send(f"привет, {nickname}", delay))
+            if nickname == "Krestila":
+                asyncio.create_task(
+                    self.delayed_send(f"{nickname}, терпеть, псина."
+                                      , delay, nickname))
+            else:
+                asyncio.create_task(
+                    self.delayed_send(f"привет, {nickname}", delay,
+                                      nickname))
+
+    def check_player(self, nickname):
+        if nickname not in self.players_nickname:
+            return
+        return True
 
     async def text_message_handle(self, message):
         user = message[PacketDataKeys.USER]
