@@ -185,14 +185,10 @@ class RoomBot:
                 and nickname not in self.muted_players
                 and nickname != self.bot_username):
             delay = random.randint(2, 5)
-            if nickname == "Krestila":
-                asyncio.create_task(
-                    self.delayed_send(f"{nickname}, терпеть, псина."
-                                      , delay, nickname))
-            else:
-                asyncio.create_task(
-                    self.delayed_send(f"привет, {nickname}", delay,
-                                      nickname))
+            
+            asyncio.create_task(
+                self.delayed_send(f"привет, {nickname}", delay,
+                                    nickname))
 
     def check_player(self, nickname):
         if nickname not in self.players_nickname:
