@@ -34,7 +34,7 @@ class Http:
         }
 
     @staticmethod
-    def generate_agent():
+    def generate_agent() -> dict:
         return re.sub(r'\s*\[.*$', '', dalvik_ugen())
 
     @staticmethod

@@ -37,7 +37,8 @@ class BanError(Exception):
         # Ensure data is not None before accessing it
         reason = data[PacketDataKeys.REASON.value] if data else ("unknown "
                                                                  "reason")
-
+        if not self.auth.user or not self.client.user:
+            raise AttributeError
         username = (self.client.user.username or self.auth.user.username or
                     "UnknownUser")
 

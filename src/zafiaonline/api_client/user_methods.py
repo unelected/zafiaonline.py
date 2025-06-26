@@ -29,7 +29,7 @@ class Auth(Websocket):
             debug (bool): Enables or disables debug mode. Defaults to False.
         """
         self.client = client
-        self.proxy = proxy or []
+        self.proxy = proxy or None
         self.debug = debug
         self.token: Optional[str] = None
         self.user_id: Optional[str] = None
@@ -90,7 +90,7 @@ class Auth(Websocket):
         """
         if not self.alive:
             logger.debug("Connection not active. Attempting to connect...")
-            await self.create_connection()
+            await self.create_connection(self.proxy)
 
     def _prepare_auth_data(self, email: str, password: str, token: str,
                            user_id: str) -> dict:

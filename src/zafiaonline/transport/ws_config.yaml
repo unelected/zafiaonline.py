@@ -1,0 +1,3 @@
+host: "dottap.com"
+port: 7091
+connect_type: "wss"
