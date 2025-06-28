@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "zafiaonline"
-version = "5.1.22"
+version = "5.2.0"
 keywords = ["Mafia Online API"]
 description = "A Python API library for interacting with Mafia Online game."
 requires-python = ">=3.9"
