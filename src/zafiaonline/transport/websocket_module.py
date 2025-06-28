@@ -76,7 +76,7 @@ class Config:
                 - 7090 for 'ws'
                 - 7091 for 'wss'
         """
-        config_path = files('zafiaonline').joinpath(path)
+        config_path = files('zafiaonline.transport').joinpath(path)
         with as_file(config_path) as resource_file:
             with open(resource_file, "r") as config_file:
                 config = yaml.safe_load(config_file)
