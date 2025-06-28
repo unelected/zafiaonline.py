@@ -176,7 +176,7 @@ class Websocket:
             await self._handle_reconnect()
             raise
 
-    async def _connect(self, proxy) -> None:
+    async def _connect(self, proxy: List[str] | None = None) -> None:
         """
         Creates a WebSocket connection to the specified server URI.
 
@@ -198,7 +198,10 @@ class Websocket:
         }
         if not headers:
             raise AttributeError
-        self.ws = await connect(self.uri, user_agent_header=str(headers), proxy=proxy)
+        if proxy:
+            self.ws = await connect(self.uri, user_agent_header=str(headers), proxy=proxy)
+        else:
+            self.ws = await connect(self.uri, user_agent_header=str(headers))
         self.alive = True
 
     async def _post_connect_setup(self) -> None:
