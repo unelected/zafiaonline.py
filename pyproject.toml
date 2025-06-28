@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "zafiaonline"
-version = "5.1.21"
+version = "5.1.22"
 keywords = ["Mafia Online API"]
 description = "A Python API library for interacting with Mafia Online game."
 requires-python = ">=3.9"
@@ -20,3 +20,12 @@ dependencies = [
     "aiohttp",
     "PyBookAgents"
 ]
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"zafiaonline.transport" = ["*.yaml"]
