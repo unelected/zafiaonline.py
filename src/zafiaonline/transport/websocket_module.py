@@ -6,7 +6,7 @@ import websockets
 import yaml
 
 from websockets import ConnectionClosedOK, connect, ConnectionClosed
-from typing import Any, Optional, TYPE_CHECKING, List
+from typing import Any, Optional, TYPE_CHECKING
 from importlib.resources import files, as_file
 
 if TYPE_CHECKING:
@@ -131,7 +131,7 @@ class Websocket:
             self.user_id = self.client.user_id
             self.token = self.client.token
 
-    async def create_connection(self, proxy: List[str] | None = None) -> None:
+    async def create_connection(self, proxy: str | None = None) -> None:
         """
         Establishes a WebSocket connection if not already connected.
 
@@ -176,7 +176,7 @@ class Websocket:
             await self._handle_reconnect()
             raise
 
-    async def _connect(self, proxy: List[str] | None = None) -> None:
+    async def _connect(self, proxy: str | None = None) -> None:
         """
         Creates a WebSocket connection to the specified server URI.
 

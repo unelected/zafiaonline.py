@@ -1,9 +1,6 @@
-from typing import List
-
-
 class Client:
     #TODO улучшить наследование
-    def __init__(self, proxy: List[str] | None = None):
+    def __init__(self, proxy: str | None = None):
         from zafiaonline.api_client.player_methods import Players
         from zafiaonline.api_client.global_chat_methods import GlobalChat
         from zafiaonline.api_client.user_methods import Auth, User

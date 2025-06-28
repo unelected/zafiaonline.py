@@ -1,7 +1,7 @@
 import base64
 import json
 
-from typing import  Optional, List, TYPE_CHECKING, Any
+from typing import  Optional, TYPE_CHECKING, Any
 from secrets import token_hex
 from msgspec.json import decode
 
@@ -18,7 +18,7 @@ from zafiaonline.utils.utils import get_user_attributes
 
 
 class Auth(Websocket):
-    def __init__(self, client: "Client", proxy: Optional[List[str]] = None) -> None:
+    def __init__(self, client: "Client", proxy: str | None = None) -> None:
         """
         Initializes the Client.
 
