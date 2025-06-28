@@ -1,5 +1,0 @@
-websockets
-msgspec
-sphinx
-aiohttp
-PyBookAgents
