@@ -7,6 +7,7 @@ import yaml
 
 from websockets import ConnectionClosedOK, connect, ConnectionClosed
 from typing import Any, Optional, TYPE_CHECKING, List
+from importlib.resources import files, as_file
 
 if TYPE_CHECKING:
     from zafiaonline.main import Client
@@ -75,8 +76,10 @@ class Config:
                 - 7090 for 'ws'
                 - 7091 for 'wss'
         """
-        with open(path, "r") as config_file:
-            config = yaml.safe_load(config_file)
+        config_path = files('zafiaonline').joinpath(path)
+        with as_file(config_path) as resource_file:
+            with open(resource_file, "r") as config_file:
+                config = yaml.safe_load(config_file)
         self.address: str = config.get("address", "dottap.com")
         self.port: int = config.get("port", 7091)
         self.connect_type: str = config.get("connect_type", "wss")
