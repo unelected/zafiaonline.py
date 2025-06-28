@@ -1,5 +1,5 @@
 import asyncio
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 from zafiaonline.structures import PacketDataKeys
 from zafiaonline.structures.enums import MessageStyles
@@ -9,8 +9,8 @@ from zafiaonline.utils.utils_for_send_messages import Utils, SentMessages
 
 class GlobalChat:
     if TYPE_CHECKING:  # Импорт выполняется только для аннотации типов
-        from zafiaonline.main import Client
-    def __init__(self, client: Optional["Client"] = None):
+        from zafiaonline.api_client.user_methods import Auth
+    def __init__(self, client: "Auth"):
         self.client = client
         if self.client:
             get_user_attributes(self.client)

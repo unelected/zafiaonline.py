@@ -7,7 +7,7 @@ from msgspec.json import decode
 from zafiaonline.utils import Md5
 
 if TYPE_CHECKING:
-    from zafiaonline.main import Client
+    from zafiaonline.api_client.user_methods import Auth
 from zafiaonline.utils.utils_for_send_messages import Utils, SentMessages
 from zafiaonline.structures import PacketDataKeys, ModelRoom
 from zafiaonline.structures.enums import MessageStyles, RoomModelType, Roles
@@ -16,7 +16,7 @@ from zafiaonline.utils.utils import get_user_attributes
 
 
 class Room:
-    def __init__(self, client: Optional["Client"] = None):
+    def __init__(self, client: "Auth"):
         self.client = client
         if self.client:
             get_user_attributes(self.client)
@@ -53,14 +53,14 @@ class Room:
 
     async def create_room(
             self,
-            selected_roles: Optional[List[Roles]] = None,
+            selected_roles: List[Roles | int] = [0],
             title: str = "",
             max_players: int = 8,
             min_players: int = 5,
             password: Optional[str] = None,
             min_level: int = 1,
             vip_enabled: bool = False
-    ) -> ModelRoom:
+    ) -> ModelRoom | None:
         """
         Creates a new game room with the specified parameters.
 
@@ -82,18 +82,21 @@ class Room:
         Returns:
             ModelRoom: The created room object.
         """
-        selected_roles = selected_roles or [0]
-        room_request = self._build_room_request(selected_roles, title,
+        roles: list[int] = selected_roles or [0]
+        room_request = self._build_room_request(roles, title,
                                                 max_players, min_players,
                                                 password, min_level,
                                                 vip_enabled)
 
         await self.send_server(room_request)
-        received_data = await self._get_validated_room_response(room_request)
+        received_data: dict | None = await self._get_validated_room_response(room_request)
+
+        if received_data is None:
+            raise AttributeError
 
         return self._decode_room(received_data)
 
-    def _build_room_request(self, selected_roles: Optional[List[Roles]],
+    def _build_room_request(self, selected_roles: List[Roles | int],
             title: str, max_players: int, min_players: int, password:
             Optional[str],
             min_level: int, vip_enabled: bool) -> dict:
@@ -262,9 +265,8 @@ class Room:
             attempts += 1
             if data is not None and attempts < 3:
                 break
-            else:
-                if data is None:
-                    return None
+        if data is None:
+            raise AttributeError
         player_list = data.get(PacketDataKeys.PLAYERS, [])
         room_messages = data.get(PacketDataKeys.MESSAGES, [])
 
@@ -398,7 +400,7 @@ class Room:
 
 
 class MatchMaking:
-    def __init__(self, client: Optional["Client"] = None):
+    def __init__(self, client: "Auth"):
         self.client = client
         if self.client:
             get_user_attributes(self.client)
@@ -409,7 +411,7 @@ class MatchMaking:
     async def get_data(self, data):
         return await self.client.get_data(data)
 
-    async def match_making_get_status(self) -> dict:
+    async def match_making_get_status(self) -> dict | None:
         """
         Retrieves the current status of matchmaking.
 
@@ -427,7 +429,7 @@ class MatchMaking:
         await asyncio.sleep(.01)
         return await self.get_data(PacketDataKeys.MATCH_MAKING_MATCH_STATUS)
 
-    async def users_waiting_count(self, players_size: int = 8) -> dict:
+    async def users_waiting_count(self, players_size: int = 8) -> dict | None:
         """
         Retrieves the number of users currently waiting for a matchmaking game.
 

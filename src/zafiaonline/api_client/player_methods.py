@@ -5,7 +5,7 @@ from typing import List, Optional, Dict, Any, TYPE_CHECKING
 from msgspec.json import decode
 
 if TYPE_CHECKING:
-    from zafiaonline.main import Client
+    from zafiaonline.api_client.user_methods import Auth
 from zafiaonline.structures.packet_data_keys import PacketDataKeys
 from zafiaonline.structures.models import ModelFriend, ModelMessage
 from zafiaonline.structures.enums import RatingMode, RatingType
@@ -15,7 +15,7 @@ from zafiaonline.utils.logging_config import logger
 
 
 class Players:
-    def __init__(self, client: Optional["Client"] = None):
+    def __init__(self, client: "Auth"):
         self.client = client
         if self.client:
             get_user_attributes(self.client)
@@ -44,6 +44,8 @@ class Players:
 
         await asyncio.sleep(.01)
         received_data = await self.get_data(PacketDataKeys.FRIENDSHIP_LIST)
+        if received_data is None:
+            raise AttributeError
 
         friends: List[ModelFriend] = []
 
@@ -68,7 +70,7 @@ class Players:
         await asyncio.sleep(.1)
         return await self.get_data(PacketDataKeys.FRIEND_IS_INVITED)
 
-    async def search_player(self, nickname: str) -> dict:
+    async def search_player(self, nickname: str) -> dict | None:
         """
         Searches for a player by their nickname.
 
@@ -140,7 +142,7 @@ class Players:
         await self.send_server(kick_request)
 
     async def message_complaint(self, reason: str, screenshot_id: int,
-                                user_id: str) -> dict:
+                                user_id: str) -> dict | None:
         """
         Submits a complaint about a user's message.
 
@@ -188,6 +190,8 @@ class Players:
         received_messages = await self.get_data(
             PacketDataKeys.PRIVATE_CHAT_LIST_MESSAGES
         )
+        if received_messages is None:
+            raise AttributeError
 
         messages: List[ModelMessage] = [
             decode(json.dumps(message), type=ModelMessage)
@@ -198,7 +202,7 @@ class Players:
 
     async def get_rating(self, rating_type: RatingType =
     RatingType.AUTHORITY,
-                     rating_mode: RatingMode = RatingMode.ALL_TIME) -> dict:
+                     rating_mode: RatingMode = RatingMode.ALL_TIME) -> dict | None:
         """
         Retrieves the player rating based on the specified type and mode.
 

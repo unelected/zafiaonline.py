@@ -1,7 +1,7 @@
 import base64
 import json
 
-from typing import  Optional, List, TYPE_CHECKING
+from typing import  Optional, List, TYPE_CHECKING, Any
 from secrets import token_hex
 from msgspec.json import decode
 
@@ -18,8 +18,7 @@ from zafiaonline.utils.utils import get_user_attributes
 
 
 class Auth(Websocket):
-    def __init__(self, proxy: Optional[List[str]] = None, debug: bool =
-    False, client: Optional["Client"] = None) -> None:
+    def __init__(self, client: "Client", proxy: Optional[List[str]] = None) -> None:
         """
         Initializes the Client.
 
@@ -30,14 +29,13 @@ class Auth(Websocket):
         """
         self.client = client
         self.proxy = proxy or None
-        self.debug = debug
         self.token: Optional[str] = None
         self.user_id: Optional[str] = None
         self.device_id = None
         self.md5hash = Md5()
         self.user = ModelUser()
         self.server_config = ModelServerConfig()
-        super().__init__(client = self)
+        super().__init__(client = client) # тут может быть баг
 
     @ApiDecorators.login_required
     async def sign_in(self, email: str = "", password: str = "",
@@ -167,12 +165,12 @@ class Auth(Websocket):
 
 
 class User:
-    def __init__(self, client: Optional["Client"] = Auth):
+    def __init__(self, client: "Auth"):
         self.client = client
         if self.client:
             get_user_attributes(self.client)
 
-    async def send_server(self, data, remove_token_from_object = False):
+    async def send_server(self, data: dict[str, Any], remove_token_from_object: bool = False):
         await self.client.send_server(data, remove_token_from_object)
 
     async def listen(self):
@@ -235,7 +233,7 @@ class User:
         }
         await self.send_server(update_photo_request)
 
-    async def update_sex(self, sex: Sex) -> dict:
+    async def update_sex(self, sex: Sex) -> dict | Any:
         """
         Updates the user's gender.
 

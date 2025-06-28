@@ -6,7 +6,7 @@ import websockets
 import yaml
 
 from websockets import ConnectionClosedOK, connect, ConnectionClosed
-from typing import Any, Optional, TYPE_CHECKING
+from typing import Any, Optional, TYPE_CHECKING, List
 
 if TYPE_CHECKING:
     from zafiaonline.main import Client
@@ -28,7 +28,7 @@ class Config:
         connect_type (str): Protocol type, either 'ws' or 'wss'. Defaults to 'wss'.
 
     Args:
-        path (str, optional): Path to the YAML configuration file. Defaults to 'ws_conf.yaml'.
+        path (str, optional): Path to the YAML configuration file. Defaults to 'ws_config.yaml'.
 
     Raises:
         FileNotFoundError: If the YAML file is not found.
@@ -128,7 +128,7 @@ class Websocket:
             self.user_id = self.client.user_id
             self.token = self.client.token
 
-    async def create_connection(self, proxy: dict | None = None) -> None:
+    async def create_connection(self, proxy: List[str] | None = None) -> None:
         """
         Establishes a WebSocket connection if not already connected.
 

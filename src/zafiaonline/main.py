@@ -1,12 +1,15 @@
+from typing import List
+
+
 class Client:
     #TODO улучшить наследование
-    def __init__(self):
+    def __init__(self, proxy: List[str] | None = None):
         from zafiaonline.api_client.player_methods import Players
         from zafiaonline.api_client.global_chat_methods import GlobalChat
         from zafiaonline.api_client.user_methods import Auth, User
         from zafiaonline.api_client.room_methods import Room, MatchMaking
 
-        self.auth = Auth(client = self)
+        self.auth = Auth(client = self, proxy = proxy)
 
         self.sub_modules = {
             "auth": self.auth,

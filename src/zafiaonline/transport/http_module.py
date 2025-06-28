@@ -34,8 +34,11 @@ class Http:
         }
 
     @staticmethod
-    def generate_agent() -> dict:
-        return re.sub(r'\s*\[.*$', '', dalvik_ugen())
+    def generate_agent() -> str:
+        user_agent = dalvik_ugen()
+        if user_agent is None:
+            raise AttributeError
+        return re.sub(r'\s*\[.*$', '', user_agent)
 
     @staticmethod
     def __generate_random_token(length:int = 32) -> str:
@@ -50,16 +53,16 @@ class Http:
                                 params = params, headers = headers)
 
     async def mafia_request(self, method: Literal["get", "post", "put",
-                            "delete"], endpoint: str,
-                            params:Optional[dict[str,Any]]=None):
-        headers = self.__build_mafia_headers()
+                            "delete"], endpoint: Endpoints,
+                            params:Optional[dict[str,Any]]=None) -> Any:
+        headers: Dict[str, str] = self.__build_mafia_headers()
         return await (self.__mafia_request(
             self.mafia_url, method, endpoint, params, headers))
 
     async def api_mafia_request(self, method: Literal["get", "post", "put",
-                            "delete"], endpoint: str,
+                            "delete"], endpoint: Endpoints,
                             params:Optional[dict[str,Any]]=None):
-        headers = self.__build_api_mafia_headers()
+        headers: Dict[str, str] = self.__build_api_mafia_headers()
         return await (self.__mafia_request(
             self.api_mafia_url, method, endpoint, params, headers))
 
@@ -67,7 +70,7 @@ class Http:
     async def __mafia_request(self, url, method: Literal["get", "post", "put",
                             "delete"], endpoint: Endpoints,
                             params:Optional[dict[str,Any]]=None,
-                            headers:Optional[dict[str, str]] = None):
+                            headers:Optional[Dict[str, str]] = None) -> Any:
         url = urljoin(url, endpoint.value)
         return await self.__send_request(method, url, params, headers)
 
@@ -85,7 +88,7 @@ class Http:
             return url, True
         return url
 
-    def __create_headers(self, headers, user_id):
+    def __create_headers(self, headers, user_id) -> Dict:
         token = self.__generate_random_token()
         auth_raw = f"{user_id}=:={token}"
         auth_token = base64.b64encode(auth_raw.encode()).decode()
@@ -93,18 +96,19 @@ class Http:
         return headers
 
     def __build_zafia_headers(self, endpoint: ZafiaEndpoints, user_id:
-    str = uuid.uuid4()) -> tuple[str, Dict[str, str]]:
+    str = str(uuid.uuid4())) -> tuple[str, Dict[str, str]]:
         headers = self.zafia_headers.copy()
-        self.__build_headers(endpoint, user_id, headers)
+        url, headers = self.__build_headers(endpoint, user_id, headers)
+        return url, headers
 
     def __build_mafia_headers(self, user_id:
-    str = uuid.uuid4()) -> tuple[str, Dict[str, str]]:
-        headers = self.mafia_headers.copy()
-        headers = self.__create_headers(headers, user_id)
+    str = str(uuid.uuid4())) -> Dict[str, str]:
+        headers: dict = self.mafia_headers.copy()
+        headers: dict = self.__create_headers(headers, user_id)
         return headers
 
     def __build_api_mafia_headers(self, user_id:
-    str = uuid.uuid4()) -> tuple[str, Dict[str, str]]:
+    str = str(uuid.uuid4())) -> Dict[str, str]:
         #TODO: add new headers
         headers = self.mafia_headers.copy()
         headers = self.__create_headers(headers, user_id)
@@ -113,10 +117,9 @@ class Http:
     @staticmethod
     async def __send_request(method: Literal["get", "post", "put", "delete"]
                            , url: str, params:Optional[dict[str,Any]]=None,
-                           headers:Optional[dict[str, str]] = None) -> Dict[
-        str, Any]:
+                           headers:Optional[dict[str, str]] = None) -> Any:
         async with (aiohttp.ClientSession(headers=headers) as session):
-            method = method.lower()
+            method = method
             try:
                 async with getattr(session, method)(url, params = params
                                                     ) as response:
