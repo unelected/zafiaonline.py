@@ -92,7 +92,7 @@ class Room:
         received_data: dict | None = await self._get_validated_room_response(room_request)
 
         if received_data is None:
-            raise AttributeError
+            raise AttributeError("No received_data")
 
         return self._decode_room(received_data)
 
