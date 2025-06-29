@@ -5,7 +5,7 @@ from typing import Optional
 
 from zafiaonline.structures import PacketDataKeys, MessageType
 
-from configs.utils.utils import *
+from .configs.utils.utils import *
 
 
 class Farm:
