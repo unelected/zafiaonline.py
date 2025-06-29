@@ -177,7 +177,7 @@ elif MAX_PLAYERS == 12 and MODE == 2:
     #    DISABLED_ROLES.append(Roles.SHERIFF)
 
 def get_non_vip_titles(is_mafofarm: bool = False):
-    with open("./configs/utils/farm_titles.json", "r", encoding="utf-8") as f:
+    with open("./configs/utils/room_titles.json", "r", encoding="utf-8") as f:
         data = json.load(f)
     if is_mafofarm:
         mafofarm_titles = data["MAFOFARM_TITLES"]
