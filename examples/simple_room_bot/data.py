@@ -18,7 +18,7 @@ class RoomData:
     title: str | None = os.getenv("TITLE") or "title"
     max_players: int = int(os.getenv("MAX_PLAYERS") or 31)
     min_players: int = int(os.getenv("MIN_PLAYERS") or 18)
-    password: Optional[str] = os.getenv("PASSWORD") or None
+    password: Optional[str] = os.getenv("ROOM_PASSWORD") or None
     min_level: int = int(os.getenv("MIN_LEVEL") or 5)
     vip_enabled: bool = bool(os.getenv("VIP_ENABLED") or False)
     quantity_players_for_leave: int = int(os.getenv("QUANTITY_PLAYERS_FOR_LEAVE") or 3) # ENG: the number of players to be subtracted from ‘min_players’ and at this number of players the room will be reset
