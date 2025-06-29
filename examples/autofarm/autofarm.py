@@ -1,9 +1,10 @@
 import asyncio
-import traceback
 import sys
 import os
+import traceback
 
 from typing import Optional
+
 from zafiaonline.structures import PacketDataKeys, MessageType
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../..")))
@@ -111,7 +112,7 @@ class Farm:
     async def get_data_handle(self, callbacks):
         try:
             if not self.listener_account:
-                raise AttributeError
+                raise AttributeError("No listener acccount")
             data = await self.listener_account.listen()
         except TimeoutError:
             await self.stop_farm_action(callbacks)
@@ -329,7 +330,7 @@ class Farm:
 
     async def room_creation_response(self, callbacks, room):
         if not self.host:
-            raise AttributeError
+            raise AttributeError("No hosts")
         logging.info(f"{self.host.user.username} создал-(а) комнату с "
                      f"названием {room.title}")
         await self.join_all_players_to_room(callbacks)
@@ -541,7 +542,7 @@ class Farm:
         # Создаём основного игрока
         await self.create_main_player()
         if not self.mafia_main:
-            raise AttributeError
+            raise AttributeError("No main account")
         self.server = self.mafia_main.user.selected_language
 
         if await self.handle_cautiously(callbacks):
@@ -889,7 +890,8 @@ class Farm:
 
         if await self.prepare_players(callbacks) == "cautiously":
             if not callbacks:
-                raise AttributeError
+                #raise AttributeError("No callbacks")
+                return
             callbacks.get("cautiously", lambda: None)()
             return
         logging.info('go')
@@ -1061,7 +1063,7 @@ class Farm:
         bool]:
         listener = self.mafia_main
         if not listener:
-            raise AttributeError
+            raise AttributeError("No listener")
         try:
             result = await listener.get_user(user_id)
         except Exception as e:
@@ -1095,7 +1097,7 @@ class Farm:
         cautiously_wowa = await self.cautiously(ModeratorsIDs.wow1one_id,
                                                 callbacks)
         if not self.mafia_main:
-            raise AttributeError
+            raise AttributeError("No main account")
         if cautiously_wowa:
             user_language = self.mafia_main.user.selected_language.value
             if cautiously_wowa != user_language:
@@ -1116,7 +1118,7 @@ class Farm:
         cautiously_gercog = await self.cautiously(ModeratorsIDs.gercog_id,
                                                   callbacks)
         if not self.mafia_main:
-            raise AttributeError
+            raise AttributeError("No main account")
         if cautiously_gercog:
             user_language = self.mafia_main.user.selected_language.value
             if cautiously_gercog != user_language and warn:
@@ -1166,12 +1168,12 @@ class Farm:
                 return None
             try:
                 if not self.mafia_main:
-                    raise AttributeError
+                    raise AttributeError("No main account")
                 if VIP_ENABLED and not self.mafia_main.user.is_vip:
                     logging.info("у игрока нет випа")
                     sys.exit()
                 if not self.unavailable_hosts:
-                    raise AttributeError
+                    raise AttributeError("No main account")
                 self.unavailable_hosts.append(self.host.user.username)
                 min_players = await self.get_min_players()
                 room = await self.host.create_room(
@@ -1240,8 +1242,8 @@ class Farm:
 
     def vip_civilian_title(self):
         if not self.count:
-            raise AttributeError
-        title = get_vip_farm_title(count=self.count)
+            raise AttributeError("No count")
+        title, VIP_TITLES = get_vip_farm_title(count=self.count)
         self.count += 1
         if self.count >= len(VIP_TITLES):
             random.shuffle(VIP_TITLES)
@@ -1368,7 +1370,7 @@ class Farm:
             self.players[index].role = role
 
             if not self.mafia_main:
-                raise AttributeError
+                raise AttributeError("No main account")
             if account.client.user_id == self.mafia_main.user_id:
                 if await self.main_account_role_actions(role, account,
                                                         index, callbacks):
@@ -1417,7 +1419,7 @@ class Farm:
                          f"{'МАФОВ' if self.is_killing_mafia else 'МИРОВ'}")
 
         if not self.mafia_main or not self.listener_account:
-            raise AttributeError
+            raise AttributeError("No main or listener account")
         if self.mafia_main.user_id != self.listener_account.user_id:
             await self.disconnect_disabled_roles(role, account, index)
         await self.log_main_account_role()
@@ -1479,7 +1481,7 @@ class Farm:
 
     def get_all_wins(self):
         if not self.mafia_main:
-            raise AttributeError
+            raise AttributeError("No main account")
         return (self.mafia_main.user.wins_as_mafia +
                 self.mafia_main.user.wins_as_peaceful + 1)
 
@@ -1492,7 +1494,7 @@ class Farm:
 
     def get_games_info(self, number_of_games, work_time):
         if not self.mafia_main:
-            raise AttributeError
+            raise AttributeError("No main account")
         games_per_hour = ((number_of_games / work_time) * 60) * 60
         games_per_day = int(games_per_hour * 24)
         all_games = (self.mafia_main.user.played_games + 1)
@@ -1791,7 +1793,7 @@ class Farm:
     def is_listener(self, player):
         """Проверяет, является ли игрок слушателем."""
         if not self.listener_account:
-            raise AttributeError
+            raise AttributeError("No listener account")
         return (player.client.user.username ==
                 self.listener_account.user.username)
 

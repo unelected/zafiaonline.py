@@ -185,7 +185,6 @@ class RoomBot:
                 and nickname not in self.muted_players
                 and nickname != self.bot_username):
             delay = random.randint(2, 5)
-            
             asyncio.create_task(
                 self.delayed_send(f"привет, {nickname}", delay,
                                     nickname))

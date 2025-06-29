@@ -220,7 +220,8 @@ def get_random_mafofarm_title():
 
 def get_vip_farm_title(count):
     vip_titles = get_vip_titles()
-    return vip_titles[0][count]
+    VIP_TITLES = vip_titles
+    return vip_titles[0][count], VIP_TITLES
 
 
 def generate_title(title: str, room_password: str) -> str:
