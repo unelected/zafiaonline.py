@@ -1,11 +1,13 @@
 import asyncio
 import traceback
+import sys
+import os
 
 from typing import Optional
-
 from zafiaonline.structures import PacketDataKeys, MessageType
 
-from .configs.utils.utils import *
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../..")))
+from configs.utils.utils import *
 
 
 class Farm:
