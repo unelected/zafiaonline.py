@@ -199,9 +199,8 @@ class Websocket:
         if not headers:
             raise AttributeError
         if proxy:
-            self.ws = await connect(self.uri, user_agent_header=str(headers), proxy=proxy)
-        else:
-            self.ws = await connect(self.uri, user_agent_header=str(headers))
+            logger.warning("sorry this time proxy is not working")
+        self.ws = await connect(self.uri, user_agent_header=str(headers))
         self.alive = True
 
     async def _post_connect_setup(self) -> None:

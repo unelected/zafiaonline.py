@@ -1,7 +1,7 @@
 import asyncio
 import json
 
-from typing import Optional, List, TYPE_CHECKING
+from typing import Optional, List, TYPE_CHECKING, Any
 from msgspec.json import decode
 
 from zafiaonline.utils import Md5
@@ -28,6 +28,9 @@ class Room:
 
     async def get_data(self, data):
         return await self.client.get_data(data)
+
+    async def listen(self):
+        return await self.client.listen()
 
     @property
     def device_id(self):
@@ -382,7 +385,7 @@ class Room:
         await self.send_server(message_data)
         return None
 
-    async def add_client_to_room_list(self) -> None:
+    async def add_client_to_room_list(self) -> Any:
         """
         Sends a request to add the client to the list of available rooms.
 
@@ -391,12 +394,14 @@ class Room:
         in the game lobby.
 
         Returns:
-            None
+            Any
         """
         rooms_request: dict = {
             PacketDataKeys.TYPE: PacketDataKeys.ADD_CLIENT_TO_ROOMS_LIST
         }
         await self.send_server(rooms_request)
+
+        return await self.get_data(PacketDataKeys.ROOMS)
 
 
 class MatchMaking:
