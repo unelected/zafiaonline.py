@@ -12,7 +12,7 @@ class TestClient(unittest.IsolatedAsyncioTestCase):
 
     async def test_get_user(self):
         await self.client.create_connection()
-        get_user = await self.client.get_user(self.user_id)
+        get_user = await self.client.get_user(self.user_id) # ⚠️ temporary unwork
         self.assertIn(self.user_id, get_user[PacketDataKeys.USER][
             PacketDataKeys.OBJECT_ID])
 
