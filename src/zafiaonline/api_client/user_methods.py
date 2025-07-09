@@ -25,16 +25,15 @@ class Auth(Websocket):
         Parameters:
             proxy (Optional[List[str]]): List of proxy addresses. Defaults
             to an empty list.
-            debug (bool): Enables or disables debug mode. Defaults to False.
         """
-        self.client = client
-        self.proxy = proxy or None
+        self.client: "Client" = client
+        self.proxy: str | None = proxy or None
         self.token: Optional[str] = None
         self.user_id: Optional[str] = None
-        self.device_id = None
-        self.md5hash = Md5()
-        self.user = ModelUser()
-        self.server_config = ModelServerConfig()
+        self.device_id: str = ""
+        self.md5hash: "Md5" = Md5()
+        self.user: "ModelUser" = ModelUser()
+        self.server_configi: "ModelServerConfig" = ModelServerConfig()
         super().__init__(client = client) # тут может быть баг
 
     @ApiDecorators.login_required
@@ -57,7 +56,7 @@ class Auth(Websocket):
         self._warn_if_default_email(email)
         await self._ensure_connection()
 
-        auth_data = self._prepare_auth_data(email, password, token, user_id)
+        auth_data: dict = self._prepare_auth_data(email, password, token, user_id)
         await self.send_server(auth_data)
 
         return await self._process_auth_response()
@@ -73,7 +72,7 @@ class Auth(Websocket):
         Returns:
             None
         """
-        default_email = "email"
+        default_email: str = "email"
         if email.strip().lower() == default_email:
             logger.warning(
                 "Your email is literally 'email'. Please update your config "
@@ -104,7 +103,7 @@ class Auth(Websocket):
         Returns:
             dict: The authentication payload.
         """
-        self.device_id = token_hex(8)
+        self.device_id: str = token_hex(8)
         return {
             PacketDataKeys.DEVICE_ID: self.device_id,
             # Generates a random device ID
@@ -124,7 +123,7 @@ class Auth(Websocket):
             ModelUser: The authenticated user object if sign-in is successful.
             bool: False if authentication fails.
         """
-        received_data = await self.get_data(PacketDataKeys.USER_SIGN_IN)
+        received_data: dict | None = await self.get_data(PacketDataKeys.USER_SIGN_IN)
 
         if not received_data or received_data.get(
                 PacketDataKeys.TYPE) != PacketDataKeys.USER_SIGN_IN:
@@ -134,7 +133,7 @@ class Auth(Websocket):
         self._set_user_data(received_data)
         return self.user
 
-    def _set_user_data(self, received_data: dict):
+    def _set_user_data(self, received_data: dict) -> None:
         """
         Parses and stores user data from the sign-in response.
 
@@ -143,17 +142,17 @@ class Auth(Websocket):
             server info.
         """
         try:
-            user_data = received_data.get(PacketDataKeys.USER)
-            server_config_data = received_data.get(
+            user_data: str | None = received_data.get(PacketDataKeys.USER)
+            server_config_data: str | None = received_data.get(
                 PacketDataKeys.SERVER_CONFIG)
 
             if not user_data or not server_config_data:
                 logger.error("Missing user or server config data in response")
                 return
 
-            self.user = decode(json.dumps(user_data).encode(), type=ModelUser)
-            self.server_config = decode(json.dumps(server_config_data),
-                                        type=ModelServerConfig)
+            self.user: ModelUser = decode(json.dumps(user_data).encode(), type = ModelUser)
+            self.server_config: ModelServerConfig = decode(json.dumps(server_config_data),
+                                        type = ModelServerConfig)
 
             self.token = self.user.token
             self.user_id = self.user.user_id
@@ -166,7 +165,7 @@ class Auth(Websocket):
 
 class User:
     def __init__(self, client: "Auth"):
-        self.client = client
+        self.client: "Auth" = client
         if self.client:
             get_user_attributes(self.client)
 

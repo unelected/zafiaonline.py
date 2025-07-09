@@ -1,6 +1,7 @@
 from enum import Enum
 from typing import Any
 
+
 class PacketDataKeys(str, Enum):
     ACCEPTED = "a"
     ACCEPT_MESSAGES = "ac"

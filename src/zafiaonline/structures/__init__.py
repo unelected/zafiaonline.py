@@ -1,22 +1,26 @@
-from zafiaonline.structures.packet_data_keys import PacketDataKeys, Renaming
+from zafiaonline.structures.packet_data_keys import PacketDataKeys, HttpsApiKeys, ZafiaApiKeys, Endpoints, ZafiaEndpoints, Renaming
 from zafiaonline.structures.enums import (
     Sex, Roles, Languages, RatingMode, RatingType,
     ActivityType, RoomModelType, FriendInRoomType, ProfilePhotoType,
     MessageType, MessageStyles, MafiaLanguages, MethodGetFavourites
 )
 from zafiaonline.structures.models import (
-    ModelUser, ModelServerConfig, ModelRoom,
+    ModelUser, ModelOtherUser, ModelServerConfig, ModelRoom,
     ModelShortUser, ModelFriend, ModelMessage, ModelGUI
 )
 
 __all__ = (
     # Constants
     "PacketDataKeys",
+    "HttpsApiKeys",
+    "ZafiaApiKeys",
+    "Endpoints",
+    "ZafiaEndpoints",
     "Renaming",
 
     # Enums
-    "Languages",
     "Sex",
+    "Languages",
     "Roles",
     "RatingMode",
     "RatingType",
@@ -27,11 +31,13 @@ __all__ = (
     "MessageType",
     "MessageStyles",
     "MafiaLanguages",
+    "MethodGetFavourites",
 
     # Models
     "ModelUser",
-    "ModelRoom",
+    "ModelOtherUser",
     "ModelServerConfig",
+    "ModelRoom",
     "ModelShortUser",
     "ModelFriend",
     "ModelMessage",

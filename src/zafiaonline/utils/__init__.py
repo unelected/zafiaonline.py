@@ -1,6 +1,6 @@
 from zafiaonline.utils.exceptions import (
     ListenDataException,
-    ListenExampleErrorException, BanError
+    ListenExampleErrorException, BanError, LoginError
 )
 from zafiaonline.utils.md5hash import Md5
 from zafiaonline.utils.utils_for_send_messages import Utils
@@ -14,6 +14,7 @@ __all__ = (
     "ListenDataException",
     "ListenExampleErrorException",
     "BanError",
+    "LoginError",
 
     # Utils
     "Utils",

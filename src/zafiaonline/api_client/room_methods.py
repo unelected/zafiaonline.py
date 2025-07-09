@@ -60,7 +60,7 @@ class Room:
             title: str = "",
             max_players: int = 8,
             min_players: int = 5,
-            password: Optional[str] = None,
+            password: str | None = None,
             min_level: int = 1,
             vip_enabled: bool = False
     ) -> ModelRoom | None:
@@ -86,7 +86,7 @@ class Room:
             ModelRoom: The created room object.
         """
         roles: list[int] = selected_roles or [0]
-        room_request = self._build_room_request(roles, title,
+        room_request: dict = self._build_room_request(roles, title,
                                                 max_players, min_players,
                                                 password, min_level,
                                                 vip_enabled)
@@ -135,7 +135,7 @@ class Room:
         }
 
     async def _get_validated_room_response(self, room_request: dict) -> \
-    Optional[dict]:
+    dict | None:
         """
         Sends the room creation request and ensures a valid response is
         received.
@@ -149,12 +149,12 @@ class Room:
         Returns:
             Optional[dict]: The validated response if successful, else None.
         """
-        max_attempts = 3
-        attempt = 0
+        max_attempts: int = 3
+        attempt: int = 0
 
         while attempt <= max_attempts:
             try:
-                received_data = await self.get_data(
+                received_data: dict | None = await self.get_data(
                     PacketDataKeys.ROOM_CREATED)
                 if isinstance(received_data, dict) and received_data.get(
                         PacketDataKeys.TYPE) == PacketDataKeys.ROOM_CREATED:
@@ -172,7 +172,7 @@ class Room:
         return None
 
     @staticmethod
-    def _decode_room(received_data: dict) -> Optional[ModelRoom]:
+    def _decode_room(received_data: dict) -> ModelRoom | None:
         """
         Decodes the received room data into a ModelRoom object.
 
@@ -190,16 +190,16 @@ class Room:
                     return None
 
                 return decode(json.dumps(received_data[PacketDataKeys.ROOM]),
-                          type=ModelRoom)
+                          type = ModelRoom)
             return None
 
         except TypeError:
             logger.error(f"Failed to decode room data: data is None",
-                          exc_info=True)
+                          exc_info = True)
             return None
 
         except Exception as e:
-            logger.error(f"Failed to decode room data: {e}", exc_info=True)
+            logger.error(f"Failed to decode room data: {e}", exc_info = True)
             return None
 
     async def remove_player(self, room_id: str) -> None:
@@ -233,7 +233,7 @@ class Room:
     async def create_player(self, room_id: str,
                             room_model_type: RoomModelType =
                             RoomModelType.NOT_MATCHMAKING_MODE)\
-                            -> Optional[dict]:
+                            -> dict | None:
         """
         Creates a player in the specified room.
 
@@ -255,8 +255,8 @@ class Room:
         }
         await self.send_server(create_player_request)
         await asyncio.sleep(.01)
-        data = await self.get_data(PacketDataKeys.ROOM_STATISTICS)
-        attempts = 0
+        data: dict | None = await self.get_data(PacketDataKeys.ROOM_STATISTICS)
+        attempts: int = 0
         while data is None and attempts < 3:
             await self.send_server(create_player_request)
             try:
@@ -270,8 +270,8 @@ class Room:
                 break
         if data is None:
             raise AttributeError
-        player_list = data.get(PacketDataKeys.PLAYERS, [])
-        room_messages = data.get(PacketDataKeys.MESSAGES, [])
+        player_list: list = data.get(PacketDataKeys.PLAYERS, [])
+        room_messages: list = data.get(PacketDataKeys.MESSAGES, [])
 
         return {"player_list": player_list, "room_messages": room_messages}
 
@@ -364,7 +364,7 @@ class Room:
             - If the content is empty, the function prevents sending to
             avoid spam or bans.
         """
-        utils = Utils()
+        utils: "Utils" = Utils()
         if not utils.validate_message_content(content):
             return None
         content = utils.clean_content(content)

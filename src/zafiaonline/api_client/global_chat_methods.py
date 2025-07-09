@@ -14,7 +14,7 @@ class GlobalChat:
         self.client = client
         if self.client:
             get_user_attributes(self.client)
-        self.sent_messages = SentMessages()
+        self.sent_messages: "SentMessages" = SentMessages()
 
     async def send_server(self, data, remove_token_from_object = False):
         await self.client.send_server(data, remove_token_from_object)
@@ -68,7 +68,7 @@ class GlobalChat:
             - If the content is empty, the function prevents sending to
             avoid spam or bans.
         """
-        utils = Utils()
+        utils: "Utils" = Utils()
         if not utils.validate_message_content(content):
             return None
         content = utils.clean_content(content)

@@ -43,14 +43,14 @@ class Players:
         await self.send_server(friends_request)
 
         await asyncio.sleep(.01)
-        received_data = await self.get_data(PacketDataKeys.FRIENDSHIP_LIST)
+        received_data: dict | None = await self.get_data(PacketDataKeys.FRIENDSHIP_LIST)
         if received_data is None:
             raise AttributeError
 
         friends: List[ModelFriend] = []
 
         for friend in received_data[PacketDataKeys.FRIENDSHIP_LIST]:
-            friends.append(decode(json.dumps(friend), type=ModelFriend))
+            friends.append(decode(json.dumps(friend), type = ModelFriend))
         return friends
 
     async def get_friend_invite_list(self):
@@ -61,7 +61,7 @@ class Players:
         await asyncio.sleep(.01)
         return await self.get_data(PacketDataKeys.FRIENDS_IN_INVITE_LIST)
 
-    async def invite_friend(self, player_id):
+    async def invite_friend(self, player_id: str):
         invite_request: dict = {
             PacketDataKeys.TYPE: PacketDataKeys.SEND_FRIEND_INVITE_TO_ROOM,
             PacketDataKeys.USER_OBJECT_ID: player_id
@@ -187,7 +187,7 @@ class Players:
         await self.send_server(private_messages_request)
 
         await asyncio.sleep(.01)
-        received_messages = await self.get_data(
+        received_messages: dict | None = await self.get_data(
             PacketDataKeys.PRIVATE_CHAT_LIST_MESSAGES
         )
         if received_messages is None:
@@ -201,8 +201,8 @@ class Players:
         return messages
 
     async def get_rating(self, rating_type: RatingType =
-    RatingType.AUTHORITY,
-                     rating_mode: RatingMode = RatingMode.ALL_TIME) -> dict | None:
+                        RatingType.AUTHORITY,
+                        rating_mode: RatingMode = RatingMode.ALL_TIME) -> dict | None:
         """
         Retrieves the player rating based on the specified type and mode.
 
@@ -239,7 +239,7 @@ class Players:
             - If the content is empty, the function prevents sending to
             avoid spam or bans.
         """
-        utils = Utils()
+        utils: "Utils" = Utils()
         if not utils.validate_message_content(content):
             return None
         content = utils.clean_content(content)
@@ -285,12 +285,12 @@ class Players:
         await self.send_server(user_payload)
 
         try:
-            user_data = await self.get_data(PacketDataKeys.USER_PROFILE)
+            user_data: dict | None = await self.get_data(PacketDataKeys.USER_PROFILE)
             if not user_data:
                 logger.error(f"Error: get_data returned {user_data}")
                 return None
             return user_data
         except Exception as e:
             logger.error(f"Error retrieving user {user_id} data: {e}",
-                          exc_info=True)
+                          exc_info = True)
             return None

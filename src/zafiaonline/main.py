@@ -8,7 +8,7 @@ class Client:
 
         self.auth = Auth(client = self, proxy = proxy)
 
-        self.sub_modules = {
+        self.sub_modules: dict[str, Auth | Players | GlobalChat | User | Room | MatchMaking] = {
             "auth": self.auth,
             "user": User(client=self.auth),
             "players": Players(client = self.auth),
@@ -17,7 +17,7 @@ class Client:
             "matchmaking": MatchMaking(client = self.auth),
         }
 
-    def __getattr__(self, name):
+    def __getattr__(self, name: str):
         for sub_name, sub in self.sub_modules.items():
             if hasattr(sub, name):
                 return getattr(sub, name)

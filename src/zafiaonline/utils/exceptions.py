@@ -1,3 +1,8 @@
+from typing import Type
+
+from zafiaonline.main import Client
+
+
 class ListenDataException(Exception):
     """
     Raised when an error occurs while receiving data from the WebSocket
@@ -8,7 +13,7 @@ class ListenDataException(Exception):
     disconnections that were not handled properly.
     """
 
-    def __init__(self, message="An error occurred while receiving data from "
+    def __init__(self, message: str = "An error occurred while receiving data from "
                                "the listener."):
         super().__init__(message)
 
@@ -23,11 +28,11 @@ class ListenExampleErrorException(Exception):
     handling.
     """
 
-    def __init__(self, message="An example listening error occurred."):
+    def __init__(self, message: str = "An example listening error occurred."):
         super().__init__(message)
 
 class BanError(Exception):
-    def __init__(self, data = None, client = None, auth = None):
+    def __init__(self, client: "Client", data: dict = {}, auth: Type | None = None):
         from zafiaonline.structures.packet_data_keys import PacketDataKeys
 
 
@@ -35,15 +40,16 @@ class BanError(Exception):
         self.auth = auth
 
         # Ensure data is not None before accessing it
-        reason = data[PacketDataKeys.REASON.value] if data else ("unknown "
-                                                                 "reason")
+        reason: str = data[PacketDataKeys.REASON.value]
+
+        if self.auth is None or self.client is None:
+            raise AttributeError
         if not self.auth.user or not self.client.user:
             raise AttributeError
         username = (self.client.user.username or self.auth.user.username or
                     "UnknownUser")
-
-        ban_time_seconds: int = int(data[
-                                      PacketDataKeys.TIME_SEC_REMAINING.value])
+        time: str | int = data[PacketDataKeys.TIME_SEC_REMAINING.value]
+        ban_time_seconds: int = int(time)
 
         ban_time = round(ban_time_seconds / 3600, 1)
 

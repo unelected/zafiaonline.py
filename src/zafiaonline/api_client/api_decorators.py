@@ -20,15 +20,18 @@ class ApiDecorators:
         async def wrapper(cls, player_id, player_nickname, *args, **kwargs):
             from zafiaonline.api_client.player_methods import (Players,
                                                                PacketDataKeys)
-            players = Players()
+            players: "Players" = Players()
+
             if player_id is None:
-                result = await players.search_player(player_nickname)
-                users = result[PacketDataKeys.USERS]
+                result: dict | None = await players.search_player(player_nickname)
+                if result is None:
+                    raise ValueError
+                users: dict = result[PacketDataKeys.USERS]
                 if not users:
                     raise ValueError(
                         f"Player with nickname '{player_nickname}' not found")
-                user = users[0]
-                player_id = user[PacketDataKeys.OBJECT_ID]
+                user: dict = users[0]
+                player_id: str = user[PacketDataKeys.OBJECT_ID]
             return await func(cls, player_id, player_nickname, *args, **kwargs)
 
         return wrapper
@@ -37,10 +40,10 @@ class ApiDecorators:
     def login_required(func: Callable):
         @functools.wraps(func)
         def wrapper(self, *args, **kwargs) -> Union[ModelUser, bool]:
-            email = kwargs.get("email", "")
-            password = kwargs.get("password", "")
-            token = kwargs.get("token", "")
-            user_id = kwargs.get("user_id", "")
+            email: str = kwargs.get("email", "")
+            password: str = kwargs.get("password", "")
+            token: str = kwargs.get("token", "")
+            user_id: str = kwargs.get("user_id", "")
 
             if not email and password:
                 if not token and user_id:
@@ -58,8 +61,10 @@ class ApiDecorators:
         players = Players()
         @functools.wraps(func)
         async def wrapper(self, room_id: str, *args, **kwargs):
-            profile = await players.get_user(self.client.user.user_id)
-            user_room_id = profile.get(PacketDataKeys.ROOM, {}).get(
+            profile: dict | None = await players.get_user(self.client.user.user_id)
+            if profile is None:
+                raise ValueError
+            user_room_id: str = profile.get(PacketDataKeys.ROOM, {}).get(
                 PacketDataKeys.OBJECT_ID)
 
             if not user_room_id:
@@ -95,12 +100,12 @@ class ApiDecorators:
         def wrapper(self, result, *args, **kwargs):
             from zafiaonline.structures.packet_data_keys import PacketDataKeys
             if result.get(PacketDataKeys.TYPE) == PacketDataKeys.MESSAGE:
-                message = result.get(PacketDataKeys.MESSAGE, {})
-                message_type = message.get(PacketDataKeys.MESSAGE_TYPE)
+                message: dict = result.get(PacketDataKeys.MESSAGE, {})
+                message_type: int | None = message.get(PacketDataKeys.MESSAGE_TYPE)
 
                 if message_type == MessageType.MAIN_TEXT:
-                    user = message.get(PacketDataKeys.USER, {})
-                    content = message.get(PacketDataKeys.TEXT, "")
+                    user: dict = message.get(PacketDataKeys.USER, {})
+                    content: str = message.get(PacketDataKeys.TEXT, "")
 
                     # Save user data
                     self.user_id = user.get(PacketDataKeys.OBJECT_ID)

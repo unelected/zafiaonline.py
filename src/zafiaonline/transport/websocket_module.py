@@ -1,12 +1,14 @@
 import json
 import asyncio
 import sys
+import os
 
 import websockets
 import yaml
 
-from websockets import ConnectionClosedOK, connect, ConnectionClosed
-from typing import Any, Optional, TYPE_CHECKING
+from websockets.asyncio.client import connect
+from websockets.exceptions import ConnectionClosedOK,  ConnectionClosed
+from typing import Any, Optional, TYPE_CHECKING, Union
 from importlib.resources import files, as_file
 
 if TYPE_CHECKING:
@@ -87,7 +89,7 @@ class Config:
 
 class Websocket:
     #TODO сделать метакласс
-    def __init__(self, client: Optional["Client"] = None) -> None:
+    def __init__(self, client: "Client") -> None:
         """
         Initializes the WebSocket client for handling real-time communication.
 
@@ -108,7 +110,7 @@ class Websocket:
         config = Config()
         self.client = client
         self.data_queue = asyncio.Queue()
-        self.alive: Optional[bool] = None
+        self.alive: bool | None = None
         self.ws = None
         self.uri = f"{config.connect_type}://{config.address}:{config.port}"
         self.listener_task: Optional[asyncio.Task] = None
@@ -198,9 +200,9 @@ class Websocket:
         }
         if not headers:
             raise AttributeError
-        if proxy:
-            logger.warning("sorry this time proxy is not working")
-        self.ws = await connect(self.uri, user_agent_header=str(headers))
+        #if proxy:
+        #    os.environ['wss_proxy'] = proxy
+        self.ws = await connect(self.uri, user_agent_header = str(headers), proxy = proxy)
         self.alive = True
 
     async def _post_connect_setup(self) -> None:
@@ -312,7 +314,7 @@ class Websocket:
         try:
             if not self.ws:
                 raise AttributeError
-            await self.ws.close(code=1000)
+            await self.ws.close(code = 1000)
             logger.debug("WebSocket connection closed gracefully.")
         except ConnectionClosed as e:
             logger.debug(f"Connection already closed: {e}")
@@ -485,7 +487,7 @@ class Websocket:
                 logger.error(f"Unexpected error in listen: {e}")
         return None
 
-    async def get_data(self, mafia_type: str) -> Optional[dict[str, Any]]:
+    async def get_data(self, mafia_type: str) -> dict[str, Any] | None:
         """
         Waits for and returns a WebSocket event matching the expected mafia type.
 
@@ -527,13 +529,13 @@ class Websocket:
         """
         while self.alive:
             try:
-                data = await asyncio.wait_for(self.listen(), timeout = 10)
+                data: dict[str, Any] | None = await asyncio.wait_for(self.listen(), timeout = 10)
 
                 if data is None:
                     logger.error("Data is None. Cannot proceed.")
                     raise ValueError("Received None data.")
 
-                event = data.get(PacketDataKeys.TYPE)
+                event: str | None = data.get(PacketDataKeys.TYPE)
 
                 if event is None and PacketDataKeys.TIME not in data:
                     logger.error(
@@ -542,11 +544,11 @@ class Websocket:
                     )
                     return None
 
-                if event in [mafia_type, "empty", PacketDataKeys.ERROR_OCCUR]:
+                if event in [mafia_type, PacketDataKeys.ERROR_OCCUR]: # "empty"
                     return data
 
                 if event == PacketDataKeys.USER_BLOCKED:
-                    raise BanError(data, self.client)
+                    raise BanError(self.client, data)
 
                 logger.debug(
                     f"Unexpected event type received: {event}. Ignoring...")
@@ -570,7 +572,7 @@ class Websocket:
                 raise
         return None
 
-    async def safe_get_data(self, key, retries = 2, delay=2) -> dict:
+    async def safe_get_data(self, key: str, retries: int = 2, delay: int = 2) -> dict[str, Any]:
         """
         Attempts to retrieve data associated with the given key, retrying on failure.
 
@@ -592,7 +594,7 @@ class Websocket:
         """
         for _ in range(retries):
             try:
-                data = await self.get_data(key)
+                data: dict[str, Any] | None = await self.get_data(key)
                 if data is not None:
                     return data
             except Exception as e:
@@ -651,7 +653,7 @@ class Websocket:
         """
         logger.warning("Attempting to reconnect...")
 
-        max_attempts = 5
+        max_attempts: int = 5
         for attempt in range(max_attempts):
             await self._attempt_disconnect()
 
@@ -687,7 +689,7 @@ class Websocket:
     async def _try_create_connection(self) -> bool:
         """Attempts to create a new WebSocket connection with a timeout."""
         try:
-            await asyncio.wait_for(self.create_connection(), timeout=10)
+            await asyncio.wait_for(self.create_connection(), timeout = 10)
             return True
         except asyncio.TimeoutError:
             logger.error("Timeout while trying to reconnect.")
@@ -701,7 +703,7 @@ class Websocket:
         Handles actions to be performed upon establishing a WebSocket
         connection.
 
-        **Behavior**
+        Behavior
             - Sends a handshake message to confirm connection.
         """
         try:
@@ -718,7 +720,7 @@ class Websocket:
         """
         Listens for incoming WebSocket messages and adds them to the queue.
 
-        **Behavior**
+        Behavior
             - Continuously receives messages while the connection is active.
             - Handles various disconnection scenarios and attempts
             reconnection if necessary.
@@ -727,7 +729,7 @@ class Websocket:
             try:
                 if not self.ws:
                     raise AttributeError
-                message = await self.ws.recv()
+                message: Union[str, bytes] = await self.ws.recv()
                 await self.data_queue.put(message)
 
             except ConnectionClosedOK:
