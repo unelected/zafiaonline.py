@@ -1959,7 +1959,7 @@ class Farm:
         слишком много."""
         if (
                 (MAX_PLAYERS, MODE) == (8, 2)
-                and days > 0
+                and days > 1
                 and Roles.INFORMER in self.room_roles
                 and Roles.MAFIA not in DISABLED_ROLES
         ):
