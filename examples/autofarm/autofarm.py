@@ -1172,8 +1172,6 @@ class Farm:
                 if VIP_ENABLED and not self.mafia_main.user.is_vip:
                     logging.info("у игрока нет випа")
                     sys.exit()
-                if not self.unavailable_hosts:
-                    raise AttributeError("No main account")
                 self.unavailable_hosts.append(self.host.user.username)
                 min_players = await self.get_min_players()
                 room = await self.host.create_room(
