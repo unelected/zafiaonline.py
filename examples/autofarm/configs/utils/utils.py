@@ -10,7 +10,7 @@ import pyfiglet
 
 from typing import List, Union
 from dataclasses import dataclass, field
-
+from pathlib import Path
 from zafiaonline.structures.models import Roles
 from zafiaonline.main import Client
 
@@ -28,9 +28,9 @@ class Player:
         return f"{self.client.user.username}"
 
 class ModeratorsIDs:
-    gercog_id = "d0770692-a843-4350-931f-37251d44a95d"
-    billy_id = "user_5c7eb85c1694f002982wet"
-    wow1one_id = "user_57e6cce718056"
+    gercog_id: str = "d0770692-a843-4350-931f-37251d44a95d"
+    billy_id: str = "user_5c7eb85c1694f002982wet"
+    wow1one_id: str = "user_57e6cce718056"
 
 UPTIME: int = int(time.time())
 
@@ -38,7 +38,7 @@ logging.basicConfig(level = logging.INFO,
                         format = "%(asctime)s - %(levelname)s - %(message)s",
                         datefmt = "%H:%M:%S")
 
-ascii_banner = pyfiglet.figlet_format("autofarm", font="slant")
+ascii_banner = pyfiglet.figlet_format("autofarm", font = "slant")
 print(ascii_banner)
 
 while True:
@@ -50,7 +50,10 @@ while True:
     if not config:
         config = 'default'
     try:
-        with (open(f'./configs/{config}.json', 'r', encoding = 'utf-8-sig')
+        # Создаём абсолютный путь
+        config_path = Path('./configs') / f'{config}.json'
+        config_path = config_path.resolve()
+        with (open(config_path, 'r', encoding = 'utf-8-sig')
               as cfg):
             config = json.load(cfg)
     except FileNotFoundError:
@@ -177,7 +180,9 @@ elif MAX_PLAYERS == 12 and MODE == 2:
     #    DISABLED_ROLES.append(Roles.SHERIFF)
 
 def get_non_vip_titles(is_mafofarm: bool = False):
-    with open("./configs/utils/room_titles.json", "r", encoding="utf-8") as f:
+    config_path = Path('./configs') / 'utils/room_titles.json'
+    config_path = config_path.resolve()
+    with open(config_path, "r", encoding="utf-8") as f:
         data = json.load(f)
     if is_mafofarm:
         mafofarm_titles = data["MAFOFARM_TITLES"]
@@ -186,7 +191,9 @@ def get_non_vip_titles(is_mafofarm: bool = False):
     return farm_titles
 
 def get_vip_titles():
-    with open("./configs/utils/vip_titles.json", "r", encoding="utf-8") as f:
+    config_path = Path('./configs') / 'utils/vip_titles.json'
+    config_path = config_path.resolve()
+    with open(config_path, "r", encoding="utf-8") as f:
         data = json.load(f)
     # здесь должны были быть песни, но не судьба
 
