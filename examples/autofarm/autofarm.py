@@ -702,7 +702,7 @@ class Farm:
             if (len(alive_team) == last_alive_count and len(team)
                     != last_alive_count):
                 return alive_team[0]
-            return None
+        return None
 
     def get_player_role(self, player_role = Roles.SHERIFF):
         if CONNECT_DISABLED_ROLES:
