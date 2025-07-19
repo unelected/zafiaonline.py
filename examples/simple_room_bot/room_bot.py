@@ -65,7 +65,7 @@ class RoomBot:
         if len(self.players) >= (RoomData.min_players -
                                  RoomData.quantity_players_for_leave):
             logging.info("слишком много игроков, пересоздаем")
-            await self.recreate_room()
+            await self.recreate_room(True)
         logging.info(f"{username} вошёл")
 
     @staticmethod
@@ -76,15 +76,17 @@ class RoomBot:
         username = user[PacketDataKeys.USERNAME]
         return user_id, username
 
-    async def recreate_room(self):
+    async def recreate_room(self, is_fast_rejoin: bool = True):
         await client.remove_player(self.room_id)
-        await asyncio.sleep(2)
+        if is_fast_rejoin is False:
+            await asyncio.sleep(10)
         await self.create_room_and_join()
         asyncio.create_task(self.clear_past_players())
 
     async def clear_past_players(self):
         await asyncio.sleep(30)
         self.past_players.clear()
+        self.players.clear()
 
     async def create_room_and_join(self):
         room = await client.create_room(
@@ -99,7 +101,8 @@ class RoomBot:
 
     async def exit_handle(self, result):
         user_id = result[PacketDataKeys.USER_OBJECT_ID]
-        self.players.remove(user_id)
+        if user_id in self.players:
+            self.players.remove(user_id)
 
     async def chat_sender(self):
         while True:
@@ -122,14 +125,14 @@ class RoomBot:
         return None
 
     async def mute_handle(self, my_message):
-        parts = my_message.split(maxsplit=1)
+        parts = my_message.split(maxsplit = 1)
         if len(parts) > 1:
             nickname = parts[1]
             self.muted_players.append(nickname)
             logging.info(f"игрок {nickname} в муте")
 
     async def unmute_handle(self, my_message):
-        parts = my_message.split(maxsplit=1)
+        parts = my_message.split(maxsplit = 1)
         if len(parts) > 1:
             nickname = parts[1]
             self.muted_players.remove(nickname)
@@ -169,7 +172,7 @@ class RoomBot:
         results = message[PacketDataKeys.TEXT]
         kick_vote, not_kick = map(int, results.split('|'))
         if kick_vote > not_kick:
-            logging.info("бота выгнали :|\n пересоздаем")
+            logging.info("бота выгнали :|\n    пересоздаем")
             await self.recreate_room()
 
     async def leave_message_handle(self, message):
