@@ -10,9 +10,9 @@ from zafiaonline.main import Client
 
 
 class AccountData: 
-    load_dotenv("example.env")
-    EMAIL = os.getenv("EMAIL")
-    PASSWORD = os.getenv("PASSWORD")
+    EMAIL: str = os.getenv("EMAIL") or "email"
+    PASSWORD: str = os.getenv("PASSWORD") or "password"
+    print(EMAIL, PASSWORD)
 
 class Main:
     @staticmethod
@@ -114,6 +114,7 @@ class UserAgreement:
 
 
 if __name__ == "__main__":
+    load_dotenv("example.env")
     Mafia = Client()
     main = Main()
     try:

@@ -11,6 +11,9 @@ from zafiaonline.structures.packet_data_keys import (ZafiaEndpoints,
 from zafiaonline.utils.logging_config import logger
 
 class ZafiaApi(HttpWrapper):
+    def __init__(self, proxy: str | None = None):
+        super().__init__(proxy)
+
     @staticmethod
     def with_user_id(func):
         @functools.wraps(func)

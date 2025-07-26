@@ -7,8 +7,9 @@ from zafiaonline.utils.md5hash import Md5
 
 
 class HttpsApi(HttpWrapper):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, proxy: str | None = None):
+        super().__init__(proxy)
+        # TODO DRY proxy
         self.md5hash: "Md5" = Md5()
 
     async def remove_user_account_request(self, language: MafiaLanguages =

@@ -5,16 +5,20 @@ class Client:
         from zafiaonline.api_client.global_chat_methods import GlobalChat
         from zafiaonline.api_client.user_methods import Auth, User
         from zafiaonline.api_client.room_methods import Room, MatchMaking
+        from zafiaonline.api_client.https_api import HttpsApi
+        from zafiaonline.api_client.zafia_api import ZafiaApi
 
         self.auth = Auth(client = self, proxy = proxy)
 
-        self.sub_modules: dict[str, Auth | Players | GlobalChat | User | Room | MatchMaking] = {
+        self.sub_modules: dict[str, Auth | Players | GlobalChat | User | Room | MatchMaking | HttpsApi | ZafiaApi] = {
             "auth": self.auth,
-            "user": User(client=self.auth),
+            "user": User(client = self.auth),
             "players": Players(client = self.auth),
             "global_chat": GlobalChat(client = self.auth),
             "room": Room(client = self.auth),
             "matchmaking": MatchMaking(client = self.auth),
+            "https": HttpsApi(proxy = proxy),
+            "zafia": ZafiaApi(proxy = proxy),
         }
 
     def __getattr__(self, name: str):

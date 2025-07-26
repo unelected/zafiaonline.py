@@ -257,6 +257,7 @@ class PacketDataKeys(str, Enum):
     USER_SENDER_OBJECT_ID = "uso"
     USER_SET_SERVER_LANGUAGE = "usls"
     USER_SET_USERNAME_ERROR = "ueue"
+    USER_ENERGY = "ue"
     USER_SIGN_IN = "usi"
     USER_USING_DOUBLE_ACCOUNT = "uuda"
     VEST = "v"
@@ -277,6 +278,8 @@ class PacketDataKeys(str, Enum):
     MATCH_MAKING_SCORE = "mmscr"
     MATCH_MAKING_ADD_USER = "mmauk"
     MATCH_MAKING_REMOVE_USER = "mmruk"
+    MATCH_MAKING_LIST_KEY = "mmblk"
+    MATCH_MAKING_USER_IN_ROOM = "mmuir"
     MATCH_MAKING_BUCKET_RESPONSE_PLAYERS_AMOUNT = "mmbpa"
     VOTE_PLAYER_LIST = "vpl"
     PRIVATE_CHAT_LIST_MESSAGES = "pclms"
@@ -284,7 +287,18 @@ class PacketDataKeys(str, Enum):
     USER_ACCOUNT_COINS = "uac"
     SILVER_COINS = "scns"
     GOLD_COINS = "gcns"
-    DECORATORS = "dcrs"
+    DECORATIONS = "dcrs"
+    SAME_ROOM = "isr"
+    BLOCKED_USER_INFO = "bui"
+    DECORATION_ID = "did"
+    DECORATION_TYPE = "dt"
+    DECORAION_PARARAMETER = "dp"
+    USER_CURRENET_ENERGY_AMOUNT = "ucea"
+    USER_MAX_FREE_ENERGY_AMOUNT = "umfea"
+    USER_ENERGY_AMOUNT_FIRST_TIMER = "ueaft"
+    USER_ENERGY_AMOUNT_NEXT_TIMERS = "ueant"
+    CREATOR_OBJECT_ID = "rco"
+
 
 
     # MARKET
@@ -350,59 +364,121 @@ class ZafiaEndpoints(str, Enum):
 
 
 class Renaming(dict, Enum):
-    USER = {"user_id": "o", "username": "u",
-            "updated": "up", "photo": "ph", "experience": "ex",
-            "next_level_experience": "nle",
-            "previous_level_experience": "ple", "level": "l",
-            "gold": "g", "money": "mo",
-            "is_vip": "v", "vip_updated": "vupd",
-            "played_games": "pg", "score": "sc",
-            "sex": "s", "wins_as_killer": "wik",
-            "wins_as_mafia": "wim", "wins_as_peaceful": "wip",
-            "token": "t", "accept_messages": "ac",
-            "rank": "r", "selected_language": "slc",
-            "online": "on", "player_role_statistics": "prst",
-            "match_making_score": "mmscr"
+    USER = {
+        "user_id": "o", "username": "u",
+        "updated": "up", "photo": "ph", "experience": "ex",
+        "next_level_experience": "nle",
+        "previous_level_experience": "ple", "level": "l",
+        "gold": "g", "money": "mo",
+        "is_vip": "v", "vip_updated": "vupd",
+        "played_games": "pg", "score": "sc",
+        "sex": "s", "wins_as_killer": "wik",
+        "wins_as_mafia": "wim", "wins_as_peaceful": "wip",
+        "token": "t", "accept_messages": "ac",
+        "rank": "r", "selected_language": "slc",
+        "online": "on", "player_role_statistics": "prst",
+        "match_making_score": "mmscr"
+        }
+
+    USER_NEW_API = {
+        "user_id": "o", "username": "u",
+        "updated": "up", "photo": "ph", "experience": "ex",
+        "next_level_experience": "nle",
+        "previous_level_experience": "ple", "level": "l", 
+        "gold": "g", "money": "mo",
+        "is_vip": "v", "vip_updated": "vupd",
+        "played_games": "pg", "score": "sc",
+        "sex": "s", "wins_as_killer": "wik",
+        "wins_as_mafia": "wim", "wins_as_peaceful": "wip",
+        "token": "t", "accept_messages": "ac",
+        "selected_language": "slc", "user_account_coins": "uac",
+        "decorations": "dcrs", "silver_coins": "scns",
+        "online": "on", "player_role_statistics": "prst",
+        "match_making_score": "mmscr"
+        }
+
+    SERVER_CONFIG = {
+        "kick_user_price": "kup",
+        "set_room_password_min_authority": "srpma",
+        "price_username_set": "pus",
+        "server_language_change_time": "slct",
+        "show_password_room_info_button": "sprib",
+        "set_photo_minimal_level": "sppml", 
+        "room_title_minimal_level": "srtml",
+        "room_password_minimal_level": "srpml",
+        "match_making_users_in_queue": "mmguiqik",
+        "connection_inactive_timeout": "cit",
+        "connection_checker_period": "ccp",
+        }
+
+    ROOM = {
+        "room_id": "o", "min_players": "mnp",
+        "max_players": "mxp", "min_level": "mnl",
+        "vip_enabled": "venb", "status": "s",
+        "selected_roles": "sr", "title": "tt",
+        "password": "pw"
+        }
+
+    ROOM_IN_LOBBY = {
+        "room_id": "o", "min_players": "mnp",
+        "max_players": "mxp", "min_level": "mnl",
+        "vip_enabled": "venb", "status": "s",
+        "selected_roles": "sr", "title": "tt",
+        "password": "pw", "creator_id": "rco", 
+        "game_status": "s", "room_status": "rs",
+        "friend_in_room": "fir", "players": "pls",
+        "players_number": "pn",
+        "invited_in_room": "iinvtd",
+        "invitation_sender_username": "isun",
+        "friend_in_room": "fir",
+    }
+
+    ROOM_IN_LOBBY_STATE = {
+        "invitation_sender_username": "isun",
+        "friend_in_room": "fir",
+        "players_in_room": "pin",
+        "invited_in_room": "iinvtd",
+        "room_id": "ro"
+    }
+
+    SHORT_USER = {
+        "user_id": "o", "username": "u",
+        "updated": "up", "photo": "ph", "online": "on",
+        "sex": "s", "is_vip": "v", "vip_updated": "vupd"
+        }
+
+    FRIEND = {
+        "friend_id": "o", "updated": "up",
+        "user": "uu", "new_messages": "nm",
+        "user_id": "uo"
+        }
+
+    FRIENDSHIP = {
+        # friendship response
+        "accepted": "a", "currenet_room": "rr",
+        "friend_data": "ff", "friend_id": "f", 
+        "user_data": "uu"
+        }
+
+    MESSAGE = {
+        "user_id": "uo", "friend_id": "fp",
+        "created": "c", "text": "tx", "message_style": "mstl",
+        "accepted": "a", "message_type": "t"
             }
 
-    USER_NEW_API = {"user_id": "o", "username": "u",
-            "updated": "up", "photo": "ph", "experience": "ex",
-            "next_level_experience": "nle",
-            "previous_level_experience": "ple", "level": "l", 
-            "gold": "g", "money": "mo",
-            "is_vip": "v", "vip_updated": "vupd",
-            "played_games": "pg", "score": "sc",
-            "sex": "s", "wins_as_killer": "wik",
-            "wins_as_mafia": "wim", "wins_as_peaceful": "wip",
-            "token": "t", "accept_messages": "ac",
-            "selected_language": "slc", "user_account_coins": "uac",
-            "decorations": "dcrs", "silver_coins": "scns",
-            "online": "on", "player_role_statistics": "prst",
-            "match_making_score": "mmscr"
-            }
+    GUI = {
+        "count_authority_for_swap_icon":"r"
+        }
 
-    SERVER_CONFIG = {"kick_user| None _price": "kup",
-                     "set_room_password_min_authority": "srpma",
-                     "price_username_set": "pus",
-                     "server_language_change_time": "slct",
-                     "show_password_room_info_button": "sprib"
-                     }
-    ROOM = {"room_id": "o", "min_players": "mnp",
-            "max_players": "mxp", "min_level": "mnl",
-            "vip_enabled": "venb", "status": "s",
-            "selected_roles": "sr", "title": "tt",
-            "password": "pw"
-            }
-    SHORT_USER = {"user_id": "o", "username": "u",
-                  "updated": "up", "photo": "ph", "online": "on",
-                  "sex": "s", "is_vip": "v", "vip_updated": "vupd"
-                  }
-    FRIEND = {"friend_id": "o", "updated": "up",
-              "user": "uu", "new_messages": "nm"
-              }
-    MESSAGE = {"user_id": "uo", "friend_id": "fp",
-               "created": "c", "text": "tx", "message_style": "mstl",
-               "accepted": "a", "message_type": "t"
-               }
-    GUI = {"count_authority_for_swap_icon":"r"
-           }
+    DECORATIONS = {
+        "photo_border": "8", "photo_border_animation": "7",
+        "profile_animation": "4", "profile_background": "6",
+        "profile_main_color": "5", "username_animation": "0",
+        "username_background": "1", "username_shadow": "2",
+        "username_text": "3"
+    }
+
+    DECORATIONS_PARAMETERS = {
+        "alpha": "0", "value": "1",
+        "file": "2", "speed": "3"
+    }

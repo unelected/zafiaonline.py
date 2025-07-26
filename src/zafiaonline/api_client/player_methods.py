@@ -194,7 +194,7 @@ class Players:
             raise AttributeError
 
         messages: List[ModelMessage] = [
-            decode(json.dumps(message), type=ModelMessage)
+            decode(json.dumps(message), type = ModelMessage)
             for message in received_messages[PacketDataKeys.MESSAGES]
         ]
 

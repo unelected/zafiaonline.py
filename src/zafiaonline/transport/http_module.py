@@ -4,26 +4,24 @@ import random
 import uuid
 
 import aiohttp
-import re
 
 from typing import Any, Dict, Literal
 from urllib.parse import urljoin
 from aiohttp import ClientError
-from PyBookAgents import dalvik_ugen
 
 from zafiaonline.structures.packet_data_keys import Endpoints, ZafiaEndpoints
 from zafiaonline.utils.logging_config import logger
 
 
 class Http:
-    def __init__(self):
+    def __init__(self, proxy):
         self.zafia_url: str = "http://185.188.183.144:5000/zafia/"
         self.mafia_address: str = "dottap.com"
         self.api_mafia_address: str = f"api.mafia.{self.mafia_address}"
         self.mafia_url: str = f"https://{self.mafia_address}/"
         self.api_mafia_url: str = f"https://{self.api_mafia_address}/"
         self.zafia_endpoint: ZafiaEndpoints
-        self.proxy: str | None = None
+        self.proxy: str | None = proxy
         self.zafia_headers: dict = {
             "Connection": "Keep-Alive",
             "Accept-Encoding": "gzip",
@@ -31,17 +29,33 @@ class Http:
         }
         self.mafia_headers: dict = {
             "HOST": self.mafia_address,
-            "User-Agent": self.generate_agent(),
+            "User-Agent": self.generate_dalvik_ua(),
             "Connection": "Keep-Alive",
             "Accept-Encoding": "gzip"
         }
 
     @staticmethod
-    def generate_agent() -> str:
-        user_agent: str | None = dalvik_ugen()
-        if user_agent is None:
-            raise AttributeError
-        return re.sub(r'\s*\[.*$', '', user_agent)
+    def generate_dalvik_ua() -> str:
+        dalvik_versions = ["1.6.0", "2.1.0"]
+        android_versions = ["5.1.1", "6.0", "7.0", "8.1.0", "9", "10", "11", "12"]
+        devices = [
+            "Pixel 3", "Pixel 4 XL", "Samsung SM-G960F", "OnePlus A6013",
+            "Huawei P30", "Xiaomi Mi 9", "Moto G7", "Nexus 5X"
+        ]
+        builds = [
+            "LMY47D", "NRD90M", "OPM1.171019.011", "QP1A.190711.020",
+            "RP1A.200720.012", "SP1A.210812.015"
+        ]
+
+        dalvik_ver = random.choice(dalvik_versions)
+        android_ver = random.choice(android_versions)
+        device = random.choice(devices)
+        build = random.choice(builds)
+        return f"Dalvik/{dalvik_ver} (Linux; U; Android {android_ver}; {device} Build/{build})"
+
+    def generate_agent(self) -> str:
+        user_agent: str = self.generate_dalvik_ua() 
+        return user_agent
 
     @staticmethod
     def __generate_random_token(length: int = 32) -> str:
@@ -51,9 +65,9 @@ class Http:
                             "delete"], endpoint: Endpoints,
                             params: dict[str,Any] | None = None,
                             headers: Dict[str, str] | None = None,
-                            proxy: str | None = None) -> dict[str, Any] | bytes:
+                            ) -> dict[str, Any] | bytes:
         url = urljoin(url, endpoint.value)
-        return await self.send_request(method, url, params, headers, proxy = proxy)
+        return await self.send_request(method, url, params, headers)
 
     def __build_headers(self, user_id:
                         str, headers: dict) -> tuple[str, Dict[str, str]]:
@@ -96,17 +110,17 @@ class Http:
         headers: dict = self.__create_headers(headers, user_id)
         return headers
 
-    @staticmethod
-    async def send_request(method: Literal["get", "post", "put", "delete"],
+    async def send_request(self, method: Literal["get", "post", "put", "delete"],
                            url: str, params: dict[str, Any] | None = None,
-                           headers: dict[str, str] | None = None, proxy: str | None = None) -> dict[str, Any] | bytes:
-        async with (aiohttp.ClientSession(headers = headers, proxy = proxy) as session):
+                           headers: dict[str, str] | None = None
+                           ) -> dict[str, Any] | bytes:
+        async with (aiohttp.ClientSession(headers = headers, proxy = self.proxy) as session):
             method = method
             try:
                 async with getattr(session, method)(url, params = params
                                                     ) as response:
                     if response.content_type == 'application/json':
-                        data = await response.json()
+                        data: dict = await response.json()
                     else:
                         text = await response.text()
                         logger.warning(f"Response from {url}: {text}")
@@ -123,19 +137,16 @@ class Http:
 
 
 class HttpWrapper:
-    def __init__(self):
-        self.http = Http()
-
-    def use_proxy(self, proxy: str | None = None) -> None:
-        self.proxy = proxy
+    def __init__(self, proxy: str | None = None):
+        self.http = Http(proxy = proxy)
 
     async def zafia_request(self, method:
                             Literal["get", "post", "put", "delete"],
                             endpoint: ZafiaEndpoints, params: dict[str, Any],
-                            user_id: str, proxy: str | None = None) -> Dict[str, Any] | bytes:
+                            user_id: str) -> Dict[str, Any] | bytes:
         url, headers = self.http.build_zafia_headers(endpoint, user_id)
         return await self.http.send_request(method = method, url = url,
-                                params = params, headers = headers, proxy = proxy)
+                                params = params, headers = headers)
 
     async def mafia_request(self, method: Literal["get", "post", "put",
                             "delete"], endpoint: Endpoints,
