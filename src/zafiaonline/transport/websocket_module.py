@@ -1,7 +1,7 @@
 import json
 import asyncio
 import sys
-import os
+import ssl
 
 import websockets
 import yaml
@@ -87,7 +87,299 @@ class Config:
         self.connect_type: str = config.get("connect_type", "wss")
 
 
-class Websocket:
+class WebSocketHandler():
+    def __init__(self, alive, ws, data_queue, listener_task, uri, ws_lock, socket) -> None:
+        self.alive = alive
+        self.ws: websockets.ClientConnection | None = ws
+        self.data_queue = data_queue
+        self.listener_task = listener_task
+        self.uri = uri
+        self.ws_lock = ws_lock
+        self.websocket = socket
+
+
+    async def __listener(self) -> None:
+            """
+            Listens for incoming WebSocket messages and adds them to the queue.
+
+            Behavior
+                - Continuously receives messages while the connection is active.
+                - Handles various disconnection scenarios and attempts
+                reconnection if necessary.
+            """
+            while self.alive:
+                try:
+                    if not self.ws:
+                        raise AttributeError
+                    message: Union[str, bytes] = await self.ws.recv()
+                    await self.data_queue.put(message)
+
+                except ConnectionClosedOK:
+                    logger.debug("Connection closed normally (1000).")
+                    break
+                except websockets.exceptions.ConnectionClosedError as e:
+                    logger.warning(f"Connection closed unexpectedly: {e}")
+                    break
+                except asyncio.CancelledError:
+                    logger.debug("Listener task was cancelled.")
+                    break
+                except websockets.ConnectionClosed:
+                    logger.warning(
+                        "WebSocket connection lost. Attempting to reconnect...")
+                    asyncio.create_task(self._reconnect())
+                    break
+                except KeyboardInterrupt:
+                    raise
+                except Exception as e:
+                    logger.error(f"Unexpected error in __listener: {e}")
+                    if self.websocket is None:
+                        raise AttributeError("No WebSocket")
+                    await self.websocket.disconnect()
+                    break
+
+    async def __on_connect(self) -> None:
+        """
+        Handles actions to be performed upon establishing a WebSocket
+        connection.
+
+        Behavior
+            - Sends a handshake message to confirm connection.
+        """
+        try:
+            if not self.ws:
+                raise AttributeError
+            await self.ws.send("Hello, World!")
+            logger.debug("Sent initial handshake message.")
+        except websockets.ConnectionClosed as e:
+            logger.error(f"WebSocket closed before sending handshake: {e}")
+        except Exception as e:
+            logger.error(f"Unexpected error in __on_connect: {e}")
+
+    async def _cancel_listener_task(self) -> None:
+        """
+        Cancels the background listener task if it is still running.
+
+        This method checks whether the listener task responsible for handling
+        incoming WebSocket messages is active. If it is, the task is cancelled
+        to prevent further processing and to allow graceful shutdown of the client.
+
+        Example:
+            await websocket_client._cancel_listener_task()
+
+        Notes:
+            - This method is safe to call multiple times; it will only act if the
+            task exists and is not already completed or cancelled.
+            - It is typically used during client shutdown or reconnection.
+
+        Workflow:
+            1. Verifies that `self.listener_task` exists.
+            2. Checks if the task is still pending or running.
+            3. Cancels the task and logs the cancellation.
+        """
+        if self.listener_task and not self.listener_task.done():
+            self.listener_task.cancel()
+            logger.debug("Listener task cancelled.")
+
+    async def _connect(self, proxy: str | None = None) -> None:
+        """
+        Creates a WebSocket connection to the specified server URI.
+
+        This method initializes the low-level WebSocket connection using the
+        configured `self.uri`, attaches required headers, and sets the connection
+        status flag `self.alive` to `True` on success.
+
+        Raises:
+            websockets.exceptions.InvalidURI: If the URI format is incorrect.
+            websockets.exceptions.InvalidHandshake: If the handshake fails.
+            Exception: For any other errors during the connection attempt.
+
+        Notes:
+            - The following header is included in the connection request:
+            - User-Agent: "okhttp/4.12.0" (to mimic a common HTTP client)
+        """
+        headers: dict[str, str] = {
+            "User-Agent": "okhttp/4.12.0"
+        }
+        if not headers:
+            raise AttributeError("No headers")
+        self.ws = await connect(self.uri, user_agent_header = str(headers), proxy = proxy, ssl = ssl._create_unverified_context())
+        self.alive = True
+
+    async def _post_connect_setup(self) -> None:
+        """
+        Handles necessary setup after establishing a successful WebSocket connection.
+
+        This method performs post-connection initialization tasks, including
+        triggering the `__on_connect` hook and starting the background listener
+        task to handle incoming messages.
+
+        Notes:
+            - This method should be called only after a successful connection.
+            - It is asynchronous and should be awaited.
+
+        Workflow:
+            1. Calls `__on_connect()` to perform any logic needed immediately
+            after a successful connection.
+            2. Starts `__listener()` as a background task to listen for messages.
+        """
+        await self.__on_connect()
+        self.listener_task = asyncio.create_task(self.__listener())
+
+    async def _reconnect(self) -> None:
+        """
+        Performs a controlled reconnection process for the WebSocket client.
+
+        This method is used when the connection to the WebSocket server has been
+        lost or needs to be re-established. It performs up to 5 reconnection
+        attempts, with exponential backoff delays between each attempt to avoid
+        aggressive reconnect loops. Before each attempt, the current connection
+        (if any) is safely closed using `_attempt_disconnect()`.
+
+        If a reconnection attempt is successful (i.e., `_try_create_connection()`
+        returns True), the method exits early. If all attempts fail and
+        `_should_stop_reconnect()` returns True, the method stops retrying
+        gracefully without raising an exception.
+
+        This mechanism is intended to support graceful degradation and recovery
+        in unreliable network environments, especially where WebSocket stability
+        is not guaranteed.
+
+        Args:
+            None
+
+        Returns:
+            None
+
+        Behavior:
+            - Logs the reconnection process with attempt counts.
+            - Attempts up to 5 reconnection tries using exponential backoff.
+            - Backoff time doubles with each retry, capped at 30 seconds:
+            1s, 2s, 4s, 8s, 16s (but you use min(2 ** attempt, 30)).
+            - Each attempt:
+                1. Calls `_attempt_disconnect()` to safely close existing state.
+                2. Waits for backoff delay.
+                3. Calls `_try_create_connection()` to open a new WebSocket.
+            - If a connection is re-established, logs success and returns.
+            - If all attempts fail and `_should_stop_reconnect()` returns True,
+            logs a critical message and exits quietly.
+
+        Example:
+            await self._reconnect()
+
+        Notes:
+            - This method should be called internally after a disconnect or
+            connection failure.
+            - No exception is raised if reconnection fails; the method assumes
+            that failure handling is done elsewhere.
+            - Designed to be safe to call even when the connection is already closed.
+        """
+        logger.warning("Attempting to reconnect...")
+
+        max_attempts: int = 5
+        for attempt in range(max_attempts):
+            await self._attempt_disconnect()
+
+            await asyncio.sleep(min(2 ** attempt, 30))
+
+            if await self._try_create_connection():
+                logger.info("Reconnection successful.")
+                return
+
+            logger.error(f"Reconnection attempt {attempt + 1} failed.")
+
+        if await self._should_stop_reconnect():
+            return
+
+        logger.critical("Max reconnection attempts reached. Giving up.")
+
+    async def _handle_reconnect(self) -> None:
+        """
+        Initiates a reconnection attempt after a failed WebSocket connection.
+
+        Sets the connection status flag to False and starts a background task
+        to handle reconnection logic.
+
+        Notes:
+            - This method does not await the reconnection task directly.
+            - Reconnection logic should handle rate limiting and backoff.
+        """
+        self.alive = False
+        logger.info("Starting reconnection process.")
+        asyncio.create_task(self._reconnect())
+
+    async def _close_websocket(self) -> None:
+        """
+        Closes the WebSocket connection with a normal closure code (1000).
+
+        This method gracefully shuts down the current WebSocket connection, if one exists.
+        It attempts to close the connection using the standard WebSocket closure code 1000
+        (indicating a normal closure). It also handles cases where the connection may have
+        already been closed or is not initialized.
+
+        Example:
+            await websocket_client._close_websocket()
+
+        Raises:
+            Exception: If an unexpected error occurs during closure.
+
+        Notes:
+            - This method is safe to call even if the connection is already closed.
+            - If the connection object is not initialized (`self.ws is None`),
+            it logs a warning and exits silently.
+
+        Workflow:
+            1. Checks if the WebSocket (`self.ws`) is set.
+            2. Attempts to close the connection using `close(code=1000)`.
+            3. Catches and logs `ConnectionClosed` if the connection is already closed.
+            4. Catches and logs unexpected exceptions.
+            5. Resets `self.ws` to `None` to mark the connection as inactive.
+        """
+        try:
+            if not self.ws:
+                raise AttributeError
+            await self.ws.close(code = 1000)
+            logger.debug("WebSocket connection closed gracefully.")
+        except ConnectionClosed as e:
+            logger.debug(f"Connection already closed: {e}")
+            return
+        except Exception as e:
+            logger.error(f"Error while closing WebSocket connection: {e}")
+            raise
+
+    async def _should_stop_reconnect(self) -> bool:
+        """Checks if reconnection should stop due to an inactive WebSocket."""
+        if not self.alive:
+            logger.info("WebSocket is inactive. Stopping reconnection.")
+            return True
+        return False
+
+    async def _attempt_disconnect(self) -> None:
+        """Safely attempts to disconnect the WebSocket before reconnecting."""
+        try:
+            async with self.ws_lock:
+                if self.alive:
+                    if self.websocket is None:
+                        raise AttributeError("No WebSocket")
+                    await self.websocket.disconnect()
+        except Exception as e:
+            logger.error(f"Error during disconnect before reconnect: {e}")
+
+    async def _try_create_connection(self) -> bool:
+        """Attempts to create a new WebSocket connection with a timeout."""
+        try:
+            if self.websocket is None:
+                raise AttributeError("No WebSocket")
+            await asyncio.wait_for(self.websocket.create_connection(), timeout = 10)
+            return True
+        except asyncio.TimeoutError:
+            logger.error("Timeout while trying to reconnect.")
+            return False
+        except Exception as e:
+            logger.error(f"Unexpected error in _try_create_connection: {e}")
+            return False
+
+
+class Websocket(WebSocketHandler):
     #TODO сделать метакласс
     def __init__(self, client: "Client") -> None:
         """
@@ -107,16 +399,19 @@ class Websocket:
             user_id (Optional[str]): Identifier of the user (to be set after auth).
             token (Optional[str]): Authentication token (to be set after auth).
         """
-        config = Config()
-        self.client = client
-        self.data_queue = asyncio.Queue()
+        config: Config = Config()
+        self.client: Client = client
+        self.data_queue: asyncio.Queue = asyncio.Queue()
         self.alive: bool | None = None
-        self.ws = None
-        self.uri = f"{config.connect_type}://{config.address}:{config.port}"
+        self.ws: websockets.ClientConnection | None = None
+        self.uri: str = f"{config.connect_type}://{config.address}:{config.port}"
         self.listener_task: Optional[asyncio.Task] = None
-        self.ws_lock = asyncio.Lock()
-        self.user_id = None
-        self.token = None
+        self.ws_lock: asyncio.Lock = asyncio.Lock()
+        self.user_id: str | None = None
+        self.token: str | None = None
+        super().__init__(
+            self.alive, self.ws, self.data_queue, self.listener_task,
+            self.uri, self.ws_lock, self)
 
     def update_auth_data(self) -> None:
         """
@@ -178,68 +473,6 @@ class Websocket:
             await self._handle_reconnect()
             raise
 
-    async def _connect(self, proxy: str | None = None) -> None:
-        """
-        Creates a WebSocket connection to the specified server URI.
-
-        This method initializes the low-level WebSocket connection using the
-        configured `self.uri`, attaches required headers, and sets the connection
-        status flag `self.alive` to `True` on success.
-
-        Raises:
-            websockets.exceptions.InvalidURI: If the URI format is incorrect.
-            websockets.exceptions.InvalidHandshake: If the handshake fails.
-            Exception: For any other errors during the connection attempt.
-
-        Notes:
-            - The following header is included in the connection request:
-            - User-Agent: "okhttp/4.12.0" (to mimic a common HTTP client)
-        """
-        headers: dict[str, str] = {
-            "User-Agent": "okhttp/4.12.0"
-        }
-        if not headers:
-            raise AttributeError
-        #if proxy:
-        #    os.environ['wss_proxy'] = proxy
-        self.ws = await connect(self.uri, user_agent_header = str(headers), proxy = proxy)
-        self.alive = True
-
-    async def _post_connect_setup(self) -> None:
-        """
-        Handles necessary setup after establishing a successful WebSocket connection.
-
-        This method performs post-connection initialization tasks, including
-        triggering the `__on_connect` hook and starting the background listener
-        task to handle incoming messages.
-
-        Notes:
-            - This method should be called only after a successful connection.
-            - It is asynchronous and should be awaited.
-
-        Workflow:
-            1. Calls `__on_connect()` to perform any logic needed immediately
-            after a successful connection.
-            2. Starts `__listener()` as a background task to listen for messages.
-        """
-        await self.__on_connect()
-        self.listener_task = asyncio.create_task(self.__listener())
-
-    async def _handle_reconnect(self) -> None:
-        """
-        Initiates a reconnection attempt after a failed WebSocket connection.
-
-        Sets the connection status flag to False and starts a background task
-        to handle reconnection logic.
-
-        Notes:
-            - This method does not await the reconnection task directly.
-            - Reconnection logic should handle rate limiting and backoff.
-        """
-        self.alive = False
-        logger.info("Starting reconnection process.")
-        asyncio.create_task(self._reconnect())
-
     async def disconnect(self) -> None:
         """
         Gracefully closes the WebSocket connection.
@@ -283,70 +516,6 @@ class Websocket:
         await self._close_websocket()
         await self._cancel_listener_task()
         logger.debug("Disconnected.")
-
-    async def _close_websocket(self) -> None:
-        """
-        Closes the WebSocket connection with a normal closure code (1000).
-
-        This method gracefully shuts down the current WebSocket connection, if one exists.
-        It attempts to close the connection using the standard WebSocket closure code 1000
-        (indicating a normal closure). It also handles cases where the connection may have
-        already been closed or is not initialized.
-
-        Example:
-            await websocket_client._close_websocket()
-
-        Raises:
-            Exception: If an unexpected error occurs during closure.
-
-        Notes:
-            - This method is safe to call even if the connection is already closed.
-            - If the connection object is not initialized (`self.ws is None`),
-            it logs a warning and exits silently.
-
-        Workflow:
-            1. Checks if the WebSocket (`self.ws`) is set.
-            2. Attempts to close the connection using `close(code=1000)`.
-            3. Catches and logs `ConnectionClosed` if the connection is already closed.
-            4. Catches and logs unexpected exceptions.
-            5. Resets `self.ws` to `None` to mark the connection as inactive.
-        """
-        try:
-            if not self.ws:
-                raise AttributeError
-            await self.ws.close(code = 1000)
-            logger.debug("WebSocket connection closed gracefully.")
-        except ConnectionClosed as e:
-            logger.debug(f"Connection already closed: {e}")
-            return
-        except Exception as e:
-            logger.error(f"Error while closing WebSocket connection: {e}")
-            raise
-
-    async def _cancel_listener_task(self) -> None:
-        """
-        Cancels the background listener task if it is still running.
-
-        This method checks whether the listener task responsible for handling
-        incoming WebSocket messages is active. If it is, the task is cancelled
-        to prevent further processing and to allow graceful shutdown of the client.
-
-        Example:
-            await websocket_client._cancel_listener_task()
-
-        Notes:
-            - This method is safe to call multiple times; it will only act if the
-            task exists and is not already completed or cancelled.
-            - It is typically used during client shutdown or reconnection.
-
-        Workflow:
-            1. Verifies that `self.listener_task` exists.
-            2. Checks if the task is still pending or running.
-            3. Cancels the task and logs the cancellation.
-        """
-        if self.listener_task and not self.listener_task.done():
-            self.listener_task.cancel()
-            logger.debug("Listener task cancelled.")
 
     async def send_server(self, data: dict,
                           remove_token_from_object: bool = False) -> None:
@@ -602,153 +771,3 @@ class Websocket:
                 await asyncio.sleep(delay)
         raise ValueError(
             f"Failed to get data for {key} after {retries} retries")
-
-    async def _reconnect(self) -> None:
-        """
-        Performs a controlled reconnection process for the WebSocket client.
-
-        This method is used when the connection to the WebSocket server has been
-        lost or needs to be re-established. It performs up to 5 reconnection
-        attempts, with exponential backoff delays between each attempt to avoid
-        aggressive reconnect loops. Before each attempt, the current connection
-        (if any) is safely closed using `_attempt_disconnect()`.
-
-        If a reconnection attempt is successful (i.e., `_try_create_connection()`
-        returns True), the method exits early. If all attempts fail and
-        `_should_stop_reconnect()` returns True, the method stops retrying
-        gracefully without raising an exception.
-
-        This mechanism is intended to support graceful degradation and recovery
-        in unreliable network environments, especially where WebSocket stability
-        is not guaranteed.
-
-        Args:
-            None
-
-        Returns:
-            None
-
-        Behavior:
-            - Logs the reconnection process with attempt counts.
-            - Attempts up to 5 reconnection tries using exponential backoff.
-            - Backoff time doubles with each retry, capped at 30 seconds:
-            1s, 2s, 4s, 8s, 16s (but you use min(2 ** attempt, 30)).
-            - Each attempt:
-                1. Calls `_attempt_disconnect()` to safely close existing state.
-                2. Waits for backoff delay.
-                3. Calls `_try_create_connection()` to open a new WebSocket.
-            - If a connection is re-established, logs success and returns.
-            - If all attempts fail and `_should_stop_reconnect()` returns True,
-            logs a critical message and exits quietly.
-
-        Example:
-            await self._reconnect()
-
-        Notes:
-            - This method should be called internally after a disconnect or
-            connection failure.
-            - No exception is raised if reconnection fails; the method assumes
-            that failure handling is done elsewhere.
-            - Designed to be safe to call even when the connection is already closed.
-        """
-        logger.warning("Attempting to reconnect...")
-
-        max_attempts: int = 5
-        for attempt in range(max_attempts):
-            await self._attempt_disconnect()
-
-            await asyncio.sleep(min(2 ** attempt, 30))
-
-            if await self._try_create_connection():
-                logger.info("Reconnection successful.")
-                return
-
-            logger.error(f"Reconnection attempt {attempt + 1} failed.")
-
-        if await self._should_stop_reconnect():
-            return
-
-        logger.critical("Max reconnection attempts reached. Giving up.")
-
-    async def _should_stop_reconnect(self) -> bool:
-        """Checks if reconnection should stop due to an inactive WebSocket."""
-        if not self.alive:
-            logger.info("WebSocket is inactive. Stopping reconnection.")
-            return True
-        return False
-
-    async def _attempt_disconnect(self) -> None:
-        """Safely attempts to disconnect the WebSocket before reconnecting."""
-        try:
-            async with self.ws_lock:
-                if self.alive:
-                    await self.disconnect()
-        except Exception as e:
-            logger.error(f"Error during disconnect before reconnect: {e}")
-
-    async def _try_create_connection(self) -> bool:
-        """Attempts to create a new WebSocket connection with a timeout."""
-        try:
-            await asyncio.wait_for(self.create_connection(), timeout = 10)
-            return True
-        except asyncio.TimeoutError:
-            logger.error("Timeout while trying to reconnect.")
-            return False
-        except Exception as e:
-            logger.error(f"Unexpected error in _try_create_connection: {e}")
-            return False
-
-    async def __on_connect(self) -> None:
-        """
-        Handles actions to be performed upon establishing a WebSocket
-        connection.
-
-        Behavior
-            - Sends a handshake message to confirm connection.
-        """
-        try:
-            if not self.ws:
-                raise AttributeError
-            await self.ws.send("Hello, World!")
-            logger.debug("Sent initial handshake message.")
-        except websockets.ConnectionClosed as e:
-            logger.error(f"WebSocket closed before sending handshake: {e}")
-        except Exception as e:
-            logger.error(f"Unexpected error in __on_connect: {e}")
-
-    async def __listener(self) -> None:
-        """
-        Listens for incoming WebSocket messages and adds them to the queue.
-
-        Behavior
-            - Continuously receives messages while the connection is active.
-            - Handles various disconnection scenarios and attempts
-            reconnection if necessary.
-        """
-        while self.alive:
-            try:
-                if not self.ws:
-                    raise AttributeError
-                message: Union[str, bytes] = await self.ws.recv()
-                await self.data_queue.put(message)
-
-            except ConnectionClosedOK:
-                logger.debug("Connection closed normally (1000).")
-                break
-            except websockets.exceptions.ConnectionClosedError as e:
-                logger.warning(f"Connection closed unexpectedly: {e}")
-                break
-            except asyncio.CancelledError:
-                logger.debug("Listener task was cancelled.")
-                break
-            except websockets.ConnectionClosed:
-                logger.warning(
-                    "WebSocket connection lost. Attempting to reconnect...")
-                asyncio.create_task(self._reconnect())
-                break
-            except KeyboardInterrupt:
-                raise
-            except Exception as e:
-                logger.error(f"Unexpected error in __listener: {e}")
-                await self.disconnect()
-                break
