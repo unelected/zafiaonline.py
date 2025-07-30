@@ -1,4 +1,21 @@
+"""
+Handles interaction with the global chat system for authenticated clients.
+
+This module defines the GlobalChat class, which allows clients to join
+and leave the global chat, send messages, and perform basic anti-spam
+handling. It is designed to be used as part of a WebSocket-based client
+for MafiaOnline or similar real-time systems.
+
+Typical usage example:
+
+    auth = Auth(...)
+    chat = GlobalChat(auth)
+    await chat.join_global_chat()
+    await chat.send_message_global("Hello everyone!")
+    await chat.leave_from_global_chat()
+"""
 import asyncio
+
 from typing import TYPE_CHECKING
 
 from zafiaonline.structures import PacketDataKeys
@@ -8,26 +25,69 @@ from zafiaonline.utils.utils_for_send_messages import Utils, SentMessages
 
 
 class GlobalChat:
-    if TYPE_CHECKING:  # Импорт выполняется только для аннотации типов
+    """
+    Handles global chat interactions for an authenticated user.
+
+    This class manages the global chat functionality using an authenticated
+    client session. It initializes user-related state and tracks messages
+    sent during the session.
+
+    Attributes:
+        client: An authenticated API client instance used for user operations.
+        sent_messages: A SentMessages instance used to track sent messages.
+    """
+    if TYPE_CHECKING:
         from zafiaonline.api_client.user_methods import Auth
     def __init__(self, client: "Auth"):
+        """
+        Initializes GlobalChat with the provided authenticated client.
+
+        Args:
+            client: An authenticated API client used to perform user-related actions.
+        """
         self.client = client
         if self.client:
             get_user_attributes(self.client)
         self.sent_messages: "SentMessages" = SentMessages()
 
-    async def send_server(self, data, remove_token_from_object = False):
+    async def send_server(self, data: dict, 
+                          remove_token_from_object: bool = False) -> None:
+        """
+        Sends data to the server through the authenticated client.
+
+        This method forwards the given data to the server using the client's
+        `send_server` method. Optionally removes token-related information
+        from the data before sending.
+
+        Args:
+            data: The dict data object to be sent to the server. Can be of any type
+                supported by the underlying client method.
+            remove_token_from_object: If True, removes authentication token
+                fields from the data before sending. Defaults to False.
+
+        Returns:
+            None
+
+        Raises:
+            Any exception raised by `self.client.send_server`.
+        """
         await self.client.send_server(data, remove_token_from_object)
 
     async def join_global_chat(self) -> None:
         """
-        Sends a request to join the global chat.
+        Joins the global chat by sending a join request to the server.
 
-        This function allows the client to enter the global chat and receive
-        messages from other users.
+        This method constructs a packet with the appropriate type identifier
+        and sends it to the server to add the client to the global chat session.
+
+        Once joined, the client can receive and send messages within the
+        global chat room.
 
         Returns:
             None
+
+        Raises:
+            Any exception raised by `send_server`.
         """
         chat_join_request: dict = {
             PacketDataKeys.TYPE: PacketDataKeys.ADD_CLIENT_TO_CHAT
@@ -36,14 +96,17 @@ class GlobalChat:
 
     async def leave_from_global_chat(self) -> None:
         """
-        Sends a request to add the client to the dashboard.
+        Leaves the global chat and returns the client to the dashboard.
 
-        This function requests the server to place the client on the
-        dashboard, typically used for accessing account-related information
-        or lobby interactions.
+        Sends a request to the server to remove the client from the global chat
+        and add them to the dashboard, typically representing a lobby or
+        non-chat state.
 
         Returns:
             None
+
+        Raises:
+            Any exception raised by `send_server`.
         """
         leave_from_chat_request: dict = {
             PacketDataKeys.TYPE: PacketDataKeys.ADD_CLIENT_TO_DASHBOARD
@@ -54,19 +117,18 @@ class GlobalChat:
     async def send_message_global(self, content: str, message_style: int =
                                 MessageStyles.NO_COLOR) -> None:
         """
-        Sends a message to the global chat.
+        Sends a message to the global chat with optional styling.
 
-        Parameters:
-            content (str): The text of the message to be sent.
-            message_style (int, optional): The style of the message.
-            Defaults to 0.
+        Validates and cleans the message before sending. Implements basic spam
+        prevention and risk mitigation by skipping unsafe or repeated messages.
+
+        Args:
+            content (str): The text content of the message to send.
+            message_style (int, optional): The display style of the message.
+                Defaults to `MessageStyles.NO_COLOR`.
 
         Returns:
             None
-
-        Notes:
-            - If the content is empty, the function prevents sending to
-            avoid spam or bans.
         """
         utils: "Utils" = Utils()
         if not utils.validate_message_content(content):

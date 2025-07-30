@@ -13,7 +13,7 @@ class BotData:
     password: str = os.getenv("PASSWORD") or "password"
 
 class RoomData:
-    # TODO json
+    # TODO: @unelected - json
     selected_roles: Optional[List[Roles]] = None
     title: str | None = os.getenv("TITLE") or "title"
     max_players: int = int(os.getenv("MAX_PLAYERS") or 31)
@@ -25,11 +25,11 @@ class RoomData:
                                                                                         # RU: количество игроков которое будет отниматься от ‘min_players’ и при этом количестве игроков будет сбрасываться комната
 
 class MutedPlayersData:
-    # TODO json
+    # TODO: @unelected - json
     muted_list: list[str] = [
         #"nickaname",
     ]
 
 class MessageStyleData:
-    # TODO json
+    # TODO: @unelected - json
     style: Optional[MessageStyles] = None

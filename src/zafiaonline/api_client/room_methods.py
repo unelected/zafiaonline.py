@@ -1,7 +1,20 @@
+"""
+This module provides matchmaking and room-related functionalities for a multiplayer game client.
+
+It defines asynchronous methods for joining and leaving rooms, creating players, performing
+role-based actions, sending messages, and interacting with the matchmaking queue. The module
+relies on communication with a game server using structured packet data.
+
+Typical usage example:
+
+    auth = Auth(...)
+    matchmaking = MatchMaking(auth)
+    await matchmaking.match_making_add_user(players_size = 12)
+"""
 import asyncio
 import json
 
-from typing import Optional, List, TYPE_CHECKING, Any
+from typing import Optional, List, TYPE_CHECKING
 from msgspec.json import decode
 
 from zafiaonline.utils import Md5
@@ -16,33 +29,103 @@ from zafiaonline.utils.utils import get_user_attributes
 
 
 class Room:
+    """
+    Handles multiplayer room logic over WebSocket for an authenticated client.
+
+    The Room class provides high-level operations for creating, joining,
+    managing, and interacting within game rooms via WebSocket. It builds
+    structured payloads, handles message dispatch, and manages room-level
+    interactions like chat, voting, and forfeiting.
+
+    Attributes:
+        client (Auth): Authenticated WebSocket client used for communication.
+        sent_messages (SentMessages): Tracker for detecting repeated messages or spam.
+        md5hash (Md5): Utility for hashing passwords with salt before transmission.
+    """
     def __init__(self, client: "Auth"):
+        """
+        Initializes a Room instance with an authenticated WebSocket client.
+
+        This constructor sets up the authenticated client connection, initializes
+        message tracking to prevent spam, and prepares utilities like MD5 hashing
+        for password security.
+
+        Args:
+            client (Auth): An authenticated WebSocket client used to send and receive
+                messages related to room interactions.
+        """
         self.client = client
         if self.client:
             get_user_attributes(self.client)
         self.sent_messages = SentMessages()
         self.md5hash = Md5()
 
-    async def send_server(self, data, remove_token_from_object = False):
+    async def send_server(self, data: dict, 
+                          remove_token_from_object: bool = False) -> None:
+        """
+        Sends a structured payload to the game server via WebSocket.
+
+        Delegates the actual sending logic to the authenticated client.
+
+        Args:
+            data (dict): The payload to be sent to the server.
+            remove_token_from_object (bool, optional): Whether to remove the
+                authentication token from the payload object before sending.
+                Defaults to False.
+
+        Returns:
+            None
+        """
         await self.client.send_server(data, remove_token_from_object)
 
-    async def get_data(self, data):
+    async def get_data(self, data: str) -> dict | None:
+        """
+        Fetches structured data from the server based on the given key.
+
+        Delegates the retrieval logic to the authenticated client.
+
+        Args:
+            data (str): The key or identifier for the data to fetch.
+
+        Returns:
+            dict | None: The retrieved data as a dictionary if available;
+            otherwise, None.
+        """
         return await self.client.get_data(data)
 
-    async def listen(self):
+    async def listen(self) -> dict | None:
+        """
+        Waits for and returns the next incoming message from the server.
+
+        This method listens for a single message from the WebSocket connection
+        and returns it as a dictionary.
+
+        Returns:
+            dict | None: The parsed message if received successfully;
+            otherwise, None.
+        """
         return await self.client.listen()
 
     @property
     def device_id(self):
+        """
+        Device ID associated with the client.
+
+        Returns:
+            str: The unique device identifier used for authentication.
+        """
         return self.client.device_id
 
     async def vote_player_list(self, user_id: str, room_id: str) -> None:
         """
-        Sends a request to vote for a player in the given room.
+        Sends a vote request for a specific player in a room.
 
-        Parameters:
-            user_id (str): The unique identifier of the player being voted for.
-            room_id (str): The unique identifier of the room.
+        Constructs and sends a vote payload to the server, indicating that the user
+        with the given `user_id` is being voted for within the specified room.
+
+        Args:
+            user_id (str): The ID of the player being voted for.
+            room_id (str): The ID of the room where the vote is cast.
 
         Returns:
             None
@@ -67,23 +150,25 @@ class Room:
         """
         Creates a new game room with the specified parameters.
 
-        Parameters:
-            selected_roles (Optional[List[Roles]]): List of selected roles
-            for the room. Defaults to [0].
-            title (str): The title of the room. Defaults to an empty string.
-            max_players (int): Maximum number of players allowed in the
-            room. Defaults to 8.
-            min_players (int): Minimum number of players required to start
-            the game. Defaults to 5.
-            password (str): Optional password for the room.
-            Defaults to an empty string.
-            min_level (int): Minimum player level required to join.
-            Defaults to 1.
-            vip_enabled (bool): Whether VIP features are enabled.
-            Defaults to False.
+        Sends a room creation request to the server with the configured
+        settings such as player limits, role selection, room title,
+        and access restrictions.
+
+        Args:
+            selected_roles (List[Roles | int], optional): List of roles or role IDs
+                selected for the room. Defaults to [0].
+            title (str, optional): Title of the room. Defaults to "".
+            max_players (int, optional): Maximum number of players allowed. Defaults to 8.
+            min_players (int, optional): Minimum number of players to start the game. Defaults to 5.
+            password (str | None, optional): Optional password for the room. Defaults to None.
+            min_level (int, optional): Minimum player level required to join. Defaults to 1.
+            vip_enabled (bool, optional): Whether VIP features are enabled. Defaults to False.
 
         Returns:
-            ModelRoom: The created room object.
+            ModelRoom | None: A `ModelRoom` instance if room creation succeeds, otherwise None.
+
+        Raises:
+            AttributeError: If no response data is received after sending the request.
         """
         roles: list[int] = selected_roles or [0]
         room_request: dict = self._build_room_request(roles, title,
@@ -95,7 +180,7 @@ class Room:
         received_data: dict | None = await self._get_validated_room_response(room_request)
 
         if received_data is None:
-            raise AttributeError("No received_data")
+            raise AttributeError("No received data")
 
         return self._decode_room(received_data)
 
@@ -106,18 +191,20 @@ class Room:
         """
         Constructs the request payload for creating a room.
 
+        Builds a structured dictionary payload for room creation, applying
+        constraints to player counts, trimming titles, and hashing passwords.
+
         Args:
-            selected_roles (Optional[List[Roles]]): List of selected roles
-            for the room.
-            title (str): The title of the room (max 15 characters).
-            max_players (int): Maximum number of players allowed (8-21).
-            min_players (int): Minimum number of players required (5-18).
-            password (str): Room password (will be hashed).
-            min_level (int): Minimum level required to join (must be ≥1).
-            vip_enabled (bool): Whether VIP mode is enabled.
+            selected_roles (List[Roles | int]): List of selected roles or role IDs for the room.
+            title (str): Title of the room. Will be trimmed to 15 characters.
+            max_players (int): Maximum number of players allowed (clamped between 8 and 21).
+            min_players (int): Minimum number of players required (clamped between 5 and 18).
+            password (Optional[str]): Optional room password; will be hashed with salt if provided.
+            min_level (int): Minimum player level required to join (minimum 1).
+            vip_enabled (bool): Whether VIP features are enabled.
 
         Returns:
-            dict: A dictionary representing the request payload.
+            dict: Dictionary payload ready to be sent to the server.
         """
         return {
             PacketDataKeys.TYPE: PacketDataKeys.ROOM_CREATE,
@@ -137,17 +224,17 @@ class Room:
     async def _get_validated_room_response(self, room_request: dict) -> \
     dict | None:
         """
-        Sends the room creation request and ensures a valid response is
-        received.
+        Sends the room creation request and ensures a valid response is received.
 
-        If the first attempt fails, it retries once. If both attempts fail,
-        logs an error and returns None.
+        Attempts to retrieve and validate the server response to a room creation
+        request. If the response is invalid or missing, retries up to three times
+        before giving up and logging an error.
 
         Args:
-            room_request (dict): The room creation request payload.
+            room_request (dict): The dictionary payload representing the room creation request.
 
         Returns:
-            Optional[dict]: The validated response if successful, else None.
+            dict | None: The validated room creation response, or None if all attempts fail.
         """
         max_attempts: int = 3
         attempt: int = 0
@@ -174,14 +261,17 @@ class Room:
     @staticmethod
     def _decode_room(received_data: dict) -> ModelRoom | None:
         """
-        Decodes the received room data into a ModelRoom object.
+        Decodes raw server data into a ModelRoom instance.
+
+        Attempts to extract and decode the room data from the given dictionary.
+        Logs an error and returns None if the expected data is missing or
+        decoding fails.
 
         Args:
-            received_data (dict): The raw room data from the server.
+            received_data (dict): The raw dictionary received from the server containing room data.
 
         Returns:
-            Optional[ModelRoom]: Decoded ModelRoom object if successful,
-            otherwise None.
+            ModelRoom | None: A ModelRoom instance if decoding is successful; otherwise, None.
         """
         try:
             if received_data:
@@ -204,9 +294,12 @@ class Room:
 
     async def remove_player(self, room_id: str) -> None:
         """
-        Removes the player from the specified room.
+        Sends a request to remove the player from a specific room.
 
-        Parameters:
+        Constructs and sends a request to leave or be removed from the room
+        with the given identifier.
+
+        Args:
             room_id (str): The unique identifier of the room.
 
         Returns:
@@ -220,9 +313,12 @@ class Room:
 
     async def leave_room(self, room_id: str) -> None:
         """
-        Leaves the specified room by removing the player.
+        Leaves the specified room by sending a removal request.
 
-        Parameters:
+        Delegates to `remove_player` to handle the actual request to
+        leave the room.
+
+        Args:
             room_id (str): The unique identifier of the room.
 
         Returns:
@@ -235,18 +331,24 @@ class Room:
                             RoomModelType.NOT_MATCHMAKING_MODE)\
                             -> dict | None:
         """
-        Creates a player in the specified room.
+        Creates a player in the specified room and retrieves room statistics.
 
-        This method should be called after `join_room()` if the user is not
-        the host.
+        Should be called after `join_room()` if the user is not the host.
 
-        Parameters:
+        Sends a request to create a player in the given room, waits for room
+        statistics to be received, and retries up to 3 times if necessary.
+
+        Args:
             room_id (str): The unique identifier of the room.
-            room_model_type (RoomModelType, optional): The type of the room.
-            Defaults to `NOT_MATCHMAKING_MODE`.
+            room_model_type (RoomModelType, optional): The type of room model.
+                Defaults to `RoomModelType.NOT_MATCHMAKING_MODE`.
 
         Returns:
-            Optional[dict]: Room statistics if successful, otherwise None.
+            dict | None: A dictionary containing "player_list" and "room_messages"
+            if successful, otherwise None.
+
+        Raises:
+            AttributeError: If the room statistics cannot be retrieved.
         """
         create_player_request: dict = {
             PacketDataKeys.TYPE: PacketDataKeys.CREATE_PLAYER,
@@ -277,12 +379,15 @@ class Room:
 
     async def join_room(self, room_id: str, password: str = "") -> None:
         """
-        Joins a specified room.
+        Joins a specified room using the given room ID and optional password.
 
-        Parameters:
+        Sends a request to the server to join the specified room. If a password
+        is provided, it is hashed before being included in the request.
+
+        Args:
             room_id (str): The unique identifier of the room to join.
-            password (str, optional): The password for the room,
-            if required. Defaults to an empty string.
+            password (str, optional): The password for the room, if required.
+                Defaults to an empty string.
 
         Returns:
             None
@@ -299,16 +404,15 @@ class Room:
                           room_model_type: RoomModelType =
                           RoomModelType.NOT_MATCHMAKING_MODE) -> None:
         """
-        Performs an action associated with a player's role during a game.
+        Performs a role-specific action on a user within a room.
 
-        This method is used when executing a role-based action or voting
-        after the game has started.
+        Used to execute a role-based action (e.g., vote, attack, investigate)
+        during an ongoing game.
 
-        Parameters:
+        Args:
             user_id (str): The unique identifier of the targeted user.
-            room_id (str): The unique identifier of the room where the
-            action occurs.
-            room_model_type (RoomModelType, optional): The type of room model.
+            room_id (str): The unique identifier of the room where the action occurs.
+            room_model_type (RoomModelType, optional): The type of room model to use.
                 Defaults to RoomModelType.NOT_MATCHMAKING_MODE.
 
         Returns:
@@ -327,11 +431,10 @@ class Room:
         """
         Sends a request to forfeit the game.
 
-        This method allows a player to surrender during an ongoing game.
+        Allows a player to surrender during an ongoing game.
 
-        Parameters:
-            room_id (str): The unique identifier of the room where the
-            surrender occurs.
+        Args:
+            room_id (str): The unique identifier of the room where the surrender occurs.
             room_model_type (RoomModelType, optional): The type of room model.
                 Defaults to RoomModelType.NOT_MATCHMAKING_MODE.
 
@@ -349,20 +452,19 @@ class Room:
                                 message_style: int = MessageStyles.NO_COLOR)\
                                 -> None:
         """
-        Sends a message to a room.
+        Sends a message to the specified room.
 
-        Parameters:
+        Prevents sending if the message content is empty or potentially
+        risky to avoid spam or bans.
+
+        Args:
             content (str): The message text to be sent.
             room_id (str): The unique identifier of the room.
             message_style (int, optional): The style of the message.
-            Defaults to 0.
+                Defaults to MessageStyles.NO_COLOR.
 
         Returns:
             None
-
-        Notes:
-            - If the content is empty, the function prevents sending to
-            avoid spam or bans.
         """
         utils: "Utils" = Utils()
         if not utils.validate_message_content(content):
@@ -385,16 +487,15 @@ class Room:
         await self.send_server(message_data)
         return None
 
-    async def add_client_to_room_list(self) -> Any:
+    async def add_client_to_room_list(self) -> dict | None:
         """
-        Sends a request to add the client to the list of available rooms.
+        Adds the client to the list of available rooms.
 
-        This function allows the client to receive updates about available
-        rooms
-        in the game lobby.
+        Sends a request so the client can receive updates about available
+        rooms in the game lobby.
 
         Returns:
-            Any
+            Optional[dict]: Room list data if available, otherwise None.
         """
         rooms_request: dict = {
             PacketDataKeys.TYPE: PacketDataKeys.ADD_CLIENT_TO_ROOMS_LIST
@@ -405,27 +506,69 @@ class Room:
 
 
 class MatchMaking:
+    """
+    Handles matchmaking operations for the client.
+
+    This class provides methods for interacting with the matchmaking system,
+    including adding and removing the user from the matchmaking queue,
+    checking queue status, and retrieving user count.
+
+    Attributes:
+        client (Auth): The authenticated client instance used to send and
+            receive data from the server.
+    """
     def __init__(self, client: "Auth"):
+        """
+        Initializes the MatchMaking instance.
+
+        This constructor sets up the matchmaking client and initializes
+        user attributes if a valid client is provided.
+
+        Args:
+            client (Auth): The authenticated client instance used for communication
+                with the game server.
+        """
         self.client = client
         if self.client:
             get_user_attributes(self.client)
 
-    async def send_server(self, data, remove_token_from_object = False):
+    async def send_server(self, data: dict,
+                          remove_token_from_object: bool = False) -> None:
+        """
+        Sends a packet to the server through the authenticated client.
+
+        Args:
+            data (dict): The data to be sent to the server.
+            remove_token_from_object (bool, optional): Whether to remove the token
+                from the object before sending. Defaults to False.
+
+        Returns:
+            None
+        """
         await self.client.send_server(data, remove_token_from_object)
 
-    async def get_data(self, data):
+    async def get_data(self, data: str) -> dict | None:
+        """
+        Retrieves data from the server through the authenticated client.
+
+        Args:
+            data (str): The key or identifier for the data to retrieve.
+
+        Returns:
+            dict | None: The data received from the server, or None if no data is available.
+        """
         return await self.client.get_data(data)
 
     async def match_making_get_status(self) -> dict | None:
         """
         Retrieves the current status of matchmaking.
 
-        Returns:
-            dict: The matchmaking status data received from the server.
+        Sends a request to the server to get the current matchmaking status and 
+        waits briefly for a response.
 
-        Notes:
-            - Sends a request to fetch the matchmaking status.
-            - Waits for and returns the response from the server.
+        Returns:
+            dict | None: The matchmaking status data received from the server,
+            or None if no data is returned.
         """
         status_request: dict = {
             PacketDataKeys.TYPE: PacketDataKeys.MATCH_MAKING_GET_STATUS
@@ -438,18 +581,16 @@ class MatchMaking:
         """
         Retrieves the number of users currently waiting for a matchmaking game.
 
-        Parameters:
-            players_size (int, optional): The desired number of players in
-            the game.
-            Defaults to 8.
+        Sends a request to the server to get the number of players currently
+        waiting in the matchmaking queue.
+
+        Args:
+            players_size (int, optional): The desired number of players in the game.
+                Defaults to 8.
 
         Returns:
-            dict: The response data containing the count of waiting users.
-
-        Notes:
-            - Sends a request to the server to get the count of players
-            waiting in matchmaking.
-            - Waits for and returns the response from the server.
+            dict | None: The response data containing the count of waiting users,
+            or None if no data is returned.
         """
         users_in_wait_request: dict = {
             PacketDataKeys.TYPE: PacketDataKeys.
@@ -465,17 +606,15 @@ class MatchMaking:
         """
         Adds the user to the matchmaking queue.
 
-        Parameters:
-            players_size (int, optional): The desired number of players in
-            the game.
-            Defaults to 8.
+        Sends a request to the server to add the user to matchmaking. No response
+        is expected.
+
+        Args:
+            players_size (int, optional): The desired number of players in the game.
+                Defaults to 8.
 
         Returns:
             None
-
-        Notes:
-            - Sends a request to the server to add the user to matchmaking.
-            - No response data is expected.
         """
         add_user_request: dict = {
             PacketDataKeys.TYPE: PacketDataKeys.MATCH_MAKING_ADD_USER,
@@ -487,13 +626,11 @@ class MatchMaking:
         """
         Removes the user from the matchmaking queue.
 
+        Sends a request to the server to remove the user from matchmaking. No
+        response is expected.
+
         Returns:
             None
-
-        Notes:
-            - Sends a request to the server to remove the user from
-            matchmaking.
-            - No response data is expected.
         """
         remove_user_request: dict = {
             PacketDataKeys.TYPE: PacketDataKeys.MATCH_MAKING_REMOVE_USER

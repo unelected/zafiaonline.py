@@ -1,3 +1,17 @@
+"""
+Client-side interface for sending and receiving data via server packets.
+
+This module provides a high-level asynchronous interface for interacting
+with a game or application server. It includes methods for sending
+requests (e.g., friend management, messaging, complaints, room actions),
+receiving responses, and parsing returned data into model objects.
+
+Typical usage example:
+
+    client = Client(...)
+    await client.remove_friend("user_id")
+    messages = await client.get_private_messages("friend_id")
+"""
 import asyncio
 import json
 
@@ -15,27 +29,93 @@ from zafiaonline.utils.logging_config import logger
 
 
 class Players:
+    """
+    Handles all player-related interactions in the system.
+
+    This class provides a high-level interface to interact with the 
+    player's data, including friends, messages, complaints, ratings, 
+    and profile information. It communicates with the backend server 
+    via the provided authenticated client.
+
+    Attributes:
+        client (Auth): An authenticated client used to communicate 
+            with the backend.
+        sent_messages (SentMessages): A message tracker used for spam 
+            prevention and content validation.
+    """
     def __init__(self, client: "Auth"):
+        """
+        Initializes the Players class with an authenticated client.
+
+        If the client is valid, it retrieves and sets user attributes.
+
+        Args:
+            client (Auth): The authenticated client instance.
+        """
         self.client = client
         if self.client:
             get_user_attributes(self.client)
         self.sent_messages = SentMessages()
 
-    async def send_server(self, data, remove_token_from_object = False):
+    async def send_server(self, data: dict,
+                          remove_token_from_object: bool = False) -> None:
+        """
+        Sends data to the server using the authenticated client.
+
+        This method delegates the sending operation to the internal client.
+        Optionally removes the token from the data object before sending.
+
+        Args:
+            data: The dict data object to be sent to the server.
+            remove_token_from_object (bool): If True, removes the token field
+                from the object before sending. Defaults to False.
+
+        Returns:
+            None
+        """
         await self.client.send_server(data, remove_token_from_object)
 
-    async def listen(self):
+    async def listen(self) -> dict | None:
+        """
+        Listens for a single message from the WebSocket connection.
+
+        Delegates the actual listening operation to the internal client and returns
+        the next available message.
+
+        Returns:
+            dict | None: The received message as a dictionary if available,
+            otherwise None if the connection is closed or no message is received.
+        """
         return await self.client.listen()
 
-    async def get_data(self, data):
+    async def get_data(self, data: str) -> dict | None:
+        """
+        Sends a request and waits for a specific response from the server.
+
+        Delegates the operation to the internal client to retrieve data that matches
+        the given identifier or request type.
+
+        Args:
+            data: The string key or identifier used to filter or retrieve the expected response.
+
+        Returns:
+            dict | None: The response data as a dictionary if available,
+            otherwise None.
+        """
         return await self.client.get_data(data)
 
     async def friend_list(self) -> List[ModelFriend]:
         """
-        Retrieves the user's friend list.
+        Fetches the user's friend list from the server.
+
+        Sends a request with packet type `ADD_CLIENT_TO_FRIENDSHIP_LIST`, then
+        awaits and decodes the server response into a list of `ModelFriend` objects.
 
         Returns:
-            List[ModelFriend]: A list of friends as ModelFriend objects.
+            A list of `ModelFriend` instances representing the user's friends.
+
+        Raises:
+            AttributeError: If the friendship list is missing in the server response.
         """
         friends_request: dict = {
             PacketDataKeys.TYPE: PacketDataKeys.ADD_CLIENT_TO_FRIENDSHIP_LIST
@@ -45,7 +125,7 @@ class Players:
         await asyncio.sleep(.01)
         received_data: dict | None = await self.get_data(PacketDataKeys.FRIENDSHIP_LIST)
         if received_data is None:
-            raise AttributeError
+            raise AttributeError("No friend list data")
 
         friends: List[ModelFriend] = []
 
@@ -53,7 +133,17 @@ class Players:
             friends.append(decode(json.dumps(friend), type = ModelFriend))
         return friends
 
-    async def get_friend_invite_list(self):
+    async def get_friend_invite_list(self) -> dict | None:
+        """
+        Fetches the list of friends in the invite list from the server.
+
+        Sends a request to retrieve users currently in the invite list and awaits
+        the server's response.
+
+        Returns:
+            The parsed server response associated with `FRIENDS_IN_INVITE_LIST`,
+            typically a `dict` or `None` if the data was not received.
+        """
         get_invite_list_request: dict = {
             PacketDataKeys.TYPE: PacketDataKeys.GET_FRIENDS_IN_INVITE_LIST
         }
@@ -61,7 +151,20 @@ class Players:
         await asyncio.sleep(.01)
         return await self.get_data(PacketDataKeys.FRIENDS_IN_INVITE_LIST)
 
-    async def invite_friend(self, player_id: str):
+    async def invite_friend(self, player_id: str) -> dict | None:
+        """
+        Sends a friend invite to a player by their ID.
+
+        Sends a request to invite the specified player to the current room
+        and awaits a confirmation response from the server.
+
+        Args:
+            player_id: The unique identifier of the player to invite.
+
+        Returns:
+            The server's response associated with the `FRIEND_IS_INVITED` key,
+            or `None` if no response was received.
+        """
         invite_request: dict = {
             PacketDataKeys.TYPE: PacketDataKeys.SEND_FRIEND_INVITE_TO_ROOM,
             PacketDataKeys.USER_OBJECT_ID: player_id
@@ -74,11 +177,15 @@ class Players:
         """
         Searches for a player by their nickname.
 
-        Parameters:
-            nickname (str): The nickname of the player to search for.
+        Sends a search request to the server to look up a player using the
+        provided nickname.
+
+        Args:
+            nickname: The nickname of the player to search for.
 
         Returns:
-            dict: The search result data.
+            A dictionary containing the search result data, or None if no
+            data was received.
         """
         search_info_request: dict = {
             PacketDataKeys.TYPE: PacketDataKeys.SEARCH_USER,
@@ -92,11 +199,13 @@ class Players:
         """
         Removes a friend from the user's friend list.
 
-        Parameters:
-            friend_id (str): The unique identifier of the friend to remove.
+        Sends a request to the server to remove the specified friend.
+
+        Args:
+            friend_id: The unique identifier of the friend to remove.
 
         Returns:
-            None
+            None.
         """
         remove_friend_request: dict = {
             PacketDataKeys.TYPE: PacketDataKeys.REMOVE_FRIEND,
@@ -106,15 +215,11 @@ class Players:
 
     async def kick_user_vote(self, room_id: str, value: bool = True) -> None:
         """
-        Sends a vote request to kick a user from the room.
+        Sends a vote request to kick a user from a room.
 
-        Parameters:
-            room_id (str): The unique identifier of the room.
-            value (bool, optional): The vote decision.
-            Defaults to True (vote to kick).
-
-        Returns:
-            None
+        Args:
+            room_id: The unique identifier of the room.
+            value: The vote decision. Defaults to True (vote to kick).
         """
         vote_request: dict = {
             PacketDataKeys.TYPE: PacketDataKeys.KICK_USER_VOTE,
@@ -127,12 +232,9 @@ class Players:
         """
         Sends a request to kick a user from the specified room.
 
-        Parameters:
-            user_id (str): The unique identifier of the user to be kicked.
-            room_id (str): The unique identifier of the room.
-
-        Returns:
-            None
+        Args:
+            user_id: The unique identifier of the user to be kicked.
+            room_id: The unique identifier of the room.
         """
         kick_request: dict = {
             PacketDataKeys.TYPE: PacketDataKeys.KICK_USER,
@@ -146,18 +248,17 @@ class Players:
         """
         Submits a complaint about a user's message.
 
-        This method allows users to report inappropriate messages by
-        specifying a reason
+        Allows users to report inappropriate messages by specifying a reason
         and attaching a screenshot.
 
-        Parameters:
-            reason (str): The reason for the complaint.
-            screenshot_id (int): The ID of the uploaded screenshot.
-                Obtained from update_photo_server().
-            user_id (str): The ID of the user being reported.
+        Args:
+            reason: The reason for the complaint.
+            screenshot_id: The ID of the uploaded screenshot. Obtained from
+                update_photo_server().
+            user_id: The ID of the user being reported.
 
         Returns:
-            dict: The server response to the complaint request.
+            The server response to the complaint request.
         """
         complaint_request: dict = {
             PacketDataKeys.TYPE: PacketDataKeys.MAKE_COMPLAINT,
@@ -171,14 +272,16 @@ class Players:
 
     async def get_private_messages(self, friend_id: str) -> List[ModelMessage]:
         """
-        Retrieves the list of private messages exchanged with a specific
-        friend.
+        Retrieves private messages exchanged with a specific friend.
 
-        Parameters:
-            friend_id (str): The unique identifier of the friend.
+        Args:
+            friend_id: The unique identifier of the friend.
 
         Returns:
-            List[ModelMessage]: A list of private messages.
+            A list of private messages as ModelMessage objects.
+
+        Raises:
+            AttributeError: If no data was received from the server.
         """
         private_messages_request: dict = {
             PacketDataKeys.TYPE: PacketDataKeys.ADD_CLIENT_TO_PRIVATE_CHAT,
@@ -206,14 +309,12 @@ class Players:
         """
         Retrieves the player rating based on the specified type and mode.
 
-        Parameters:
-            rating_type (RatingType): The type of rating to retrieve.
-                Defaults to RatingType.AUTHORITY.
-            rating_mode (RatingMode): The time period for the rating.
-                Defaults to RatingMode.ALL_TIME.
+        Args:
+            rating_type: The type of rating to retrieve. Defaults to RatingType.AUTHORITY.
+            rating_mode: The time period for the rating. Defaults to RatingMode.ALL_TIME.
 
         Returns:
-            dict: A dictionary containing the rating data.
+            A dictionary containing the rating data if successful, otherwise None.
         """
         rating_query: dict = {
             PacketDataKeys.TYPE: PacketDataKeys.GET_RATING,
@@ -228,16 +329,12 @@ class Players:
         """
         Sends a private message to a friend.
 
-        Parameters:
-            friend_id (str): The unique identifier of the friend.
-            content (str): The message text to be sent.
+        Args:
+            friend_id: The unique identifier of the friend.
+            content: The message text to be sent.
 
         Returns:
-            None
-
-        Notes:
-            - If the content is empty, the function prevents sending to
-            avoid spam or bans.
+            None. The message is sent if it passes validation checks.
         """
         utils: "Utils" = Utils()
         if not utils.validate_message_content(content):
@@ -263,19 +360,14 @@ class Players:
         """
         Retrieves the profile data of a specific user.
 
-        Parameters:
-            user_id (str): The unique identifier of the user.
+        Args:
+            user_id: The unique identifier of the user.
 
         Returns:
-            Optional[dict]: The user's profile data if successfully
-            retrieved, otherwise None.
+            The user's profile data if successfully retrieved, otherwise None.
 
         Raises:
             Exception: If an unexpected error occurs while fetching the data.
-
-        Notes:
-            - Logs an error if no data is returned.
-            - Uses exception handling to catch and log potential failures.
         """
         user_payload: Dict[str, Any] = {
             PacketDataKeys.TYPE: PacketDataKeys.GET_USER_PROFILE,

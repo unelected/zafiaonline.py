@@ -1,3 +1,17 @@
+"""
+Logging configuration for the Mafia Online client.
+
+Initializes and configures the global logger used throughout the
+Mafia Online client library. The logger outputs messages to stdout
+using a standard timestamped format.
+
+Typical usage example:
+
+    from zafiaonline.logger import logger
+
+    logger.info("Application started")
+    logger.error("An error occurred")
+"""
 import logging
 import sys
 

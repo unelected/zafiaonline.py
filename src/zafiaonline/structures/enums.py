@@ -1,86 +1,81 @@
+"""
+Enumerations for the Mafia game server.
+
+This module defines various enums used throughout the Mafia game backend.
+These enums represent things like player roles, user settings, game events,
+chat message types, and rating systems.
+
+Typical usage example:
+
+    from mafia.enums import Roles, RatingMode
+
+    if user.role == Roles.SHERIFF:
+        investigate(user)
+
+    if leaderboard.mode == RatingMode.TODAY:
+        print(f"Today's rating is {leaderboard}")
+"""
 from enum import IntEnum, Enum
+
 
 class Sex(IntEnum):
     """
-        Enumeration representing the biological sex of a user.
+    Enumeration representing the biological sex of a user.
 
-        Attributes:
-            WOMEN (int): Represents a female user, assigned the value `0`.
-            MEN (int): Represents a male user, assigned the value `1`.
-
-        Usage example:
-            >>> user_sex = Sex.WOMEN
-            >>> print(user_sex)
-            Sex.WOMEN
-            >>> print(user_sex.value)
-            0
-        """
+    Attributes:
+        MEN: Represents a male user (value = 0).
+        WOMEN: Represents a female user (value = 1).
+    """
     MEN = 0
     WOMEN = 1
+
 
 class Languages(str, Enum):
     """
     Enumeration representing supported languages.
 
     Attributes:
-        UNSELECTED (str): Default value when no language is selected,
-        represented as an empty string (`""`).
-        RUSSIAN (str): Represents the Russian language, using the code `"ru"`.
-        ENGLISH (str): Represents the English language, using the code `"en"`.
-
-    Usage example:
-        >>> user_language = Languages.RUSSIAN
-        >>> print(user_language)
-        Languages.RUSSIAN
-        >>> print(user_language.value)
-        'ru'
+        UNSELECTED: Default value when no language is selected (value = "").
+        RUSSIAN: Represents the Russian language (value = "ru").
+        ENGLISH: Represents the English language (value = "en").
     """
-    UNSELECTED = ""  # No language selected
-    RUSSIAN = "ru"   # Russian language
-    ENGLISH = "en"   # English language
+    UNSELECTED = ""
+    RUSSIAN = "ru"
+    ENGLISH = "en"
+
 
 class Roles(IntEnum):
     """
     Enumeration representing different roles in the game.
 
-    Each role has a unique integer identifier, which is used to define
-    a player's function or abilities within the game.
+    Each role has a unique integer identifier, defining a player's function
+    or abilities within the game.
 
     Attributes:
-        CIVILIAN (int): A regular player with no special abilities (1).
-        DOCTOR (int): Can heal other players to protect them from
-        "elimination" (2).
-        SHERIFF (int): Can investigate other players to determine their
-        "roles" (3).
-        MAFIA (int): Works with the mafia team to eliminate civilians (4).
-        LOVER (int): Forms a bond with another player; their fate is linked
-        (5).
-        TERRORIST (int): Can sacrifice themselves to eliminate another
-        "player" (6).
-        JOURNALIST (int): Can reveal a player's role to the public (7).
-        BODYGUARD (int): Protects a chosen player from attacks (8).
-        BARMAN (int): Can disable another player’s abilities for a turn (9).
-        SPY (int): Can gather information about other players’ actions (10).
-        INFORMER (int): Can manipulate information or provide false leads (11).
-
-    Usage example:
-        >>> player_role = Roles.SHERIFF
-        >>> print(player_role)
-        Roles.SHERIFF
-        >>> print(player_role.value)
-        3
+        CIVILIAN: A regular player with no special abilities (1).
+        DOCTOR: Can heal other players to protect them from elimination (2).
+        SHERIFF: Can investigate other players to determine their roles (3).
+        MAFIA: Works with the mafia team to eliminate civilians (4).
+        LOVER: Forms a bond with another player; their fate is linked (5).
+        TERRORIST: Can sacrifice themselves to eliminate another player (6).
+        JOURNALIST: Can reveal a player's role to the public (7).
+        BODYGUARD: Protects a chosen player from attacks (8).
+        BARMAN: Can disable another player’s abilities for a turn (9).
+        SPY: Can gather information about other players’ actions (10).
+        INFORMER: Can manipulate information or provide false leads (11).
     """
-    CIVILIAN = 1      # Regular player with no special abilities
-    DOCTOR = 2        # Can heal players
-    SHERIFF = 3       # Can investigate roles
-    MAFIA = 4         # Part of the mafia team
-    LOVER = 5         # Forms a linked bond with another player
-    TERRORIST = 6     # Can sacrifice themselves for an attack
-    JOURNALIST = 7    # Reveals player roles
-    BODYGUARD = 8     # Protects a chosen player
-    BARMAN = 9        # Disables player abilities for a turn
-    SPY = 10          # Gathers information about players
-    INFORMER = 11     # Manipulates information or misleads
+    CIVILIAN = 1
+    DOCTOR = 2
+    SHERIFF = 3
+    MAFIA = 4
+    LOVER = 5
+    TERRORIST = 6
+    JOURNALIST = 7
+    BODYGUARD = 8
+    BARMAN = 9
+    SPY = 10
+    INFORMER = 11
+
 
 class RatingMode(str, Enum):
     """
@@ -90,71 +85,46 @@ class RatingMode(str, Enum):
     and displayed on the leaderboard.
 
     Attributes:
-        ALL_TIME (str): Displays rankings based on all-time performance.
-        TODAY (str): Displays rankings based on performance for the current
-        day.
-        YESTERDAY (str): Displays rankings based on performance for the
-        previous day.
-
-    Usage example:
-        >>> current_mode = RatingMode.TODAY
-        >>> print(current_mode)
-        RatingMode.TODAY
-        >>> print(current_mode.value)
-        'today'
+        ALL_TIME: Rankings based on all-time performance.
+        TODAY: Rankings based on performance for the current day.
+        YESTERDAY: Rankings based on performance for the previous day.
     """
-    ALL_TIME = "all_time"   # Leaderboard for all-time rankings
-    TODAY = "today"         # Leaderboard for today's performance
-    YESTERDAY = "yesterday" # Leaderboard for yesterday's performance
+    ALL_TIME = "all_time"
+    TODAY = "today"
+    YESTERDAY = "yesterday"
+
 
 class RatingType(str, Enum):
     """
-    Enumeration representing different types of rating categories for
-    player rankings.
+    Enumeration representing different types of rating categories for player rankings.
 
     This enum defines the various metrics used to rank players in leaderboards.
 
     Attributes:
-        GAMES (str): Ranking based on the total number of games played.
-        EXPERIENCE (str): Ranking based on the player's accumulated
-        experience points.
-        AUTHORITY (str): Ranking based on the player's authority level.
-        WINS (str): Ranking based on the total number of wins achieved.
-
-    Usage example:
-        >>> rating_category = RatingType.EXPERIENCE
-        >>> print(rating_category)
-        RatingType.EXPERIENCE
-        >>> print(rating_category.value)
-        'experience'
+        GAMES: Ranking based on the total number of games played.
+        EXPERIENCE: Ranking based on the player's accumulated experience points.
+        AUTHORITY: Ranking based on the player's authority level.
+        WINS: Ranking based on the total number of wins achieved.
     """
-    GAMES = "games"         # Rank based on the number of games played
-    EXPERIENCE = "experience" # Rank based on total experience points
-    AUTHORITY = "authority" # Rank based on authority level
-    WINS = "wins"           # Rank based on total wins
+    GAMES = "games"
+    EXPERIENCE = "experience"
+    AUTHORITY = "authority"
+    WINS = "wins"
+
 
 class ActivityType(IntEnum):
     """
     Enumeration representing the activity status of a user.
 
-    This enum is used to indicate whether a user is currently online or
-    offline.
+    This enum is used to indicate whether a user is currently online or offline.
 
     Attributes:
-        OFFLINE (int): Represents a user who is not currently active (value
-        = 0).
-        ONLINE (int): Represents a user who is currently active and online (
-        value = 1).
-
-    Usage example:
-        >>> status = ActivityType.ONLINE
-        >>> print(status)
-        ActivityType.ONLINE
-        >>> print(status.value)
-        1
+        OFFLINE: Represents a user who is not currently active.
+        ONLINE: Represents a user who is currently active and online.
     """
-    OFFLINE = 0  # User is not active
-    ONLINE = 1   # User is currently online
+    OFFLINE = 0
+    ONLINE = 1
+
 
 class RoomModelType(IntEnum):
     """
@@ -164,40 +134,26 @@ class RoomModelType(IntEnum):
     matchmaking-enabled rooms.
 
     Attributes:
-        NOT_MATCHMAKING_MODE (int): Represents a regular game room without
-        "matchmaking" (value = 0).
-        MATCHMAKING_MODE (int): Represents a room that uses a matchmaking
-        system to pair players (value = 1).
-
-    Usage example:
-        >>> room_type = RoomModelType.MATCHMAKING_MODE
-        >>> print(room_type)
-        RoomModelType.MATCHMAKING_MODE
-        >>> print(room_type.value)
-        1
+        NOT_MATCHMAKING_MODE: Represents a regular game room without matchmaking.
+        MATCHMAKING_MODE: Represents a room that uses a matchmaking system to pair players.
     """
-    NOT_MATCHMAKING_MODE = 0  # Regular room without matchmaking
-    MATCHMAKING_MODE = 1      # Room with matchmaking enabled
+    NOT_MATCHMAKING_MODE = 0
+    MATCHMAKING_MODE = 1
 
-class ProfilePhotoType(int, Enum):
+
+class ProfilePhotoType(str, Enum):
     """
     Enumeration representing the profile photo status of a user.
 
     This enum is used to determine whether a user has uploaded a profile photo.
 
     Attributes:
-        NO_PHOTO (int): The user has not uploaded a profile photo (value = "").
-        PHOTO_ADDED (int): The user has uploaded a profile photo (value = 1).
-
-    Usage example:
-        >>> photo_status = ProfilePhotoType.PHOTO_ADDED
-        >>> print(photo_status)
-        ProfilePhotoType.PHOTO_ADDED
-        >>> print(photo_status.value)
-        1
+        NO_PHOTO: The user has not uploaded a profile photo.
+        PHOTO_ADDED: The user has uploaded a profile photo.
     """
-    NO_PHOTO = "0"      # No profile photo uploaded
-    PHOTO_ADDED = "1"   # Profile photo has been added
+    NO_PHOTO = "0"
+    PHOTO_ADDED = "1"
+
 
 class FriendInRoomType(IntEnum):
     """
@@ -207,61 +163,49 @@ class FriendInRoomType(IntEnum):
     the same room.
 
     Attributes:
-        NO_FRIEND_IN_ROOM (int): No friends are present in the room
-        (value = 0).
-        FRIEND_IN_ROOM (int): At least one friend is present in the room (
-        value = 1).
-
-    Usage example:
-        >>> friend_status = FriendInRoomType.FRIEND_IN_ROOM
-        >>> print(friend_status)
-        FriendInRoomType.FRIEND_IN_ROOM
-        >>> print(friend_status.value)
-        1
+        NO_FRIEND_IN_ROOM: No friends are present in the room.
+        FRIEND_IN_ROOM: At least one friend is present in the room.
     """
-    NO_FRIEND_IN_ROOM = 0  # No friends present in the room
-    FRIEND_IN_ROOM = 1     # At least one friend is in the room
+    NO_FRIEND_IN_ROOM = 0
+    FRIEND_IN_ROOM = 1
+
 
 class MessageType(IntEnum):
     """
-    A class containing message type constants for the Mafia game chat.
+    Enumeration of message types for the Mafia game chat.
 
-    Message Types:
-        MAIN_TEXT: 1 — "%s", color: main_text (dark in mafia, white in zafia)
-        USER_HAS_ENTERED: 2 — "%s %s %s", color: green
-        USER_HAS_LEFT: 3 — "%s %s %s", color: red
-        GAME_HAS_STARTED: 4 — "%s", color: main_text
-        NIGHT_COME_MAFIA_IN_CHAT: 5 — "%s", color: blue
-        NIGHT_MAFIA_CHOOSE_VICTIM: 6 — "%s", color: blue
-        DAY_COME_EVERYONE_IN_CHAT: 7 — "%s", color: orange
-        DAY_CIVILIANS_VOTING: 8 — "%s", color: orange
-        VOTES_FOR: 9 — "%s [%s]", color: green
-        MAIN_TEXT10: 10 — "%s", color: main_text, useless
-        KILLED_PLAYER_MESSAGE: 11 — "%s", color: gray
-        PLAYER_KILLED: 12 — "%s [%s] %s", color: red
-        VOTES_FOR13: 13 — "%s [%s]", color: green, useless
-        NOBODY_KILLED: 14 — "%s", color: green
-        GAME_FINISHED_CIVILIANS_WON: 15 — "%s", color: green
-        GAME_FINISHED_MAFIA_WON: 16 — "%s", color: green
-        KILLED_USER_MESSAGE: 17 — "%s", color: gray (#ff6d6a96)
-        TERRORIST_BOMBED: 18 — "%s [%s]", color: red
-        BREAKING_NEWS_PLAYING_THE_SAME_TEAM: 19 — split("[#][=][#]"), "%s [%s] %s [%s] %s", color: red
-        BREAKING_NEWS_PLAYING_DIFFERENT_TEAMS: 20 — split("[#][=][#]"), "%s [%s] %s [%s] %s", color: red
-        TERRORIST_BOMBED_USER_WAS_UNDER_GUARDIAN: 21 — "%s [%s], %s" "%s", color: red
-        GAME_FINISHED_IN_DRAW: 22 — "%s", color: green
-        STARTED_VOTING_TO_KICK_USER: 23 — split("[#][=][#]"), "[%s] %s [%s] %s", color: blue
-            First part is the nickname of the initiator, second is the target.
-        KICK_VOTING_HAS_FINISHED: 24 — split("[|]"), "%s\n%s:\n%s: %s\n%s: %s", color: blue
-        MAIN_TEXT25: 25 — "%s", color: main_text, useless
-        VOTES_FOR26: 26 — "%s [%s]", color: green, useless
-        GIVE_UP: 27 — "%s", color: red
+    Message types define the structure, color, and context of chat messages
+    used during gameplay.
 
-    Notes:
-        Format strings are indicated in comments for each message type.
-        The color defines how the message should appear in the game interface.
-        Do not modify the numeric values as they are fixed by the external API.
+    Attributes:
+        MAIN_TEXT: General game message.
+        USER_HAS_ENTERED: A user has entered the room.
+        USER_HAS_LEFT: A user has left the room.
+        GAME_HAS_STARTED: Game start notification.
+        NIGHT_COME_MAFIA_IN_CHAT: Night phase begins, mafia chat opens.
+        NIGHT_MAFIA_CHOOSE_VICTIM: Mafia selects a victim.
+        DAY_COME_EVERYONE_IN_CHAT: Day phase begins, all players chat.
+        DAY_CIVILIANS_VOTING: Civilians begin voting.
+        VOTES_FOR: A vote has been cast.
+        MAIN_TEXT10: Duplicate main text (unused).
+        KILLED_PLAYER_MESSAGE: Message about a killed player.
+        PLAYER_KILLED: Announcement of player killed.
+        VOTES_FOR13: Duplicate voting message (unused).
+        NOBODY_KILLED: No player was killed.
+        GAME_FINISHED_CIVILIANS_WON: Game end, civilians win.
+        GAME_FINISHED_MAFIA_WON: Game end, mafia win.
+        KILLED_USER_MESSAGE: User has been killed.
+        TERRORIST_BOMBED: Terrorist has exploded.
+        BREAKING_NEWS_PLAYING_THE_SAME_TEAM: Breaking news, same team.
+        BREAKING_NEWS_PLAYING_DIFFERENT_TEAMS: Breaking news, different teams.
+        TERRORIST_BOMBED_USER_WAS_UNDER_GUARDIAN: Bomb blocked by guardian.
+        GAME_FINISHED_IN_DRAW: Game ended in a draw.
+        STARTED_VOTING_TO_KICK_USER: Kick vote initiated.
+        KICK_VOTING_HAS_FINISHED: Kick vote concluded.
+        MAIN_TEXT25: Duplicate main text (unused).
+        VOTES_FOR26: Duplicate voting message (unused).
+        GIVE_UP: Player has surrendered.
     """
-
     MAIN_TEXT = 1
     USER_HAS_ENTERED = 2
     USER_HAS_LEFT = 3
@@ -290,23 +234,23 @@ class MessageType(IntEnum):
     VOTES_FOR26 = 26
     GIVE_UP = 27
 
+
 class MessageStyles(IntEnum):
     """
-    Enum for message color styles used in the Mafia game chat.
+    Enumeration of color styles for chat messages in the Mafia game.
 
-    Values:
-        NO_COLOR (int): 0 — No color applied.
-        GREY_COLOR (int): 1 — Grey color style.
-        BLUE_COLOR (int): 2 — Blue color style.
-        RED_COLOR (int): 3 — Red color style.
-        GREEN_COLOR (int): 4 — Green color style.
-        PURPLE_COLOR (int): 5 — Purple color style.
-        YELLOW_COLOR (int): 6 — Yellow color style.
-        PINK_COLOR (int): 7 — Pink color style.
+    These styles define the appearance of chat messages based on their type.
+    Values correspond to predefined color codes in the game’s client UI.
 
-    Notes:
-        These styles define the appearance of chat messages based on their type.
-        Values correspond to predefined color codes in the game’s client UI.
+    Attributes:
+        NO_COLOR: No color applied.
+        GREY_COLOR: Grey color style.
+        BLUE_COLOR: Blue color style.
+        RED_COLOR: Red color style.
+        GREEN_COLOR: Green color style.
+        PURPLE_COLOR: Purple color style.
+        YELLOW_COLOR: Yellow color style.
+        PINK_COLOR: Pink color style.
     """
     NO_COLOR = 0
     GREY_COLOR = 1
@@ -317,30 +261,30 @@ class MessageStyles(IntEnum):
     YELLOW_COLOR = 6
     PINK_COLOR = 7
 
+
 class MafiaLanguages(str, Enum):
     """
-    Enum for supported language codes in the Mafia game.
+    Enumeration of supported language codes in the Mafia game.
 
-    Values:
-        Russian (str): "RUS" — Russian language.
-        English (str): "ENG" — English language.
+    These codes are used for localizing game content and messages.
 
-    Notes:
-        These codes are used for localizing game content and messages.
+    Attributes:
+        Russian: Russian language.
+        English: English language.
     """
     Russian = "RUS"
     English = "ENG"
 
+
 class MethodGetFavourites(IntEnum):
     """
-    Enum for methods of retrieving favourite players in the Mafia game.
+    Enumeration for methods of retrieving favourite players in the Mafia game.
 
-    Values:
-        FriendMethod (int): 0 — Retrieve favourites from the friend list.
-        InviteMethod (int): 1 — Retrieve favourites from the invite list.
+    Used to specify the source of a player's favourites when making a request.
 
-    Notes:
-        Used to specify the source of a player's favourites when making a request.
+    Attributes:
+        FriendMethod: Retrieve favourites from the friend list.
+        InviteMethod: Retrieve favourites from the invite list.
     """
     FriendMethod = 0
     InviteMethod = 1

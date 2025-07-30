@@ -1,3 +1,20 @@
+"""
+Custom exception classes for Mafia Online client.
+
+This module defines application-specific exceptions used throughout the
+Mafia Online WebSocket client codebase. These exceptions allow for precise
+handling of login failures, bans, and other client-side error conditions.
+
+Typical usage example:
+
+    from zafiaonline.exceptions import LoginError, BanError
+
+    if not user_logged_in:
+        raise LoginError("Invalid credentials")
+
+    if server_response["type"] == "USER_BLOCKED":
+        raise BanError(client, server_response, auth)
+"""
 from typing import Type
 
 from zafiaonline.main import Client
@@ -32,7 +49,36 @@ class ListenExampleErrorException(Exception):
         super().__init__(message)
 
 class BanError(Exception):
+    """
+    Exception raised when a user is banned by the server.
+
+    This error is triggered upon receiving a USER_BLOCKED event from the server,
+    indicating the client is no longer allowed to interact due to a violation
+    or other reason.
+
+    Attributes:
+        client (Client): The client instance associated with the banned user.
+        auth (Type | None): Optional authentication object for fallback user data.
+        message (str): Explanation of the ban including reason and remaining time.
+    """
     def __init__(self, client: "Client", data: dict = {}, auth: Type | None = None):
+        """
+        Initializes a BanError indicating the client has been banned.
+
+        Constructs a detailed error message based on the ban reason and remaining
+        ban duration. Uses client and optional auth information to determine the
+        banned username.
+
+        Args:
+            client (Client): The client instance representing the banned user.
+            data (dict, optional): The server packet containing ban information.
+                Must include 'REASON' and 'TIME_SEC_REMAINING' fields.
+            auth (Type | None, optional): An optional auth object used to
+                supplement or replace client info if needed.
+
+        Raises:
+            AttributeError: If required client or auth user attributes are missing.
+        """
         from zafiaonline.structures.packet_data_keys import PacketDataKeys
 
 
@@ -58,4 +104,10 @@ class BanError(Exception):
         super().__init__(message)
 
 class LoginError(Exception):
+    """
+    Exception raised when authentication with the server fails.
+
+    This can occur due to invalid credentials, network errors,
+    or server-side issues during the login process.
+    """
     pass

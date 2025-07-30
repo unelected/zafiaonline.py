@@ -1,8 +1,32 @@
+"""
+Enums and renaming dictionaries for networking and API communication.
+
+This module contains enum classes and key renaming mappings used for encoding
+and decoding messages between clients and servers in Mafia Online and Zafia Online.
+
+Typical usage example:
+
+    from mafia.enums_and_keys import PacketDataKeys, Renaming
+
+    value = PacketDataKeys.USERNAME
+    renamed_dict = rename_payload(data, rename_map=Renaming.USER)
+"""
 from enum import Enum
 from typing import Any
 
 
 class PacketDataKeys(str, Enum):
+    """
+    Enumeration of packet data keys for client-server communication.
+
+    This class defines short string identifiers used in network packets
+    exchanged between client and server. These compact keys help reduce
+    payload size and improve communication efficiency.
+
+    Each enum member maps a semantic constant name to a short code, often
+    a single letter or abbreviation, which identifies a specific action,
+    status, user attribute, or system message in the protocol.
+    """
     ACCEPTED = "a"
     ACCEPT_MESSAGES = "ac"
     ACTIVE = "ac"
@@ -309,6 +333,23 @@ class PacketDataKeys(str, Enum):
 
 
 class HttpsApiKeys(str, Enum):
+    """Enumeration of standard HTTP API parameter keys.
+
+    This enum defines the string constants used as keys in HTTPS API requests.
+    These keys are used to identify values such as credentials, language settings,
+    and device identifiers during HTTP communication with the server.
+
+    Attributes:
+        LANGUAGE (str): Key for specifying the language.
+        NEW_EMAIL (str): Key for submitting a new email address.
+        DEVICE_ID (str): Key for identifying the user's device.
+        USER_OBJECT_ID (str): Key for the user's object ID.
+        EMAIL (str): Key for the user's email address.
+        USERNAME (str): Key for the user's username.
+        PASSWORD (str): Key for the user's password.
+        CURRENT_PASSWORD (str): Key for the user's current password.
+        VERIFICATION_CODE (str): Key for email or account verification code.
+    """
     LANGUAGE = "lang"
     NEW_EMAIL = "newEmail"
     DEVICE_ID = "deviceId"
@@ -321,6 +362,25 @@ class HttpsApiKeys(str, Enum):
 
 
 class ZafiaApiKeys(str, Enum):
+    """
+    Enumeration of API parameter keys used in Zafia API requests.
+
+    This enum defines string constants representing keys commonly used
+    in requests to the Zafia API. These keys identify user-related data,
+    request parameters, and device information.
+
+    Attributes:
+        USER_ID (str): Key for specifying the user identifier.
+        FAVORITE_ID (str): Key for specifying the favorite item identifier.
+        SHOW (str): Key for controlling visibility or display options.
+        FROM_TYPE (str): Key indicating the source or type of a request.
+        CHECK_ID (str): Key for an ID to be checked or verified.
+        USER_NICKNAME (str): Key for the user's nickname.
+        CHECK_NICKNAME (str): Key for a nickname to be checked.
+        TYPE (str): Key for specifying the type or category.
+        VERSION (str): Key for the API or client version.
+        DEVICE_ID (str): Key for identifying the user's device.
+    """
     USER_ID = "userId"
     FAVORITE_ID = "favoriteId"
     SHOW = "show"
@@ -334,7 +394,26 @@ class ZafiaApiKeys(str, Enum):
 
 
 class Endpoints(str, Enum):
-    # Mafia Online
+    """
+    Enumeration of API endpoint paths for Mafia Online backend.
+
+    This enum defines the string constants for various HTTP API endpoints
+    used by the Mafia Online client to interact with the backend services.
+
+    Attributes:
+        REMOVE_ACCOUNT (str): Endpoint for deleting a user account.
+        PROFILE_PHOTO (str): Endpoint to fetch a user's profile photo by user ID.
+        CLIENT_CONFIG (str): Endpoint for retrieving client configuration with version.
+        CLIENT_FEATURE_CONFIG (str): Endpoint for fetching feature configuration.
+        USER_SIGN_OUT (str): Endpoint for signing out the user.
+        USER_SIGN_UP (str): Endpoint for registering a new user.
+        USER_EMAIL_VERIFY (str): Endpoint to verify a user's email.
+        USER_CHANGE_EMAIL (str): Endpoint for changing the user's email address.
+        USER_EMAIL_VERIFICATION (str): Endpoint to request email verification code.
+        USER_GET (str): Endpoint to retrieve user profile data.
+        BACKPACK_GET (str): Endpoint to get the contents of a user's backpack.
+        BACKPACK_GET_BONUS_PRICES (str): Endpoint to fetch bonus item prices in the backpack.
+    """
     REMOVE_ACCOUNT = "user/remove"
     PROFILE_PHOTO = "mafia/profile_photo/{user_id}.jpg"
     CLIENT_CONFIG = "mafia/clientConfig{version}.txt"
@@ -350,7 +429,21 @@ class Endpoints(str, Enum):
 
 
 class ZafiaEndpoints(str, Enum):
-    # Zafia Online
+    """
+    API endpoints for Zafia Online.
+
+    This enum contains shorthand identifiers used in Zafia Online's
+    internal API routing. Each value corresponds to a specific backend
+    action that the client can trigger.
+
+    Attributes:
+        CHANGE_FAVORITE_STATUS: Change the favorite status of a user.
+        CHANGE_VISIBLE_TOP: Change a user's visibility in the top list.
+        CHECK_PROFILE: Retrieve another user's profile data.
+        GET_FAVORITES_LIST: Get the current user's list of favorites.
+        GET_TOP: Retrieve the top-ranking users.
+        GET_VERIFICATIONS: Get verification-related data.
+    """
     CHANGE_FAVORITE_STATUS = "cfs"
     CHANGE_VISIBLE_TOP = "cvt"
     CHECK_PROFILE = "cpr"
@@ -360,10 +453,46 @@ class ZafiaEndpoints(str, Enum):
 
 
     def format(self, *args: Any, **kwargs: Any) -> str:
+        """
+        Formats the enum value as a string using provided keyword arguments.
+
+        This method uses the underlying enum string (self.value) as a format
+        string and substitutes any named placeholders with values from kwargs.
+
+        Args:
+            *args: Unused. Present for compatibility.
+            **kwargs: Keyword arguments to format the string.
+
+        Returns:
+            str: Formatted string with placeholders replaced by keyword values.
+        """
         return self.value.format(**kwargs)
 
 
 class Renaming(dict, Enum):
+    """
+    Field name mappings for different object types used in the API.
+
+    This enum stores dictionaries that map verbose field names to their
+    shortened versions used in serialization, API responses, or internal
+    communication. Each attribute represents a context-specific renaming
+    schema (e.g., user data, room settings, server config).
+
+    Attributes:
+        USER: Mapping for user-related fields.
+        USER_NEW_API: Mapping for extended user fields in new API version.
+        SERVER_CONFIG: Mapping for server configuration fields.
+        ROOM: Mapping for basic room-related fields.
+        ROOM_IN_LOBBY: Mapping for room fields shown in lobby context.
+        ROOM_IN_LOBBY_STATE: Mapping for additional room lobby state fields.
+        SHORT_USER: Mapping for minimal user representations.
+        FRIEND: Mapping for friend list entries.
+        FRIENDSHIP: Mapping for friendship relationship data.
+        MESSAGE: Mapping for messaging system fields.
+        GUI: Mapping for GUI-specific identifiers.
+        DECORATIONS: Mapping for decoration item types.
+        DECORATIONS_PARAMETERS: Mapping for parameters of decorations.
+    """
     USER = {
         "user_id": "o", "username": "u",
         "updated": "up", "photo": "ph", "experience": "ex",

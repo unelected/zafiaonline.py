@@ -1,3 +1,19 @@
+"""
+WebSocket support for real-time client-server communication.
+
+This module handles low-level asynchronous messaging over WebSocket for a client,
+including authentication, message parsing, error handling, and lifecycle control.
+
+It is intended to be used as part of a larger client framework.
+
+Typical usage example:
+
+    client = Client(...)
+    ws = Websocket(client)
+    await ws.create_connection()
+    data = await ws.get_data("some_event")
+    await ws.disconnect()
+"""
 import json
 import asyncio
 import sys
@@ -8,7 +24,7 @@ import yaml
 
 from websockets.asyncio.client import connect
 from websockets.exceptions import ConnectionClosedOK,  ConnectionClosed
-from typing import Any, Optional, TYPE_CHECKING, Union
+from typing import Any, TYPE_CHECKING, Union
 from importlib.resources import files, as_file
 
 if TYPE_CHECKING:
@@ -22,61 +38,34 @@ class Config:
     """
     Loads WebSocket server configuration from a YAML file.
 
-    This class reads settings from a YAML file and assigns them to instance attributes.
-    If any values are missing, sensible defaults are applied.
+    Reads settings from a YAML file and assigns them to instance attributes.
+    If any values are missing, sensible defaults are applied:
+       address: 'dottap.com'
+      - port: 7091 for 'wss', 7090 for 'ws'
+      - connect_type: 'wss'
 
-    Attributes:
-        address (str): Hostname or IP address of the WebSocket server. Defaults to 'dottap.com'.
-        port (int): Port number of the WebSocket server. Defaults to 7091.
-        connect_type (str): Protocol type, either 'ws' or 'wss'. Defaults to 'wss'.
+    Typical usage example:
 
-    Args:
-        path (str, optional): Path to the YAML configuration file. Defaults to 'ws_config.yaml'.
-
-    Raises:
-        FileNotFoundError: If the YAML file is not found.
-        yaml.YAMLError: If the YAML content is malformed.
-
-    Examples:
-        Instantiate and access attributes:
-
-            config = Config()
-            print(config.address)       # e.g. 'dottap.com'
-            print(config.port)          # e.g. 7091
-            print(config.connect_type)  # e.g. 'wss'
-
-        Example contents of ws_conf.yaml:
-
-            address: '37.143.8.68'
-            port: 7090
-            connect_type: 'ws'
-
-    Notes:
-        Default ports are based on the protocol:
-            - 7090 for 'ws'
-            - 7091 for 'wss'
+      config = Config(path='ws_config.yaml')
+      print(config.address)       # e.g. '37.143.8.68'
+      print(config.port)          # e.g. 7090
+      print(config.connect_type)  # e.g. 'ws'
     """
     def __init__(self, path: str = "ws_config.yaml") -> None:
         """
         Initializes the Config instance by loading settings from a YAML file.
 
+        Loads the following configuration keys, applying defaults for any that are missing:
+        - address (str): WebSocket server hostname or IP. Defaults to 'dottap.com'.
+        - port (int): WebSocket server port. Defaults to 7091.
+        - connect_type (str): Protocol type ('ws' or 'wss'). Defaults to 'wss'.
+
         Args:
-            path (str, optional): Path to the YAML configuration file. Defaults to 'ws_config.yaml'.
+            path (str): Path to the YAML configuration file. Defaults to 'ws_config.yaml'.
 
         Raises:
             FileNotFoundError: If the YAML file does not exist.
             yaml.YAMLError: If the YAML content is malformed.
-
-        Attributes:
-            Loads the following keys from the YAML file:
-                - 'address' (str): WebSocket server hostname or IP. Defaults to 'dottap.com'.
-                - 'port' (int): WebSocket server port. Defaults to 7091.
-                - 'connect_type' (str): Protocol type ('ws' or 'wss'). Defaults to 'wss'.
-
-        Notes:
-            Default ports are based on the protocol:
-                - 7090 for 'ws'
-                - 7091 for 'wss'
         """
         config_path = files('zafiaonline.transport').joinpath(path)
         with as_file(config_path) as resource_file:
@@ -88,62 +77,94 @@ class Config:
 
 
 class WebSocketHandler():
-    def __init__(self, alive, ws, data_queue, listener_task, uri, ws_lock, socket) -> None:
-        self.alive = alive
-        self.ws: websockets.ClientConnection | None = ws
-        self.data_queue = data_queue
-        self.listener_task = listener_task
-        self.uri = uri
-        self.ws_lock = ws_lock
-        self.websocket = socket
+    """Manages the lifecycle of a WebSocket client connection.
+
+    Handles connection setup, graceful disconnection, reconnection with
+    exponential backoff, and background listening for incoming messages.
+    Designed for robust operation in unreliable network environments.
+
+    Attributes:
+        alive (bool): Indicates whether the connection is currently active.
+        ws (websockets.WebSocketClientProtocol | None): The active WebSocket connection instance.
+        uri (str): The WebSocket server URI to connect to.
+        ws_lock (asyncio.Lock): Lock used to protect concurrent access to the WebSocket.
+        listener_task (asyncio.Task | None): Background task that listens for incoming messages.
+        websocket (Any): The WebSocket wrapper that manages low-level connection logic.
+        data_queue (asyncio.Queue): Queue for storing received messages.
+        client (Any): Optional reference to the parent client or controller.
+    """
+    def __init__(self, socket) -> None:
+        """
+        Initializes the WebSocket handler with configuration and state.
+
+        Args:
+            socket (Websocket): The underlying WebSocket client wrapper.
+
+        """
+        config: Config = Config()
+        self.alive: bool | None = None
+        self.ws: websockets.ClientConnection | None = None
+        self.data_queue: asyncio.Queue = asyncio.Queue()
+        self.listener_task: asyncio.Task | None = None
+        self.uri: str = f"{config.connect_type}://{config.address}:{config.port}"
+        self.ws_lock: asyncio.Lock = asyncio.Lock()
+        self.websocket: Websocket = socket
 
 
     async def __listener(self) -> None:
-            """
-            Listens for incoming WebSocket messages and adds them to the queue.
+        """
+        Listens for incoming WebSocket messages and enqueues them.
 
-            Behavior
-                - Continuously receives messages while the connection is active.
-                - Handles various disconnection scenarios and attempts
-                reconnection if necessary.
-            """
-            while self.alive:
-                try:
-                    if not self.ws:
-                        raise AttributeError
-                    message: Union[str, bytes] = await self.ws.recv()
-                    await self.data_queue.put(message)
+        Continuously receives text or binary messages from the active WebSocket
+        connection and adds them to `self.data_queue`, handling normal and
+        unexpected disconnections, task cancellation, and reconnection.
 
-                except ConnectionClosedOK:
-                    logger.debug("Connection closed normally (1000).")
-                    break
-                except websockets.exceptions.ConnectionClosedError as e:
-                    logger.warning(f"Connection closed unexpectedly: {e}")
-                    break
-                except asyncio.CancelledError:
-                    logger.debug("Listener task was cancelled.")
-                    break
-                except websockets.ConnectionClosed:
-                    logger.warning(
-                        "WebSocket connection lost. Attempting to reconnect...")
-                    asyncio.create_task(self._reconnect())
-                    break
-                except KeyboardInterrupt:
-                    raise
-                except Exception as e:
-                    logger.error(f"Unexpected error in __listener: {e}")
-                    if self.websocket is None:
-                        raise AttributeError("No WebSocket")
-                    await self.websocket.disconnect()
-                    break
+        Returns:
+            None
+
+        Raises:
+            AttributeError: If there is no active WebSocket connection.
+            KeyboardInterrupt: If the listener is interrupted by a keyboard interrupt.
+        """
+        while self.alive:
+            try:
+                if not self.ws:
+                    raise AttributeError
+                message: Union[str, bytes] = await self.ws.recv()
+                await self.data_queue.put(message)
+
+            except ConnectionClosedOK:
+                logger.debug("Connection closed normally (1000).")
+                break
+            except websockets.exceptions.ConnectionClosedError as e:
+                logger.warning(f"Connection closed unexpectedly: {e}")
+                break
+            except asyncio.CancelledError:
+                logger.debug("Listener task was cancelled.")
+                break
+            except websockets.ConnectionClosed:
+                logger.warning(
+                    "WebSocket connection lost. Attempting to reconnect...")
+                asyncio.create_task(self._reconnect())
+                break
+            except KeyboardInterrupt:
+                raise
+            except Exception as e:
+                logger.error(f"Unexpected error in __listener: {e}")
+                if self.websocket is None:
+                    raise AttributeError("No WebSocket")
+                await self.websocket.disconnect()
+                break
 
     async def __on_connect(self) -> None:
         """
-        Handles actions to be performed upon establishing a WebSocket
-        connection.
+        Performs handshake actions after establishing a WebSocket connection.
 
-        Behavior
-            - Sends a handshake message to confirm connection.
+        Sends an initial handshake message over the active WebSocket and logs the event.
+        ConnectionClosed and other exceptions are handled internally and logged.
+
+        Returns:
+            None
         """
         try:
             if not self.ws:
@@ -159,22 +180,12 @@ class WebSocketHandler():
         """
         Cancels the background listener task if it is still running.
 
-        This method checks whether the listener task responsible for handling
-        incoming WebSocket messages is active. If it is, the task is cancelled
-        to prevent further processing and to allow graceful shutdown of the client.
+        If `self.listener_task` exists and is not yet done, this method
+        cancels it to stop processing incoming WebSocket messages, enabling
+        a graceful shutdown or reconnection. It is safe to call multiple times.
 
-        Example:
-            await websocket_client._cancel_listener_task()
-
-        Notes:
-            - This method is safe to call multiple times; it will only act if the
-            task exists and is not already completed or cancelled.
-            - It is typically used during client shutdown or reconnection.
-
-        Workflow:
-            1. Verifies that `self.listener_task` exists.
-            2. Checks if the task is still pending or running.
-            3. Cancels the task and logs the cancellation.
+        Returns:
+            None
         """
         if self.listener_task and not self.listener_task.done():
             self.listener_task.cancel()
@@ -182,96 +193,63 @@ class WebSocketHandler():
 
     async def _connect(self, proxy: str | None = None) -> None:
         """
-        Creates a WebSocket connection to the specified server URI.
+        Creates a WebSocket connection to the configured server URI.
 
-        This method initializes the low-level WebSocket connection using the
-        configured `self.uri`, attaches required headers, and sets the connection
-        status flag `self.alive` to `True` on success.
+        Initializes a low-level WebSocket connection using `self.uri`, applies
+        the provided proxy settings, and includes a User-Agent header to mimic
+        a common HTTP client. On success, sets `self.alive` to True.
+
+        Args:
+        proxy:
+            Optional proxy URL for the connection. If None, no proxy is used.
+
+        Returns:
+        None.
 
         Raises:
-            websockets.exceptions.InvalidURI: If the URI format is incorrect.
-            websockets.exceptions.InvalidHandshake: If the handshake fails.
-            Exception: For any other errors during the connection attempt.
-
-        Notes:
-            - The following header is included in the connection request:
-            - User-Agent: "okhttp/4.12.0" (to mimic a common HTTP client)
+        websockets.exceptions.InvalidURI:
+            If `self.uri` has an invalid format.
+        websockets.exceptions.InvalidHandshake:
+            If the WebSocket handshake fails.
+        Exception:
+            For any other errors encountered during the connection attempt.
         """
         headers: dict[str, str] = {
             "User-Agent": "okhttp/4.12.0"
         }
         if not headers:
             raise AttributeError("No headers")
-        self.ws = await connect(self.uri, user_agent_header = str(headers), proxy = proxy, ssl = ssl._create_unverified_context())
+        self.ws = await connect(self.uri, user_agent_header = str(headers), 
+                                proxy = proxy, ssl = ssl._create_unverified_context()) 
+        #FIXME: @unelected - ssl certificate is not secure
         self.alive = True
 
     async def _post_connect_setup(self) -> None:
         """
-        Handles necessary setup after establishing a successful WebSocket connection.
+        Performs post-connection initialization tasks.
 
-        This method performs post-connection initialization tasks, including
-        triggering the `__on_connect` hook and starting the background listener
-        task to handle incoming messages.
+        Calls `__on_connect` to handle any immediate post-connection logic
+        and starts the background listener task for incoming messages.
 
-        Notes:
-            - This method should be called only after a successful connection.
-            - It is asynchronous and should be awaited.
-
-        Workflow:
-            1. Calls `__on_connect()` to perform any logic needed immediately
-            after a successful connection.
-            2. Starts `__listener()` as a background task to listen for messages.
+        Returns:
+        None
         """
         await self.__on_connect()
         self.listener_task = asyncio.create_task(self.__listener())
 
     async def _reconnect(self) -> None:
         """
-        Performs a controlled reconnection process for the WebSocket client.
+        Attempts to re-establish the WebSocket connection with backoff.
 
-        This method is used when the connection to the WebSocket server has been
-        lost or needs to be re-established. It performs up to 5 reconnection
-        attempts, with exponential backoff delays between each attempt to avoid
-        aggressive reconnect loops. Before each attempt, the current connection
-        (if any) is safely closed using `_attempt_disconnect()`.
-
-        If a reconnection attempt is successful (i.e., `_try_create_connection()`
-        returns True), the method exits early. If all attempts fail and
-        `_should_stop_reconnect()` returns True, the method stops retrying
-        gracefully without raising an exception.
-
-        This mechanism is intended to support graceful degradation and recovery
-        in unreliable network environments, especially where WebSocket stability
-        is not guaranteed.
-
-        Args:
-            None
+        When the connection is lost, this method makes up to five reconnection
+        attempts using exponential backoff delays (1s, 2s, 4s, 8s, 16s, capped at 30s).
+        Before each attempt, it safely closes any existing connection state by
+        calling `_attempt_disconnect`. If `_try_create_connection` succeeds, the
+        method returns immediately. If all attempts fail and `_should_stop_reconnect`
+        returns True, it stops retrying without raising an exception.
 
         Returns:
             None
-
-        Behavior:
-            - Logs the reconnection process with attempt counts.
-            - Attempts up to 5 reconnection tries using exponential backoff.
-            - Backoff time doubles with each retry, capped at 30 seconds:
-            1s, 2s, 4s, 8s, 16s (but you use min(2 ** attempt, 30)).
-            - Each attempt:
-                1. Calls `_attempt_disconnect()` to safely close existing state.
-                2. Waits for backoff delay.
-                3. Calls `_try_create_connection()` to open a new WebSocket.
-            - If a connection is re-established, logs success and returns.
-            - If all attempts fail and `_should_stop_reconnect()` returns True,
-            logs a critical message and exits quietly.
-
-        Example:
-            await self._reconnect()
-
-        Notes:
-            - This method should be called internally after a disconnect or
-            connection failure.
-            - No exception is raised if reconnection fails; the method assumes
-            that failure handling is done elsewhere.
-            - Designed to be safe to call even when the connection is already closed.
         """
         logger.warning("Attempting to reconnect...")
 
@@ -294,14 +272,13 @@ class WebSocketHandler():
 
     async def _handle_reconnect(self) -> None:
         """
-        Initiates a reconnection attempt after a failed WebSocket connection.
+        Initiates a background reconnection process after connection failure.
 
-        Sets the connection status flag to False and starts a background task
-        to handle reconnection logic.
+        Sets `self.alive` to False and schedules the `_reconnect` coroutine as
+        a background task without awaiting it.
 
-        Notes:
-            - This method does not await the reconnection task directly.
-            - Reconnection logic should handle rate limiting and backoff.
+        Returns:
+            None
         """
         self.alive = False
         logger.info("Starting reconnection process.")
@@ -309,30 +286,17 @@ class WebSocketHandler():
 
     async def _close_websocket(self) -> None:
         """
-        Closes the WebSocket connection with a normal closure code (1000).
+        Closes the WebSocket connection with a normal closure code.
 
-        This method gracefully shuts down the current WebSocket connection, if one exists.
-        It attempts to close the connection using the standard WebSocket closure code 1000
-        (indicating a normal closure). It also handles cases where the connection may have
-        already been closed or is not initialized.
+        If an active WebSocket connection exists, closes it using code 1000
+        (normal closure). Safe to call if the connection is already closed or
+        uninitialized.
 
-        Example:
-            await websocket_client._close_websocket()
+        Returns:
+            None
 
         Raises:
             Exception: If an unexpected error occurs during closure.
-
-        Notes:
-            - This method is safe to call even if the connection is already closed.
-            - If the connection object is not initialized (`self.ws is None`),
-            it logs a warning and exits silently.
-
-        Workflow:
-            1. Checks if the WebSocket (`self.ws`) is set.
-            2. Attempts to close the connection using `close(code=1000)`.
-            3. Catches and logs `ConnectionClosed` if the connection is already closed.
-            4. Catches and logs unexpected exceptions.
-            5. Resets `self.ws` to `None` to mark the connection as inactive.
         """
         try:
             if not self.ws:
@@ -347,14 +311,28 @@ class WebSocketHandler():
             raise
 
     async def _should_stop_reconnect(self) -> bool:
-        """Checks if reconnection should stop due to an inactive WebSocket."""
+        """
+        Determines whether reconnection attempts should cease.
+
+        Returns:
+            bool: True if the WebSocket connection is inactive and reconnection
+                should stop; otherwise, False.
+        """
         if not self.alive:
             logger.info("WebSocket is inactive. Stopping reconnection.")
             return True
         return False
 
     async def _attempt_disconnect(self) -> None:
-        """Safely attempts to disconnect the WebSocket before reconnecting."""
+        """
+        Safely disconnects the WebSocket before attempting to reconnect.
+
+        Acquires `self.ws_lock` to ensure no concurrent operations, then calls
+        the `disconnect` method on the underlying WebSocket if the connection is alive.
+
+        Returns:
+            None
+        """
         try:
             async with self.ws_lock:
                 if self.alive:
@@ -365,7 +343,16 @@ class WebSocketHandler():
             logger.error(f"Error during disconnect before reconnect: {e}")
 
     async def _try_create_connection(self) -> bool:
-        """Attempts to create a new WebSocket connection with a timeout."""
+        """
+        Attempts to establish a new WebSocket connection within a timeout.
+
+        Calls `self.websocket.create_connection()` and waits up to 10 seconds
+        for it to complete.
+
+        Returns:
+            bool: True if the connection was established successfully within
+                the timeout; otherwise, False (on timeout or other errors).
+        """
         try:
             if self.websocket is None:
                 raise AttributeError("No WebSocket")
@@ -379,47 +366,34 @@ class WebSocketHandler():
             return False
 
 
+#TODO: @unelected - сделать метакласс
 class Websocket(WebSocketHandler):
-    #TODO сделать метакласс
+    """
+    Manages a WebSocket connection with support for authentication, message handling,
+    and graceful shutdown.
+
+    Attributes:
+        client (Client): Reference to the main client instance, used for syncing data.
+        user_id (str | None): Identifier of the authenticated user, synced from the client.
+        token (str | None): Authentication token, synced from the client.
+    """
     def __init__(self, client: "Client") -> None:
         """
         Initializes the WebSocket client for handling real-time communication.
 
         Args:
-            client (Optional[Client]): Reference to the main client instance.
-
-        Attributes:
-            client (Optional[Client]): The main client instance (if provided).
-            data_queue (asyncio.Queue): Queue for storing incoming messages.
-            alive (Optional[bool]): Connection status flag.
-            ws (Optional[websockets.WebSocketClientProtocol]): WebSocket connection instance.
-            uri (str): WebSocket server address.
-            listener_task (Optional[asyncio.Task]): Background task for listening to messages.
-            ws_lock (asyncio.Lock): Lock to ensure thread-safe WebSocket operations.
-            user_id (Optional[str]): Identifier of the user (to be set after auth).
-            token (Optional[str]): Authentication token (to be set after auth).
+            client (Client): Reference to the main client instance.
         """
-        config: Config = Config()
         self.client: Client = client
-        self.data_queue: asyncio.Queue = asyncio.Queue()
-        self.alive: bool | None = None
-        self.ws: websockets.ClientConnection | None = None
-        self.uri: str = f"{config.connect_type}://{config.address}:{config.port}"
-        self.listener_task: Optional[asyncio.Task] = None
-        self.ws_lock: asyncio.Lock = asyncio.Lock()
         self.user_id: str | None = None
         self.token: str | None = None
-        super().__init__(
-            self.alive, self.ws, self.data_queue, self.listener_task,
-            self.uri, self.ws_lock, self)
+        super().__init__(self)
 
     def update_auth_data(self) -> None:
         """
-        Updates `user_id` and `token` from the client instance after authentication.
+        Updates `user_id` and `token` from the client instance.
 
-        If the WebSocket instance has an associated client, this method copies
-        the `user_id` and `token` attributes from the client to the WebSocket
-        instance.
+        Copies authentication data from the associated client, if available.
 
         Returns:
             None
@@ -432,30 +406,13 @@ class Websocket(WebSocketHandler):
         """
         Establishes a WebSocket connection if not already connected.
 
-        This method sets up a persistent WebSocket connection to the server. It ensures
-        that only one active connection exists, handles potential connection failures,
-        and performs necessary post-connection setup (such as authentication and
-        starting the listener for incoming messages).
-
-        Example:
-            client = WebsocketClient(uri="wss://example.com/socket")
-            await client.create_connection()
+        Args:
+            proxy: Optional proxy address to use for the connection.
 
         Raises:
             websockets.exceptions.ConnectionClosed: If the WebSocket connection is closed unexpectedly.
             websockets.exceptions.InvalidStatus: If the server responds with an invalid status code.
-            Exception: For any other unforeseen errors during connection initialization.
-
-        Notes:
-            - This method is asynchronous and should be awaited.
-            - If the connection is lost, `_handle_reconnect()` will attempt to restore it.
-
-        Workflow:
-            1. Checks if a connection is already active (`self.alive`).
-            2. Attempts to establish a new WebSocket connection.
-            3. Calls `_post_connect_setup()` to perform initialization.
-            4. Starts a background task (`__listener()`) to listen for incoming messages.
-            5. If the connection attempt fails, retries using `_handle_reconnect()`.
+            Exception: If an unexpected error occurs during connection initialization.
         """
         if self.alive:
             logger.info("Connection already established.")
@@ -477,33 +434,9 @@ class Websocket(WebSocketHandler):
         """
         Gracefully closes the WebSocket connection.
 
-        Ensures a clean shutdown of the WebSocket connection to prevent resource
-        leaks and handle any unexpected errors that may occur during closure.
-        If the connection is already closed, the method logs the event and exits silently.
-
-        Example:
-            client = WebsocketClient(uri="wss://example.com/socket")
-            await client.create_connection()
-            # Do some operations...
-            await client.disconnect()
-
         Raises:
             websockets.exceptions.ConnectionClosed: If the connection was already closed.
             Exception: If an unexpected error occurs while closing the connection.
-
-        Notes:
-            - This method is asynchronous and should be awaited.
-            - After calling this method, the client should not be used unless reconnected.
-            - The method performs the following steps:
-                1. Checks if the connection is active (`self.alive`).
-                2. Sets `self.alive` to `False` to prevent further operations.
-                3. Calls `_close_websocket()` to properly close the connection.
-                4. Cancels the background listener task (`__listener()`).
-                5. Logs the disconnection status.
-            - Logging includes:
-                - Attempting to close the connection.
-                - Detecting if already closed.
-                - Successful disconnection.
         """
         logger.debug(
             f"Attempting to close WebSocket. self.alive={self.alive}")
@@ -522,42 +455,18 @@ class Websocket(WebSocketHandler):
         """
         Sends a JSON-encoded payload to the WebSocket server.
 
-        This method handles serialization, attaches authentication details
-        (if available), and ensures the WebSocket is connected before sending.
-        If the connection is lost, it attempts an automatic reconnection.
-        In case of a known ban (e.g., BanError), the method exits silently.
-
         Args:
             data (dict): The data payload to send over the WebSocket.
             remove_token_from_object (bool): If True, omits authentication
                 details ('token' and 'user_id') from the outgoing message.
 
-        Example:
-            await client.send_server({
-                "PacketDataKeys.TYPE": "PacketDataKeys.UPLOAD_PHOTO",
-                "PacketDataKeys.FILE": base64.encodebytes(file).decode()
-            })
-
         Raises:
-            json.JSONDecodeError: On serialization failure.
+            json.JSONDecodeError: If serialization fails.
             AttributeError: If the WebSocket instance is unexpectedly missing.
-            websockets.ConnectionClosed: If sending fails due to closed socket.
+            websockets.ConnectionClosed: If the WebSocket is closed during send.
 
-        Notes:
-            - Attempts to be fault-tolerant: reconnects if disconnected,
-            gracefully skips banned clients.
-            - Skips sending if reconnection fails or connection remains unavailable.
-            - Handles errors internally; the caller is not expected to manage exceptions.
-            - If a BanError is raised during reconnection, the message is dropped silently.
-            - This method is asynchronous and must be awaited to ensure correct operation.
-
-        Workflow:
-            1. Checks if the WebSocket connection is active (self.alive).
-            2. If inactive, tries to reconnect. On failure or BanError, drops message.
-            3. Attaches authentication data (if applicable and not suppressed).
-            4. Serializes the payload to JSON.
-            5. Sends the data via self.ws.send().
-            6. On connection closure, triggers a reconnection in background.
+        Returns:
+            None
         """
         if not self.alive:
             try:
@@ -593,41 +502,15 @@ class Websocket(WebSocketHandler):
 
     async def listen(self) -> dict[str, Any] | None:
         """
-        Listen for a single incoming message from the WebSocket queue.
-
-        This asynchronous method continuously monitors the internal message queue
-        (`self.data_queue`) while the listener is alive (`self.alive`). It attempts
-        to retrieve and decode a JSON message, with built-in handling for timeouts,
-        decoding issues, and unexpected exceptions.
+        Waits for and returns a single decoded JSON message from the WebSocket queue.
 
         Returns:
-            dict | None: The parsed JSON object if a valid message is received and
-            decoded successfully. Returns `None` if no valid message is retrieved
-            before `self.alive` becomes `False`, or if all retries within a cycle fail.
+            dict[str, Any] | None: The decoded JSON message if successful, otherwise None.
 
         Raises:
-            KeyboardInterrupt: Propagated if the user manually interrupts execution
-            (e.g., via Ctrl+C).
-            json.JSONDecodeError: Raised if an invalid JSON is encountered outside
-            the inner try block (rare, but accounted for).
-            Exception: Any other unexpected exceptions are logged but not re-raised.
-
-        Notes:
-            - Uses `asyncio.wait_for` with a 5-second timeout for each message.
-            - If a message is received:
-                - If the message is `None`, an error is logged.
-                - Attempts to decode it from JSON:
-                    - If decoding succeeds, returns the resulting dictionary.
-                    - If decoding fails, logs the malformed message and continues.
-            - If no message is received within 5 seconds, a debug message is logged
-              and the loop continues waiting.
-            - All exceptions except `KeyboardInterrupt` are caught and logged internally.
-            - JSON decoding errors and unexpected values are logged with context.
-            - Timeout events are logged at the debug level to reduce noise.
-            - Unexpected exceptions are captured and logged without interrupting the loop.
-            - This method is designed to run in a persistent listening loop within
-              an asynchronous context and will return after handling a single message,
-              or `None` if the loop ends without valid input.
+            KeyboardInterrupt: If execution is interrupted manually.
+            json.JSONDecodeError: If a JSON decoding error escapes internal handling.
+            Exception: If an unexpected error occurs during processing.
         """
         while self.alive:
             try:
@@ -660,41 +543,20 @@ class Websocket(WebSocketHandler):
         """
         Waits for and returns a WebSocket event matching the expected mafia type.
 
-        This coroutine listens for JSON messages from the WebSocket using the `listen()`
-        method, and filters them based on the specified `mafia_type`. It handles timeouts,
-        unexpected event types, and block conditions. Returns a valid matching message
-        as a dictionary, or raises an exception if necessary.
-
         Args:
-            mafia_type (str): The event type to wait for. Only messages with this type,
+            mafia_type (str): The expected event type to match. Only messages with this type,
                 "empty", or an error type (`PacketDataKeys.ERROR_OCCUR`) are considered valid.
 
         Returns:
-            dict or None: A dictionary containing the valid message data, or `None` if
-            listening is interrupted or no suitable data is received within the timeout.
+            dict[str, Any] | None: A dictionary with the matching message data, or None if
+            listening times out or is interrupted.
 
         Raises:
-            ValueError: If a `None` response is received from the listener.
-            BanError: If the server signals the user has been blocked via a `USER_BLOCKED` event.
-            asyncio.TimeoutError: If no data is received within 10 seconds.
-            KeyboardInterrupt: If the user manually interrupts execution.
+            ValueError: If the listener returns None.
+            BanError: If a USER_BLOCKED event is received.
+            asyncio.TimeoutError: If no valid data is received within 10 seconds.
+            KeyboardInterrupt: If execution is interrupted manually.
             Exception: For all other unexpected exceptions.
-
-        Notes:
-            - Listens for one message at a time using a 10-second timeout.
-            - If the received message's `type` field matches one of the following, it is returned:
-                - The expected `mafia_type`
-                - "empty"
-                - `PacketDataKeys.ERROR_OCCUR`
-            - If a `USER_BLOCKED` event is received:
-                - A `BanError` is raised.
-                - The client is disconnected.
-                - The process exits using `sys.exit()`.
-            - Unexpected or unrelated events are logged and ignored.
-            - If a `None` or malformed message is received, it is either skipped or raises an error.
-            - This method is typically used in response to game events such as
-              `PacketDataKeys.GAME_STARTED`, `PacketDataKeys.GAME_STATUS`, or
-              `PacketDataKeys.GAME_FINISHED`, filtering out all others until a match is found.
         """
         while self.alive:
             try:
@@ -745,21 +607,16 @@ class Websocket(WebSocketHandler):
         """
         Attempts to retrieve data associated with the given key, retrying on failure.
 
-        This method repeatedly calls `self.get_data(key)` until it returns a non-None value
-        or the maximum number of retries is reached. If an exception is raised during a call,
-        the method logs the error, waits for the specified delay, and retries. If no valid
-        data is retrieved after all attempts, a ValueError is raised.
-
         Args:
-            key (str): The event type or key used to request data from `get_data`.
-            retries (int, optional): Maximum number of retry attempts. Defaults to 2.
-            delay (int, optional): Delay in seconds between retry attempts. Defaults to 2.
+            key (str): The event type to request via `get_data`.
+            retries (int, optional): Number of retry attempts. Defaults to 2.
+            delay (int, optional): Delay between retries in seconds. Defaults to 2.
 
         Returns:
-            dict: The first non-None response returned by `get_data`.
+            dict[str, Any]: The first non-None response returned by `get_data`.
 
         Raises:
-            ValueError: If all retry attempts fail or only None values are returned.
+            ValueError: If all attempts fail or return None.
         """
         for _ in range(retries):
             try:
