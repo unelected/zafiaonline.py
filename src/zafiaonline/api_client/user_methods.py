@@ -130,16 +130,16 @@ class Auth(Websocket):
             dict: A dictionary containing the sign-in request payload.
         """
         self.device_id: str = token_hex(8)
-        return {
-            PacketDataKeys.DEVICE_ID: self.device_id,
+        data: dict = {
             # Generates a random device ID
             PacketDataKeys.TYPE: PacketDataKeys.SIGN_IN,
             PacketDataKeys.EMAIL: email,
             PacketDataKeys.PASSWORD: self.md5hash.md5salt(password or ""),
-            # Hashes password
             PacketDataKeys.OBJECT_ID: user_id,
+            PacketDataKeys.DEVICE_ID: self.device_id,
             PacketDataKeys.TOKEN: token,
-        }
+            }
+        return data
 
     async def _process_auth_response(self) -> ModelUser | bool:
         """

@@ -475,9 +475,9 @@ class Websocket(WebSocketHandler):
                 return
 
         if not remove_token_from_object:
-            if self.token:
+            if self.token and self.token is not None:
                 data[PacketDataKeys.TOKEN] = self.token
-            if self.user_id:
+            if self.user_id and self.user_id is not None:
                 data.setdefault(PacketDataKeys.USER_OBJECT_ID, self.user_id)
 
         try:
