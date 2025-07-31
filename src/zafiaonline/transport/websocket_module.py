@@ -38,18 +38,13 @@ class Config:
     """
     Loads WebSocket server configuration from a YAML file.
 
-    Reads settings from a YAML file and assigns them to instance attributes.
-    If any values are missing, sensible defaults are applied:
-       address: 'dottap.com'
-      - port: 7091 for 'wss', 7090 for 'ws'
-      - connect_type: 'wss'
+    Reads settings from a YAML configuration file and assigns them to instance
+    attributes. If any values are missing, sensible defaults are used.
 
-    Typical usage example:
-
-      config = Config(path='ws_config.yaml')
-      print(config.address)       # e.g. '37.143.8.68'
-      print(config.port)          # e.g. 7090
-      print(config.connect_type)  # e.g. 'ws'
+    Attributes:
+        address (str): WebSocket server hostname or IP. Defaults to "dottap.com".
+        port (int): WebSocket server port. Defaults to 7091.
+        connect_type (str): WebSocket protocol ("ws" or "wss"). Defaults to "wss".
     """
     def __init__(self, path: str = "ws_config.yaml") -> None:
         """

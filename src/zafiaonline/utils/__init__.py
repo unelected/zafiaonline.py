@@ -6,7 +6,7 @@ from zafiaonline.utils.md5hash import Md5
 from zafiaonline.utils.utils_for_send_messages import Utils
 
 
-__all__ = (
+__all__: tuple[str, ...] = (
     # Hash's
     "Md5",
 

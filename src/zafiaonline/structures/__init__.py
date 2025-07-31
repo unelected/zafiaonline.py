@@ -9,7 +9,7 @@ from zafiaonline.structures.models import (
     ModelShortUser, ModelFriend, ModelMessage, ModelGUI
 )
 
-__all__ = (
+__all__: tuple[str, ...] = (
     # Constants
     "PacketDataKeys",
     "HttpsApiKeys",

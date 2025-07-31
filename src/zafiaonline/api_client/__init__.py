@@ -6,7 +6,7 @@ from zafiaonline.api_client.user_methods import Auth, User
 from zafiaonline.api_client.https_api import HttpsApi
 from zafiaonline.api_client.zafia_api import ZafiaApi
 
-__all__ = (
+__all__: tuple[str, ...] = (
     #Decorators
     "ApiDecorators",
 

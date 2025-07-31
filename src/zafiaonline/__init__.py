@@ -5,7 +5,7 @@ import zafiaonline.transport as transport
 
 from zafiaonline.main import Client
 
-__all__ = (
+__all__: tuple[str, ...] = (
     # Classes
     "Client",
 
