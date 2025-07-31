@@ -15,9 +15,11 @@ Typical usage example:
 """
 import functools
 
-from typing import Awaitable, Callable, Union, Any
+from typing import TYPE_CHECKING, Awaitable, Callable, Union, Any
 
-from zafiaonline.api_client.user_methods import Auth
+if TYPE_CHECKING:
+    from zafiaonline.api_client.user_methods import Auth
+
 from zafiaonline.structures import ModelUser
 from zafiaonline.structures.enums import MessageType
 from zafiaonline.utils.exceptions import LoginError
@@ -55,7 +57,7 @@ class ApiDecorators:
         """
         @functools.wraps(func)
         async def wrapper(cls, player_id: str | None,
-                          player_nickname: str | None, auth: Auth, *args, **kwargs) -> Awaitable[Any]:
+                          player_nickname: str | None, auth: "Auth", *args, **kwargs) -> Awaitable[Any]:
             """
             Resolves `player_id` via `player_nickname` if not provided and calls the wrapped function.
 
@@ -79,8 +81,9 @@ class ApiDecorators:
                 AttributeError: If both `player_id` and `player_nickname` are None.
                 ValueError: If `player_nickname` lookup returns no matching player.
             """
-            from zafiaonline.api_client.player_methods import (Players,
-                                                               PacketDataKeys)
+            if TYPE_CHECKING:
+                from zafiaonline.api_client.player_methods import Players
+            from zafiaonline.structures.packet_data_keys import PacketDataKeys
             players: "Players" = Players(auth)
 
             if player_id is None:
@@ -155,12 +158,12 @@ class ApiDecorators:
                     logger.error("Not all login details have been entered")
                     raise LoginError
 
-            return func(self, *args, **kwargs)
+            return await func(self, *args, **kwargs)
 
         return wrapper
 
     @staticmethod
-    def requires_room_check(auth: Auth) -> Callable:
+    def requires_room_check(auth: "Auth") -> Callable:
         """
         Decorator to ensure the user is in the specified room before executing the function.
 
@@ -282,7 +285,7 @@ class ApiDecorators:
                     self.user_name = user.get(PacketDataKeys.USERNAME)
                     self.sex = user.get(PacketDataKeys.SEX)
 
-                    return func(self, content, *args, **kwargs)
+                    return await func(self, content, *args, **kwargs)
 
             return None
 

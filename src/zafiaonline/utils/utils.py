@@ -7,7 +7,10 @@ attributes from a client's `__dict__` back to the client instance.
 Intended for use in dynamic or reflective systems where attribute resetting
 or propagation is necessary.
 """
-from zafiaonline.api_client.user_methods import Auth
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from zafiaonline.api_client.user_methods import Auth
 
 
 def get_user_attributes(auth: "Auth") -> None:

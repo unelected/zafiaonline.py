@@ -19,8 +19,8 @@ import asyncio
 from typing import TYPE_CHECKING
 
 from zafiaonline.structures import PacketDataKeys
-from zafiaonline.structures.enums import MessageStyles
 from zafiaonline.utils.utils import get_user_attributes
+from zafiaonline.structures.enums import MessageStyles
 from zafiaonline.utils.utils_for_send_messages import Utils, SentMessages
 
 
