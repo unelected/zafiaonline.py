@@ -50,11 +50,6 @@ class Config:
         """
         Initializes the Config instance by loading settings from a YAML file.
 
-        Loads the following configuration keys, applying defaults for any that are missing:
-        - address (str): WebSocket server hostname or IP. Defaults to 'dottap.com'.
-        - port (int): WebSocket server port. Defaults to 7091.
-        - connect_type (str): Protocol type ('ws' or 'wss'). Defaults to 'wss'.
-
         Args:
             path (str): Path to the YAML configuration file. Defaults to 'ws_config.yaml'.
 

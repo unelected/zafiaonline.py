@@ -8,7 +8,7 @@ rankings, checking verification data, and more.
 Typical usage example:
 
     api = ZafiaApi()
-    top = await api.get_top(user_id="12345")
+    top = await api.get_top(user_id="user_xxxx")
 
 The `ZafiaApi` class extends `HttpWrapper` and handles endpoint-specific requests
 with automatic parameter formatting and error logging.
@@ -137,7 +137,7 @@ class ZafiaApi(HttpWrapper):
         Retrieves the list of favorite users for the specified user.
 
         This method fetches the user's favorites based on the specified method type,
-        such as favorites added through invites or other means.
+        such as favorites added through invites or friend list means.
 
         Args:
             user_id (str): The unique identifier of the user.
@@ -209,8 +209,7 @@ class ZafiaApi(HttpWrapper):
         """
         Retrieves the list of verifications required for the client.
 
-        Sends a request to fetch current verification requirements or states,
-        such as CAPTCHA, email verification, or others, depending on the
+        Sends a request to fetch current verification depending on the
         client version and device identifier.
 
         Args:

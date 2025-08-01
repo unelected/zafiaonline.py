@@ -275,12 +275,6 @@ class Utils:
         This method analyzes the frequency of sent messages and determines if the
         message rate is high enough to trigger anti-spam or anti-bot protection.
 
-        Conditions:
-        - If at least 6 recent messages are sent with an average interval <= 2.1 seconds.
-        - OR if at least 9 out of the last 20 messages are sent with an average interval <= 3 seconds.
-
-        If any of these conditions are met, it logs a warning and returns True.
-
         Args:
             sent_messages_class (SentMessages): The message handler containing the list of sent messages.
 

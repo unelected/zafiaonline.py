@@ -93,21 +93,21 @@ class Http:
             For example:
                 'Dalvik/2.1.0 (Linux; U; Android 10; Pixel 4 XL Build/QP1A.190711.020)'
         """
-        dalvik_versions = ["1.6.0", "2.1.0"]
-        android_versions = ["5.1.1", "6.0", "7.0", "8.1.0", "9", "10", "11", "12"]
-        devices = [
+        dalvik_versions: list = ["1.6.0", "2.1.0"]
+        android_versions: list = ["5.1.1", "6.0", "7.0", "8.1.0", "9", "10", "11", "12"]
+        devices: list = [
             "Pixel 3", "Pixel 4 XL", "Samsung SM-G960F", "OnePlus A6013",
             "Huawei P30", "Xiaomi Mi 9", "Moto G7", "Nexus 5X"
         ]
-        builds = [
+        builds: list = [
             "LMY47D", "NRD90M", "OPM1.171019.011", "QP1A.190711.020",
             "RP1A.200720.012", "SP1A.210812.015"
         ]
 
-        dalvik_ver = random.choice(dalvik_versions)
-        android_ver = random.choice(android_versions)
-        device = random.choice(devices)
-        build = random.choice(builds)
+        dalvik_ver: str = random.choice(dalvik_versions)
+        android_ver: str = random.choice(android_versions)
+        device: str = random.choice(devices)
+        build: str = random.choice(builds)
         return f"Dalvik/{dalvik_ver} (Linux; U; Android {android_ver}; {device} Build/{build})"
 
     def generate_agent(self) -> str:
@@ -144,7 +144,7 @@ class Http:
             For example:
                 'a9f1b3c7e0d45a67b21d09cf87bc1234'
         """
-        return ''.join(random.choices(string.hexdigits.lower(), k=length))
+        return ''.join(random.choices(string.hexdigits.lower(), k = length))
 
     async def mafia_request(self, url: str, method: Literal["get", "post", "put",
                             "delete"], endpoint: Endpoints,
@@ -172,7 +172,7 @@ class Http:
                 server returns JSON; otherwise, raw response bytes.
 
                 For example, when JSON is returned:
-                    {'player': 'Zim', 'status': 'Invader'}
+                    {'ty': 'siner', 'e': '-7'}
 
                 When binary data is returned:
                     b'\x89PNG\r\n\x1a\n...'
@@ -199,22 +199,24 @@ class Http:
         Returns:
             tuple[str, Dict[str, str]]: A tuple containing:
 
-                - url (str): The request URL returned by `__create_url`.
-                - headers (Dict[str, str]): The final HTTP headers for the request.
+                url (str): The request URL returned by `__create_url`.
+                headers (Dict[str, str]): The final HTTP headers for the request.
 
             For example, if `__create_url` returns
-                ("https://api.example.com/data", False)
+                ("https://api.dottap.com/sign_up", False)
             and `__create_headers(headers, user_id)` returns
-                {"Authorization": "Bearer abc123", "Content-Type": "application/json"},
+                {"Authorization": "Bearer abc123",
+                "Content-Type": "application/json"},
             then this method returns:
-                ("https://api.example.com/data",
+                ("https://api.dottap.com/sign_up",
                 {"Authorization": "Bearer abc123",
                 "Content-Type": "application/json"})
         """
-        url, boolean = self.__create_url()
-        if boolean is True:
-            return url, headers
-        headers = self.__create_headers(headers, user_id)
+        data: tuple[str, bool] | str = self.__create_url()
+        if isinstance(data, str):
+            headers = self.__create_headers(headers, user_id)
+            return data, headers
+        url: str = data[0]
         return url, headers
 
     def __create_url(self) -> tuple[str, bool] | str:
@@ -228,16 +230,17 @@ class Http:
 
         Returns:
             tuple[str, bool] | str: 
-                - If `zafia_endpoint` is `GET_VERIFICATIONS`, returns a tuple
+                If `zafia_endpoint` is `GET_VERIFICATIONS`, returns a tuple
                 `(url, True)` where `url` is the full request URL.
-                - Otherwise, returns the `url` string.
+                Otherwise, returns the `url` string.
 
                 For example:
-                    ('https://api.example.com/verify', True)
+                    ('http://185.188.183.144:5000/zafia/verify', True)
                 or:
-                    'https://api.example.com/data'
+                    'http://185.188.183.144:5000/zafia/example'
         """
         url: str = urljoin(self.zafia_url, self.zafia_endpoint.value)
+        print(url)
         if self.zafia_endpoint == ZafiaEndpoints.GET_VERIFICATIONS.value:
             return url, True
         return url
@@ -258,11 +261,11 @@ class Http:
             Dict[str, str]: The updated headers dictionary including the
             "Authorization" header.
 
-            For example, if `user_id` is "alice" and the generated token is
-            "abcd1234", the returned headers might look like:
+            For example, if `user_id` is "user_xxxx" and the generated token is
+            "meow", the returned headers might look like:
                 {
                     "Content-Type": "application/json",
-                    "Authorization": "YWxpY2U9Oj1hYmNkMTIzNA=="
+                    "Authorization": "dXNlcl94eHh4PTo9bWVvdw=="
                 }
         """
         token: str = self.__generate_random_token()
@@ -287,9 +290,9 @@ class Http:
 
         Returns:
             tuple[str, Dict[str, str]]: A tuple containing:
-                - url (str): The full request URL combining `zafia_url` and the
+                url (str): The full request URL combining `zafia_url` and the
                 endpoint path.
-                - headers (Dict[str, str]): The HTTP headers to use for the request,
+                headers (Dict[str, str]): The HTTP headers to use for the request,
                 including any authentication fields.
 
             For example:
@@ -297,13 +300,15 @@ class Http:
                     "http://185.188.183.144:5000/zafia/gt",
                     {
                         "Content-Type": "application/json",
-                        "Authorization": "YWxpY2U9Oj1hYmNkMTIzNA=="
+                        "Authorization": "dXNlcl94eHh4PTo9bWVvdw=="
                     }
                 )
         """
         headers: dict = self.zafia_headers.copy() 
         self.zafia_endpoint = endpoint
-        url, headers = self.__build_headers(user_id, headers)
+        data: tuple[str, dict] = self.__build_headers(user_id, headers)
+        url: str = data[0]
+        headers: dict = data[1]
         return url, headers
 
     def build_mafia_headers(self, user_id:
@@ -325,7 +330,7 @@ class Http:
             For example:
                 {
                     "Content-Type": "application/json",
-                    "Authorization": "YWxpY2U9Oj1hYmNkMTIzNA=="
+                    "Authorization": "dXNlcl94eHh4PTo9bWVvdw=="
                 }
         """
         headers: dict = self.mafia_headers.copy()
@@ -347,13 +352,13 @@ class Http:
 
         Returns:
             Dict[str, str]: A dictionary of HTTP headers including:
-                - The original `mafia_headers`
-                - An `"Authorization"` header with a Base64‑encoded token
+                The original `mafia_headers`
+                An `"Authorization"` header with a Base64‑encoded token
 
             For example:
                 {
                     "Content-Type": "application/json",
-                    "Authorization": "YWxpY2U9Oj1hYmNkMTIzNA=="
+                    "Authorization": "dXNlcl94eHh4PTo9bWVvdw=="
                 }
         """
         #TODO: @unelected - add new headers
@@ -387,27 +392,28 @@ class Http:
             a dictionary with an `"error"` key containing the response text.
 
             For example, on a successful JSON response:
-                {"player": "Zim", "status": "Invader"}
+                {rs": [{'o': 'ru_6c98005e-aa6e-4886-a3e3-fc1e816fc863',
+                'mnp': 18, 'mxp': 21, 'mnl': 1, 'venb': False, 's': 0, 'rs': 2, 
+                'sr': [], 'fir': 0, 'tt': '!вики', 'pw': 0, 'pn': 1, 'iinvtd': 0}],
+                "ty": "rs"}
 
             On non-JSON response:
-                {"error": "Service unavailable"}
+                {"ty": "siner", "e": -1}
 
         Raises:
             aiohttp.ClientError: If a network-level error occurs during the request.
             Exception: For any other exceptions encountered while sending or
                 processing the response.
         """
-        async with (aiohttp.ClientSession(headers = headers, proxy = self.proxy) as session):
-            method = method
+        async with aiohttp.ClientSession(headers = headers, proxy = self.proxy) as session:
             try:
-                async with getattr(session, method)(url, params = params
-                                                    ) as response:
+                async with await getattr(session, method)(url, params = params) as response:
                     if response.content_type == 'application/json':
                         data: dict = await response.json()
                     else:
-                        text = await response.text()
+                        text: str = await response.text()
                         logger.warning(f"Response from {url}: {text}")
-                        data = {'error': text}
+                        data: dict = {'error': text}
                     return data
             except ClientError as e:
                 logger.error(
@@ -465,7 +471,7 @@ class HttpWrapper:
                 returns JSON; otherwise, raw response bytes.
 
                 For example, on JSON success:
-                    {"status": "ok", "data": {...}}
+                    {"type": "cfs", "status": True
 
                 On non-JSON response:
                     b'\x89PNG\r\n\x1a\n...'
@@ -474,7 +480,10 @@ class HttpWrapper:
             aiohttp.ClientError: If a network-level error occurs during the request.
             Exception: For any other errors encountered while sending or processing the response.
         """
-        url, headers = self.http.build_zafia_headers(endpoint, user_id)
+        data: tuple[str, dict[str, str]] = self.http.build_zafia_headers(endpoint, user_id)
+        url: str = data[0]
+        headers: dict = data[1]
+        print(url, headers)
         return await self.http.send_request(method = method, url = url,
                                 params = params, headers = headers)
 
@@ -498,7 +507,7 @@ class HttpWrapper:
             server returns JSON; otherwise, raw response bytes.
 
             For example, on JSON success:
-                {"player": "Zim", "status": "Invader"}
+                {"uu": {player_data}, "ty": "usi"}
 
             On non-JSON response:
                 b'\x89PNG\r\n\x1a\n...'

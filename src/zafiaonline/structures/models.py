@@ -11,7 +11,7 @@ Typical usage example:
     from zafiaonline.structures.models import ModelUser, ModelRoom
 
     user = ModelUser(username="Player123", password="21242424")
-    room = ModelRoom(room_id="abc123", max_players=12)
+    room = ModelRoom(room_id="ru_96180a0e-57bd-4f4f-bf72-3e0978351761", max_players=12)
 """
 from msgspec import Struct
 from typing import List
