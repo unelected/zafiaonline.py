@@ -136,10 +136,10 @@ class ApiDecorators:
                 self: The class instance to which the method belongs.
                 *args: Positional arguments passed to the original function.
                 **kwargs: Keyword arguments expected to include login credentials.
-                    - email (str): User's email address.
-                    - password (str): User's password.
-                    - token (str): Authentication token.
-                    - user_id (str): User's unique identifier.
+                    email (str): User's email address.
+                    password (str): User's password.
+                    token (str): Authentication token.
+                    user_id (str): User's unique identifier.
 
             Returns:
                 Union[ModelUser, bool]: Result of the decorated function if login data
