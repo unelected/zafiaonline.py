@@ -123,7 +123,8 @@ class HttpsApi(HttpWrapper):
         endpoint: Endpoints = Endpoints(Endpoints.USER_SIGN_OUT)
         return await self.api_mafia_request("post", endpoint)
 
-    async def sign_up(self, email:str, password, username: str|None = None,
+    async def sign_up(self, email: str, password: str,
+                      username: str | None = None,
                       language: MafiaLanguages =
                       MafiaLanguages.English) -> dict | bytes:
         """
@@ -133,7 +134,7 @@ class HttpsApi(HttpWrapper):
 
         Args:
             email (str): The user's email address.
-            password: The user's password, which will be hashed before sending.
+            password (str): The user's password, which will be hashed before sending.
             username (str, optional): An optional display name for the user.
             language (MafiaLanguages): The preferred language for the account.
 
@@ -142,7 +143,7 @@ class HttpsApi(HttpWrapper):
             parsed JSON or raw bytes.
         """
         endpoint: Endpoints = Endpoints(Endpoints.USER_SIGN_UP)
-        data:dict = {
+        data: dict = {
             HttpsApiKeys.EMAIL: email,
             HttpsApiKeys.USERNAME: username,
             HttpsApiKeys.PASSWORD: self.md5hash.md5salt(password),

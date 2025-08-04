@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "zafiaonline"
-version = "6.0.2"
+version = "6.0.3"
 keywords = ["Mafia Online API"]
 description = "A Python API library for interacting with Mafia Online game."
 requires-python = ">=3.9"
@@ -15,10 +15,9 @@ authors = [
 
 dependencies = [
     "websockets >= 15.0.1",
-    "msgspec",
-    "sphinx",
-    "aiohttp",
-    "pyyaml"
+    "msgspec ~= 0.19",
+    "aiohttp ~= 3.12",
+    "pyyaml ~= 6.0"
 ]
 
 [tool.setuptools]
