@@ -93,7 +93,7 @@ class HttpsApi(HttpWrapper):
         endpoint: Endpoints = Endpoints(Endpoints.PROFILE_PHOTO.format(user_id))
         return await self.mafia_request("get", endpoint)
 
-    async def get_client_config(self, version: int = 50) -> dict | bytes:
+    async def get_client_config(self, version: int = 55) -> dict | bytes:
         """
         Fetches the client configuration for a given version.
 
@@ -102,7 +102,7 @@ class HttpsApi(HttpWrapper):
 
         Args:
             version: The version number of the client configuration to retrieve.
-                Defaults to 50.
+                Defaults to 55.
 
         Returns:
             dict | bytes: The client configuration data returned by the server.

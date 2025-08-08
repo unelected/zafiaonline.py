@@ -337,14 +337,49 @@ class PacketDataKeys(str, Enum):
     USER_ENERGY_AMOUNT_FIRST_TIMER = "ueaft"
     USER_ENERGY_AMOUNT_NEXT_TIMERS = "ueant"
     CREATOR_OBJECT_ID = "rco"
-
-
+    VIP_REMANING_MILLISECONDS = "vrms"
+    DASHBOARD_USER = "du"
+    BACKPACK_SIZE = "bps"
+    BACKPACK_VIP_SIZE = "bpsv"
+    AVAILABLE_DECORATIONS = "bids"
+    ACTIVATED_DECORATIONS = "aids"
+    BACKPACK_ITEM_ID = "bio"
+    WHO_BLOCKED_USER_ID = "wbuo"
+    IS_USER_ID_MATCHED = "iuoim"
+    IS_DEVICE_ID_MATHED = "idim"
+    IS_IP_ADDRESS_MATCHED = "iipam"
+    ACTIVATED_ITEM_OBJECT_ID = "aio"
+    ITEM_EXPIRE_AFTER = "iea"
+    MARKET_PRODUCT_ID = "mpid"
+    MARKET_OFFER_COIN_TYPE = "moct"
+    MARKET_OFFER_PRICE = "mop"
+    MARKET_OFFER_DURATION = "mod"
+    MARKET_COINS_AMOUNT = "mca"
+    MARKET_COIN_TYPE = "mct"
+    PAYMENT_URL = "puk"
+    ITEM_PRISE_TESXT = "iprct"
+    BILLING_PURCHASE_ACCOUNT_ID = "bpaid"
+    MARKET_ITEM_DECORATION = "mid"
+    MARKET_ITEM_OFFERS = "mio"
+    PHOTO_FILENAME = "ph"
+    MARKET_ITEM_DECORATIONS = "mids"
+    MARKET_BILLING_ITEM = "mbi"
+    MARKET_VIP_ITEMS = "mivs"
+    MARKET_SILVER_COIN_ITEMS = "misc"
+    MARKET_OFFER_ID = "moid"
+    SELECTED_PARAMETERS_IDS = "dp"
+    CACHE_KEY = "cchk"
+    USER_DEFAULT_PHOTOS_IDS = "usdphi"
+    IS_MATCH_MAKING_ENABLED = "is_match_making_enabled"
+    IS_BACKPACK_ENABLED = "is_backpack_enabled"
+    MATCH_MAKING_MINIMUM_LEVEL = "match_making_minimum_level"
+    PUBLIC_CHAT_MINIMUM_LEVEL = "public_chat_minimum_level"
+    PLAYERS_DATA = "data"
 
     # MARKET
     UNKNOWN1 = "mbt"
     UNKNOWN2 = "mrktgg"
     UNKNOWN3 = "mrktg"
-
 
 
 class HttpsApiKeys(str, Enum):
@@ -550,7 +585,7 @@ class Renaming(dict, Enum):
         "set_photo_minimal_level": "sppml", 
         "room_title_minimal_level": "srtml",
         "room_password_minimal_level": "srpml",
-        "match_making_users_in_queue": "mmguiqik",
+        "match_making_users_in_queue_interval": "mmguiqik",
         "connection_inactive_timeout": "cit",
         "connection_checker_period": "ccp",
         }
@@ -560,8 +595,15 @@ class Renaming(dict, Enum):
         "max_players": "mxp", "min_level": "mnl",
         "vip_enabled": "venb", "status": "s",
         "selected_roles": "sr", "title": "tt",
-        "password": "pw"
+        "password": "pw", "room_model_type": "rmt",
         }
+
+    CURRENET_ROOM = {
+        "game_status": "s", "min_level": "mnl",
+        "room_id": "o", "password": "pw",
+        "players_number": "pn", "same_room": "isr",
+        "title": "tt", "vip_enabled": "venb",
+    }
 
     ROOM_IN_LOBBY = {
         "room_id": "o", "min_players": "mnp",
@@ -574,7 +616,8 @@ class Renaming(dict, Enum):
         "players_number": "pn",
         "invited_in_room": "iinvtd",
         "invitation_sender_username": "isun",
-        "friend_in_room": "fir",
+        "friend_in_room": "fir", "room_model_type": "rmt",
+
     }
 
     ROOM_IN_LOBBY_STATE = {

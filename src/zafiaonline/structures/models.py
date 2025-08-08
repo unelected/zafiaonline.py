@@ -69,7 +69,7 @@ class ModelUser(Struct, rename = Renaming.USER):
     user_id: str | None = None
     updated: int | None = None
     username: str | None = None
-    photo: int | str | None = None
+    photo: str | None = None
     experience: int | None = None
     next_level_experience: int | None = None
     previous_level_experience: int | None = None
@@ -189,6 +189,7 @@ class ModelRoom(Struct, rename = Renaming.ROOM):
     selected_roles: List[Roles] | None = None
     title: str | None = None
     password: str | None = None
+    room_model_tupe: int | None = None
 
 
 class ModelShortUser(Struct, rename = Renaming.SHORT_USER):
