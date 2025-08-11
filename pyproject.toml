@@ -1,14 +1,20 @@
 [build-system]
-requires = ["setuptools", "wheel"]
+requires = ["setuptools >= 80"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "zafiaonline"
-version = "6.1.2"
-keywords = ["Mafia Online API"]
+dynamic = ["version", "readme"]
+keywords = ["Mafia Online API", "API Mafia Online"]
 description = "A Python API library for interacting with Mafia Online game."
 requires-python = ">=3.9"
-license = { text = "LGPL-3.0" }
+license = "LGPL-3.0-or-later"
+license-files = ["LICENSE.txt"]
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Environment :: Console",
+  "Intended Audience :: Developers",
+]
 authors = [
     { name = "unelected" }
 ]
@@ -20,6 +26,10 @@ dependencies = [
     "pyyaml ~= 6.0"
 ]
 
+[project.urls]
+Homepage = "https://github.com/unelected/zafiaonline.py"
+Repository = "https://github.com/unelected/zafiaonline.py.git"
+
 [tool.setuptools]
 package-dir = { "" = "src" }
 
@@ -28,3 +38,6 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 "zafiaonline.transport" = ["*.yaml"]
+[tool.setuptools.dynamic]
+version = { attr = "zafiaonline.version.__version__" }
+readme = {file = "README.md", content-type = "text/markdown"}
