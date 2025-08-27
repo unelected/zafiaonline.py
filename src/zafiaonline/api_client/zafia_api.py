@@ -1,17 +1,20 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (C) 2025 unelected
 #
 # This file is part of the zafiaonline project.
 #
-# This program is free software: you can redistribute it and/or modify it under the terms of the
-# GNU Lesser General Public License as published by the Free Software Foundation, either version 3
-# of the License, or (at your option) any later version.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-# This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-# without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-# See the GNU Lesser General Public License for more details.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-# You should have received a copy of the GNU Lesser General Public License along with this program.
-# If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 """
 Client module for interacting with the Zafia API.
@@ -35,7 +38,7 @@ from secrets import token_hex
 from typing import Any, Awaitable, Callable, Dict
 
 from zafiaonline.structures.enums import MethodGetFavourites, RatingType
-from zafiaonline.transport.http_module import HttpWrapper
+from zafiaonline.transport.http.http_wrapper import HttpWrapper
 from zafiaonline.structures.packet_data_keys import (ZafiaEndpoints,
                                                      ZafiaApiKeys)
 from zafiaonline.utils.logging_config import logger

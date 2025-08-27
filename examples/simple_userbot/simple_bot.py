@@ -1,17 +1,20 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (C) 2025 unelected
 #
 # This file is part of the zafiaonline project.
 #
-# This program is free software: you can redistribute it and/or modify it under the terms of the
-# GNU Lesser General Public License as published by the Free Software Foundation, either version 3
-# of the License, or (at your option) any later version.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-# This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-# without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-# See the GNU Lesser General Public License for more details.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-# You should have received a copy of the GNU Lesser General Public License along with this program.
-# If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import asyncio
 import logging
@@ -30,7 +33,7 @@ class SimpleBot:
         self.task1 = None
         self.task2 = None
         self.task3 = None
-        self.user_bot_config = None
+        self.user_bot_config: dict | None = None
         self.content = None
         self.user_name = None
 
@@ -38,15 +41,15 @@ class SimpleBot:
         load_dotenv("account_data.env")
         email:str = os.getenv("EMAIL") or "email"
         password:str = os.getenv("PASSWORD") or "password"
-        await mafia.sign_in(email, password)
-        await mafia.join_global_chat()  # join in global chat
+        await mafia.auth.sign_in(email, password)
+        await mafia.global_chat.join_global_chat()  # join in global chat
         await self.run_tasks()
 
 
     @staticmethod
     async def rejoin():
-        await mafia.leave_from_global_chat()
-        await mafia.join_global_chat()
+        await mafia.global_chat.leave_from_global_chat()
+        await mafia.global_chat.join_global_chat()
 
     async def reenter_timer(self):
         try:
@@ -58,9 +61,9 @@ class SimpleBot:
     async def chat_listener(self):
         while True:
             try:
-                result = await mafia.listen()
+                result = await mafia.auth.listen()
             except ListenExampleErrorException as e:
-                await mafia.disconnect()
+                await mafia.auth.disconnect()
                 raise SystemExit("listen error", e)
             except Exception as e:
                 logging.error(f"unexcepted exception {e}")
@@ -98,8 +101,8 @@ class SimpleBot:
                         await asyncio.gather(self.task1, self.task2)
                     except asyncio.CancelledError:
                         pass
-                    await mafia.leave_from_global_chat()
-                    await mafia.disconnect()
+                    await mafia.global_chat.leave_from_global_chat()
+                    await mafia.auth.disconnect()
                     print(command["message"])
                     sys.exit()
                 elif command.get("rejoin"):
@@ -109,21 +112,20 @@ class SimpleBot:
             # Обработка фраз
             if my_message in self.user_bot_config["phrases"]:
                 responses = self.user_bot_config["phrases"][my_message]
-                if not responses:
-                    raise AttributeError
-                for response in responses:
-                    # Замена {input} на введенное сообщение
-                    text = response["text"].format(input=my_message)
-                    await mafia.send_message_global(text)
+                if responses:
+                    for response in responses:
+                        # Замена {input} на введенное сообщение
+                        text = response["text"].format(input=my_message)
+                        await mafia.global_chat.send_message_global(text)
 
-                    # Задержка перед следующим сообщением
-                    delay = response.get("delay", 0)
-                    if delay > 0:
-                        await asyncio.sleep(delay)
-                continue
+                        # Задержка перед следующим сообщением
+                        delay = response.get("delay", 0)
+                        if delay > 0:
+                            await asyncio.sleep(delay)
+                    continue
 
             # По умолчанию отправлять сообщение
-            await mafia.send_message_global(my_message)
+            await mafia.global_chat.send_message_global(my_message)
 
     async def run_tasks(self):
         self.task1 = asyncio.create_task(self.reenter_timer())  # timer

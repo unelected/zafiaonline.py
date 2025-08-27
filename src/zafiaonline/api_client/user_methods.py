@@ -1,17 +1,20 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (C) 2025 unelected
 #
 # This file is part of the zafiaonline project.
 #
-# This program is free software: you can redistribute it and/or modify it under the terms of the
-# GNU Lesser General Public License as published by the Free Software Foundation, either version 3
-# of the License, or (at your option) any later version.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-# This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-# without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-# See the GNU Lesser General Public License for more details.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-# You should have received a copy of the GNU Lesser General Public License along with this program.
-# If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 """
 User-related operations for the Mafia client-server application.
@@ -42,7 +45,7 @@ if TYPE_CHECKING:
 from zafiaonline.structures import PacketDataKeys
 from zafiaonline.api_client.api_decorators import ApiDecorators
 from zafiaonline.utils.logging_config import logger
-from zafiaonline.transport.websocket_module import Websocket
+from zafiaonline.transport.websocket.websocket_module import Websocket
 from zafiaonline.utils.md5hash import Md5
 from zafiaonline.structures.models import ModelUser, ModelServerConfig
 from zafiaonline.structures.enums import Languages, Sex, MafiaLanguages
@@ -103,7 +106,8 @@ class Auth(Websocket):
         auth_data: dict = self._prepare_auth_data(email, password, token, user_id)
         await self.send_server(auth_data)
 
-        return await self._process_auth_response()
+        data: ModelUser | bool = await self._process_auth_response()
+        return data
 
     @staticmethod
     def _warn_if_default_email(email: str) -> None:
@@ -145,15 +149,20 @@ class Auth(Websocket):
             dict: A dictionary containing the sign-in request payload.
         """
         self.device_id: str = token_hex(8)
-        data: dict = {
-            # Generates a random device ID
-            PacketDataKeys.TYPE: PacketDataKeys.SIGN_IN,
-            PacketDataKeys.EMAIL: email,
-            PacketDataKeys.PASSWORD: self.md5hash.md5salt(password or ""),
-            PacketDataKeys.OBJECT_ID: user_id,
-            PacketDataKeys.DEVICE_ID: self.device_id,
-            PacketDataKeys.TOKEN: token,
+        if user_id and token:
+            data: dict = {
+                PacketDataKeys.TYPE: PacketDataKeys.SIGN_IN,
+                PacketDataKeys.OBJECT_ID: user_id,
+                PacketDataKeys.TOKEN: token,
             }
+        else:
+            data: dict = {
+                # Generates a random device ID
+                PacketDataKeys.TYPE: PacketDataKeys.SIGN_IN,
+                PacketDataKeys.EMAIL: email,
+                PacketDataKeys.PASSWORD: self.md5hash.md5salt(password or ""),
+                PacketDataKeys.DEVICE_ID: self.device_id,
+                }
         return data
 
     async def _process_auth_response(self) -> ModelUser | bool:
@@ -221,7 +230,7 @@ class User:
         client (Auth): An instance of the authenticated client used to
             communicate with the Mafia API for user-specific actions.
     """
-    def __init__(self, client: "Auth"):
+    def __init__(self, auth_client: "Auth"):
         """
         Initializes the User interaction interface.
 
@@ -234,9 +243,9 @@ class User:
             client (Auth): The authenticated Mafia client used for making
                 user-related API calls.
         """
-        self.client: "Auth" = client
-        if self.client:
-            get_user_attributes(self.client)
+        self.auth_client: "Auth" = auth_client
+        if self.auth_client:
+            get_user_attributes(self.auth_client)
 
     async def send_server(self, data: dict[str, Any],
                           remove_token_from_object: bool = False) -> None:
@@ -256,7 +265,7 @@ class User:
         Returns:
             None
         """
-        await self.client.send_server(data, remove_token_from_object)
+        await self.auth_client.send_server(data, remove_token_from_object)
 
     async def listen(self) -> dict | None:
         """
@@ -270,7 +279,7 @@ class User:
             dict | None: The message or data received from the server. The exact
             type and structure of the response depends on the server's protocol.
         """
-        return await self.client.listen()
+        return await self.auth_client.listen()
 
     async def username_set(self, nickname: str) -> None:
         """

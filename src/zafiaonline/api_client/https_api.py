@@ -1,17 +1,20 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (C) 2025 unelected
 #
 # This file is part of the zafiaonline project.
 #
-# This program is free software: you can redistribute it and/or modify it under the terms of the
-# GNU Lesser General Public License as published by the Free Software Foundation, either version 3
-# of the License, or (at your option) any later version.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-# This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-# without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-# See the GNU Lesser General Public License for more details.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-# You should have received a copy of the GNU Lesser General Public License along with this program.
-# If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 """
 HTTPS API client for Mafia Online.
@@ -30,7 +33,7 @@ from secrets import token_hex
 
 from zafiaonline.structures import MafiaLanguages
 from zafiaonline.structures.packet_data_keys import Endpoints, HttpsApiKeys
-from zafiaonline.transport.http_module import HttpWrapper
+from zafiaonline.transport.http.http_wrapper import HttpWrapper
 from zafiaonline.utils.md5hash import Md5
 
 
@@ -90,7 +93,7 @@ class HttpsApi(HttpWrapper):
             dict | bytes: The server response containing the profile photo data.
             This can be a dictionary with metadata or raw image bytes.
         """
-        endpoint: Endpoints = Endpoints(Endpoints.PROFILE_PHOTO.format(user_id))
+        endpoint: str = Endpoints.PROFILE_PHOTO.format(user_id)
         return await self.mafia_request("get", endpoint)
 
     async def get_client_config(self, version: int = 55) -> dict | bytes:
@@ -108,7 +111,7 @@ class HttpsApi(HttpWrapper):
             dict | bytes: The client configuration data returned by the server.
             Can be a parsed JSON dictionary or raw response bytes.
         """
-        endpoint: Endpoints = Endpoints(Endpoints.CLIENT_CONFIG.format(version))
+        endpoint: str = Endpoints.CLIENT_CONFIG.format(version = version)
         return await self.mafia_request("get", endpoint)
 
     async def get_client_feature_config(self) -> dict | bytes:
@@ -139,7 +142,7 @@ class HttpsApi(HttpWrapper):
         return await self.api_mafia_request("post", endpoint)
 
     async def sign_up(self, email: str, password: str,
-                      username: str | None = None,
+                      username: str = "",
                       language: MafiaLanguages =
                       MafiaLanguages.English) -> dict | bytes:
         """

@@ -1,17 +1,20 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (C) 2025 unelected
 #
 # This file is part of the zafiaonline project.
 #
-# This program is free software: you can redistribute it and/or modify it under the terms of the
-# GNU Lesser General Public License as published by the Free Software Foundation, either version 3
-# of the License, or (at your option) any later version.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-# This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-# without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-# See the GNU Lesser General Public License for more details.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-# You should have received a copy of the GNU Lesser General Public License along with this program.
-# If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 """
 Handles interaction with the global chat system for authenticated clients.
@@ -33,6 +36,9 @@ import asyncio
 
 from typing import TYPE_CHECKING
 
+if TYPE_CHECKING:
+    from zafiaonline.api_client.user_methods import Auth
+
 from zafiaonline.structures import PacketDataKeys
 from zafiaonline.utils.utils import get_user_attributes
 from zafiaonline.structures.enums import MessageStyles
@@ -51,18 +57,16 @@ class GlobalChat:
         client: An authenticated API client instance used for user operations.
         sent_messages: A SentMessages instance used to track sent messages.
     """
-    if TYPE_CHECKING:
-        from zafiaonline.api_client.user_methods import Auth
-    def __init__(self, client: "Auth"):
+    def __init__(self, auth_client: "Auth"):
         """
         Initializes GlobalChat with the provided authenticated client.
 
         Args:
             client: An authenticated API client used to perform user-related actions.
         """
-        self.client = client
-        if self.client:
-            get_user_attributes(self.client)
+        self.auth_client = auth_client
+        if self.auth_client:
+            get_user_attributes(self.auth_client)
         self.sent_messages: "SentMessages" = SentMessages()
 
     async def send_server(self, data: dict, 
@@ -86,7 +90,7 @@ class GlobalChat:
         Raises:
             Any exception raised by `self.client.send_server`.
         """
-        await self.client.send_server(data, remove_token_from_object)
+        await self.auth_client.send_server(data, remove_token_from_object)
 
     async def join_global_chat(self) -> None:
         """

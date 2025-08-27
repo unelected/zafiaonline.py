@@ -7,8 +7,8 @@ name = "zafiaonline"
 dynamic = ["version", "readme"]
 keywords = ["Mafia Online API", "API Mafia Online"]
 description = "A Python API library for interacting with Mafia Online game."
-requires-python = ">=3.9"
-license = "LGPL-3.0-or-later"
+requires-python = ">=3.10"
+license = "GPL-3.0-or-later"
 license-files = ["LICENSE.txt"]
 classifiers = [
   "Development Status :: 5 - Production/Stable",
@@ -23,7 +23,8 @@ dependencies = [
     "websockets >= 15.0.1",
     "msgspec ~= 0.19",
     "aiohttp ~= 3.12",
-    "pyyaml ~= 6.0"
+    "pyyaml ~= 6.0",
+    "pytest ~= 8.4"
 ]
 
 [project.urls]
@@ -37,7 +38,7 @@ package-dir = { "" = "src" }
 where = ["src"]
 
 [tool.setuptools.package-data]
-"zafiaonline.transport" = ["*.yaml"]
+"zafiaonline.transport.websocket" = ["*.yaml"]
 [tool.setuptools.dynamic]
 version = { attr = "zafiaonline.version.__version__" }
 readme = {file = "README.md", content-type = "text/markdown"}

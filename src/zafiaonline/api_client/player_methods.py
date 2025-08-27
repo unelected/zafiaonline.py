@@ -1,17 +1,20 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (C) 2025 unelected
 #
 # This file is part of the zafiaonline project.
 #
-# This program is free software: you can redistribute it and/or modify it under the terms of the
-# GNU Lesser General Public License as published by the Free Software Foundation, either version 3
-# of the License, or (at your option) any later version.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-# This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-# without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-# See the GNU Lesser General Public License for more details.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-# You should have received a copy of the GNU Lesser General Public License along with this program.
-# If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 """
 Client-side interface for sending and receiving data via server packets.
@@ -58,7 +61,7 @@ class Players:
         sent_messages (SentMessages): A message tracker used for spam 
             prevention and content validation.
     """
-    def __init__(self, client: "Auth"):
+    def __init__(self, auth_client: "Auth"):
         """
         Initializes the Players class with an authenticated client.
 
@@ -67,10 +70,10 @@ class Players:
         Args:
             client (Auth): The authenticated client instance.
         """
-        self.client = client
-        if self.client:
-            get_user_attributes(self.client)
-        self.sent_messages = SentMessages()
+        self.auth_client = auth_client
+        if self.auth_client:
+            get_user_attributes(self.auth_client)
+        self.sent_messages: "SentMessages" = SentMessages()
 
     async def send_server(self, data: dict,
                           remove_token_from_object: bool = False) -> None:
@@ -88,7 +91,7 @@ class Players:
         Returns:
             None
         """
-        await self.client.send_server(data, remove_token_from_object)
+        await self.auth_client.send_server(data, remove_token_from_object)
 
     async def listen(self) -> dict | None:
         """
@@ -101,7 +104,7 @@ class Players:
             dict | None: The received message as a dictionary if available,
             otherwise None if the connection is closed or no message is received.
         """
-        return await self.client.listen()
+        return await self.auth_client.listen()
 
     async def get_data(self, data: str) -> dict | None:
         """
@@ -117,7 +120,7 @@ class Players:
             dict | None: The response data as a dictionary if available,
             otherwise None.
         """
-        return await self.client.get_data(data)
+        return await self.auth_client.get_data(data)
 
     async def friend_list(self) -> List[ModelFriend]:
         """
@@ -137,7 +140,6 @@ class Players:
         }
         await self.send_server(friends_request)
 
-        await asyncio.sleep(.01)
         received_data: dict | None = await self.get_data(PacketDataKeys.FRIENDSHIP_LIST)
         if received_data is None:
             raise AttributeError("No friend list data")
@@ -163,7 +165,6 @@ class Players:
             PacketDataKeys.TYPE: PacketDataKeys.GET_FRIENDS_IN_INVITE_LIST
         }
         await self.send_server(get_invite_list_request)
-        await asyncio.sleep(.01)
         return await self.get_data(PacketDataKeys.FRIENDS_IN_INVITE_LIST)
 
     async def invite_friend(self, player_id: str) -> dict | None:
@@ -185,7 +186,6 @@ class Players:
             PacketDataKeys.USER_OBJECT_ID: player_id
         }
         await self.send_server(invite_request)
-        await asyncio.sleep(.1)
         return await self.get_data(PacketDataKeys.FRIEND_IS_INVITED)
 
     async def search_player(self, nickname: str) -> dict | None:
@@ -207,7 +207,6 @@ class Players:
             PacketDataKeys.SEARCH_TEXT: nickname
         }
         await self.send_server(search_info_request)
-        await asyncio.sleep(.01)
         return await self.get_data(PacketDataKeys.SEARCH_USER)
 
     async def remove_friend(self, friend_id: str) -> None:
@@ -304,7 +303,6 @@ class Players:
         }
         await self.send_server(private_messages_request)
 
-        await asyncio.sleep(.01)
         received_messages: dict | None = await self.get_data(
             PacketDataKeys.PRIVATE_CHAT_LIST_MESSAGES
         )
@@ -337,7 +335,6 @@ class Players:
             PacketDataKeys.RATING_MODE: rating_mode
         }
         await self.send_server(rating_query)
-        await asyncio.sleep(.01)
         return await self.get_data(PacketDataKeys.RATING)
 
     async def send_message_friend(self, friend_id: str, content: str) -> None:
@@ -387,7 +384,7 @@ class Players:
         user_payload: Dict[str, Any] = {
             PacketDataKeys.TYPE: PacketDataKeys.GET_USER_PROFILE,
             PacketDataKeys.USER_RECEIVER: user_id,
-            PacketDataKeys.USER_OBJECT_ID: self.client.user.user_id,
+            PacketDataKeys.USER_OBJECT_ID: self.auth_client.user.user_id,
         }
         await self.send_server(user_payload)
 

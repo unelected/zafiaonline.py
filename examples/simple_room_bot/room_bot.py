@@ -1,17 +1,20 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (C) 2025 unelected
 #
 # This file is part of the zafiaonline project.
 #
-# This program is free software: you can redistribute it and/or modify it under the terms of the
-# GNU Lesser General Public License as published by the Free Software Foundation, either version 3
-# of the License, or (at your option) any later version.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-# This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-# without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-# See the GNU Lesser General Public License for more details.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-# You should have received a copy of the GNU Lesser General Public License along with this program.
-# If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import asyncio
 import logging
@@ -28,7 +31,7 @@ from data import *
 class RoomBot:
     def __init__(self):
         self.bot_username = None
-        self.room_id = None
+        self.room_id: str = ""
         self.sex = None
         self.user_name = None
         self.user_id = None
@@ -43,8 +46,8 @@ class RoomBot:
         await self.process_messages()
 
     async def prepare_bot(self):
-        await client.sign_in(BotData.nickname, BotData.password)
-        self.bot_username = client.user.username
+        await client.auth.sign_in(BotData.nickname, BotData.password)
+        self.bot_username = client.auth.user.username
         await self.prepare_mutes()
         await self.create_room_and_join()
 
@@ -56,7 +59,7 @@ class RoomBot:
     async def process_messages(self):
         while True:
             try:
-                result = await client.listen()
+                result = await client.auth.listen()
             except Exception as e:
                 logging.debug(f"ошибка в получении сообщения {e}")
                 break
@@ -92,7 +95,7 @@ class RoomBot:
         return user_id, username
 
     async def recreate_room(self, is_fast_rejoin: bool = True):
-        await client.remove_player(self.room_id)
+        await client.room.remove_player(self.room_id)
         if is_fast_rejoin is False:
             await asyncio.sleep(10)
         await self.create_room_and_join()
@@ -104,15 +107,16 @@ class RoomBot:
         self.players.clear()
 
     async def create_room_and_join(self):
-        room = await client.create_room(
-            selected_roles = RoomData.selected_roles,
+        selected_roles: list[Roles | int |None] = RoomData.selected_roles
+        room = await client.room.create_room(
+            selected_roles = selected_roles,
             title = RoomData.title, max_players = RoomData.max_players,
             min_players = RoomData.min_players, password = RoomData.password,
             min_level = RoomData.min_level, vip_enabled = RoomData.vip_enabled)
 
         if room:
-            self.room_id = room.room_id
-            await client.create_player(self.room_id)
+            self.room_id: str = str(room.room_id)
+            await client.room.create_player(self.room_id)
 
     async def exit_handle(self, result):
         user_id = result[PacketDataKeys.USER_OBJECT_ID]
@@ -124,7 +128,7 @@ class RoomBot:
             my_message = await ainput()
             if await self.commands_handle(my_message):
                 continue
-            await client.send_message_room(my_message, self.room_id,
+            await client.room.send_message_room(my_message, self.room_id,
                 message_style = MessageStyleData.style)
 
     async def commands_handle(self, my_message):
@@ -156,7 +160,7 @@ class RoomBot:
     async def delayed_send(self, response, delay, nickname = None):
         await asyncio.sleep(delay)
         if self.check_player(nickname):
-            await client.send_message_room(response, self.room_id,
+            await client.room.send_message_room(response, self.room_id,
                                            message_style =
                                            MessageStyleData.style)
 

@@ -1,17 +1,20 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (C) 2025 unelected
 #
 # This file is part of the zafiaonline project.
 #
-# This program is free software: you can redistribute it and/or modify it under the terms of the
-# GNU Lesser General Public License as published by the Free Software Foundation, either version 3
-# of the License, or (at your option) any later version.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-# This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-# without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-# See the GNU Lesser General Public License for more details.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-# You should have received a copy of the GNU Lesser General Public License along with this program.
-# If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import asyncio
 import logging
@@ -26,15 +29,14 @@ from zafiaonline.main import Client
 class AccountData: 
     EMAIL: str = os.getenv("EMAIL") or "email"
     PASSWORD: str = os.getenv("PASSWORD") or "password"
-    print(EMAIL, PASSWORD)
 
 class Main:
     @staticmethod
     async def main():
         messages_handle, user_agreement = await Main.prepare_classes()
         user_agreement.show_user_agreement()
-        await Mafia.sign_in(AccountData.EMAIL, AccountData.PASSWORD)
-        await Mafia.join_global_chat()  # join in global chat
+        await Mafia.auth.sign_in(AccountData.EMAIL, AccountData.PASSWORD)
+        await Mafia.global_chat.join_global_chat()  # join in global chat
         await messages_handle.chat_handle()
 
     @staticmethod
@@ -54,7 +56,7 @@ class MessagesHandle:
     async def chat_handle(self):
         while True:
             try:
-                result = await Mafia.listen()  # try listen data for result
+                result = await Mafia.auth.listen()  # try listen data for result
             except Exception as e:
                 logging.error(f"listen error {e}")
                 raise ListenExampleErrorException
@@ -66,12 +68,14 @@ class MessagesHandle:
 
     @ApiDecorators.extract_message  # get text message data
     async def message_handle(self, content):
-        user_agreement, utils = await self.prepare_classes()
+        data = await self.prepare_classes()
+        user_agreement = data[0]
+        utils = data[1]
         await self.set_sender_data()
         utils.log_message(content)
         send_content = self.get_content_of_other_players(content)
         if user_agreement.user_agreement_is_confirmed() and send_content:
-            await Mafia.send_message_global(
+            await Mafia.global_chat.send_message_global(
                 send_content)  # send message to global chat
 
     async def set_sender_data(self):
@@ -87,7 +91,7 @@ class MessagesHandle:
     @staticmethod
     def get_content_of_other_players(content):
         message_handle = MessagesHandle()
-        if message_handle.USER_ID != Mafia.user.user_id:  # id sameness check
+        if message_handle.USER_ID != Mafia.auth.user.user_id:  # id sameness check
             send_content = content  # in id with sender and you are
             # not the same content will send
         else:

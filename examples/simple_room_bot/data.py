@@ -1,6 +1,24 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2025 unelected
+#
+# This file is part of the zafiaonline project.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 import os
 
-from typing import Optional, List
+from typing import Optional
 from dotenv import load_dotenv
 
 from zafiaonline.structures.enums import Roles
@@ -14,8 +32,8 @@ class BotData:
 
 class RoomData:
     # TODO: @unelected - json
-    selected_roles: Optional[List[Roles]] = None
-    title: str | None = os.getenv("TITLE") or "title"
+    selected_roles: list[Roles | int | None] = []
+    title: str = os.getenv("TITLE") or "title"
     max_players: int = int(os.getenv("MAX_PLAYERS") or 31)
     min_players: int = int(os.getenv("MIN_PLAYERS") or 18)
     password: Optional[str] = os.getenv("ROOM_PASSWORD") or None
@@ -32,4 +50,4 @@ class MutedPlayersData:
 
 class MessageStyleData:
     # TODO: @unelected - json
-    style: Optional[MessageStyles] = None
+    style: MessageStyles = MessageStyles.NO_COLOR
