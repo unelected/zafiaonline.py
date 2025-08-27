@@ -23,6 +23,6 @@ import asyncio
 
 async def main():
     Mafia = zafiaonline.Client()
-    await Mafia.sign_in("email", "password")
+    await Mafia.auth.sign_in("email", "password")
 asyncio.run(main())
 ```
