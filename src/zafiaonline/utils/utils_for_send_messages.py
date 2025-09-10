@@ -53,7 +53,6 @@ class Message(TypedDict):
     text: str
 
 
-
 # TODO: @unelected - расширить класс
 class SentMessages:
     """

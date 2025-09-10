@@ -294,6 +294,30 @@ class MafiaLanguages(str, Enum):
     English = "ENG"
 
 
+class BuyVipMethodsIds(str, Enum):
+    BuyWithGoldCoins = "vip_account_1"
+    BuyWithSilverCoins = "vip_account_2"
+
+
+class BuySilverCoinsMethodsIds(str, Enum):
+    BuyFiveThousandCoins = "silver_1"
+    BuyTenThousandCoins = "silver_2"
+    BuyTwentyThousandCoins = "silver_3"
+    BuyFortyThousandCoins = "silver_4"
+    BuyEightyThousandCoins = "silver_5"
+    BuyOneHundredThousandCoins = "silver_6"
+
+
+class BuyDecorationsMethodIds(IntEnum):
+    BuyOneHundredTwentyGold = 0
+    BuyFortyFiveGold = 1
+    BuyTwentyFiveGold = 2
+    BuyFiveGold = 3
+    BuyFifteenThousandSilver = 4
+    BuyFiveThousandFiveHundredSilver = 5
+    BuyThreeThousandSilver = 6
+    BuySixHundredSilver = 7
+
 class MethodGetFavourites(IntEnum):
     """
     Enumeration for methods of retrieving favourite players in the Mafia game.

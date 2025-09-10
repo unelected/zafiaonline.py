@@ -87,13 +87,11 @@ class Websocket(WebSocketHandler):
         if self.client:
             self.user_id = self.client.auth.user_id
             self.token = self.client.auth.token
+        return None
 
-    async def create_connection(self, proxy: str | None = None) -> None:
+    async def create_connection(self) -> None:
         """
         Establishes a WebSocket connection if not already connected.
-
-        Args:
-            proxy: Optional proxy address to use for the connection.
 
         Raises:
             websockets.exceptions.ConnectionClosed: If the WebSocket connection is closed unexpectedly.
@@ -102,19 +100,23 @@ class Websocket(WebSocketHandler):
         """
         if self.alive:
             logger.info("Connection already established.")
-            return
+            return None
 
         try:
-            await self._connect(proxy)
+            await self._connect()
             await self._post_connect_setup()
         except (ConnectionClosed, websockets.exceptions.InvalidStatus) as e:
             logger.error(f"Connection failed: {e}. Retrying...")
             await self._handle_reconnect()
             raise
+        except websockets.exceptions.InvalidProxy as e:
+            logger.error(f"Proxy is invalid: {e}")
+            raise
         except Exception as e:
             logger.error(f"Unexpected error in create_connection: {e}")
             await self._handle_reconnect()
             raise
+        return None
 
     async def disconnect(self) -> None:
         """
@@ -171,7 +173,7 @@ class Websocket(WebSocketHandler):
                 "WebSocket closed while sending data. Reconnecting...")
             asyncio.create_task(self._reconnect())
         return None
-
+    
     async def _make_packet(self, data: dict, remove_token_from_object: bool) -> dict:
         """
         Build the final packet structure for WebSocket transmission.
@@ -196,46 +198,24 @@ class Websocket(WebSocketHandler):
                 inner[PacketDataKeys.TOKEN] = self.token
             if self.user_id:
                 inner.setdefault(PacketDataKeys.USER_OBJECT_ID, self.user_id)
-        return { "data": inner, PacketDataKeys.VERSION_CODE: 55 }
+        return { PacketDataKeys.DATA: inner, PacketDataKeys.VERSION_CODE: 55 }
 
-    async def _possibility_of_sending(self) -> bool:
-        """
-        Check if sending data over the WebSocket is possible.
-
-        This method verifies the connection state and attempts reconnection
-        if the WebSocket is not alive. If reconnection fails or the client
-        is banned, sending is not possible.
-
-        Returns:
-            bool: True if the WebSocket connection is alive and sending
-            is possible, False otherwise.
-        """
-        if not self.alive:
-            try: 
-                logger.error( "WebSocket is not connected. Attempting to reconnect...") 
-                await self._reconnect()
-                if not self.alive:
-                    logger.error("Reconnection failed. Dropping message.") 
-                    return False 
-            except BanError: 
-                return False
-        return True
-
-    async def listen(self) -> dict[str, Any] | None:
+    async def listen(self) -> dict[str, Any]:
         """
         Waits for and returns a single decoded JSON message from the WebSocket queue.
 
         Returns:
-            dict[str, Any] | None: The decoded JSON message if successful, otherwise None.
+            dict[str, Any]: The decoded JSON message.
 
         Raises:
             KeyboardInterrupt: If execution is interrupted manually.
+            asyncio.CancelledError: If the listener stops because self.alive is False.
             json.JSONDecodeError: If a JSON decoding error escapes internal handling.
             Exception: If an unexpected error occurs during processing.
         """
         while self.alive:
             try:
-                response = await asyncio.wait_for(self.data_queue.get(),
+                response: str = await asyncio.wait_for(self.data_queue.get(),
                                                   timeout = 5)
                 if response is None:
                     logger.error("Received None response from queue")
@@ -257,43 +237,38 @@ class Websocket(WebSocketHandler):
 
             except Exception as e:
                 logger.error(f"Unexpected error in listen: {e}")
-        return None
 
-    async def get_data(self, mafia_type: str) -> dict[str, Any] | None:
+        raise asyncio.CancelledError("Listener stopped because self.alive is False")
+
+    async def get_data(self, mafia_type: str) -> dict[str, Any]:
         """
         Waits for and returns a WebSocket event matching the expected mafia type.
 
         Args:
             mafia_type (str): The expected event type to match. Only messages with this type,
-                "empty", or an error type (`PacketDataKeys.ERROR_OCCUR`) are considered valid.
+            "empty", or an error type (`PacketDataKeys.ERROR_OCCUR`) are considered valid.
 
         Returns:
-            dict[str, Any] | None: A dictionary with the matching message data, or None if
-            listening times out or is interrupted.
+            dict[str, Any]: A dictionary with the matching message data.
 
         Raises:
-            ValueError: If the listener returns None.
+            RuntimeError: If an unexpected event is received (e.g., GAME_STARTED).
             BanError: If a USER_BLOCKED event is received.
+            asyncio.CancelledError: If the get_data stops because self.alive is False.
             asyncio.TimeoutError: If no valid data is received within 10 seconds.
             KeyboardInterrupt: If execution is interrupted manually.
             Exception: For all other unexpected exceptions.
         """
         while self.alive:
             try:
-                data: dict[str, Any] | None = await asyncio.wait_for(self.listen(), timeout = 10)
-
-                if data is None:
-                    logger.error("Data is None. Cannot proceed.")
-                    raise ValueError("Received None data.")
-
+                data: dict[str, Any] = await asyncio.wait_for(self.listen(), timeout = 10)
                 event: str | None = data.get(PacketDataKeys.TYPE)
 
                 if event is None and PacketDataKeys.TIME not in data:
-                    logger.error(
+                    raise TypeError(
                         f"Received data without a valid event type. data"
                         f": {data}"
                     )
-                    return None
 
                 if event in [mafia_type, PacketDataKeys.ERROR_OCCUR]: # "empty"
                     return data
@@ -301,8 +276,14 @@ class Websocket(WebSocketHandler):
                 if event == PacketDataKeys.USER_BLOCKED:
                     raise BanError(self.client, data)
 
+                elif event == PacketDataKeys.GAME_STARTED:
+                    raise RuntimeError(f"Game in room is started")
+
+                elif event == PacketDataKeys.USER_USING_DOUBLE_ACCOUNT:
+                    raise RuntimeError("Used double account. Please use proxy")
+
                 logger.debug(
-                    f"Unexpected event type received: {event}. Ignoring...")
+                    f"Unexpected event type received: {event}.")
 
             except BanError as e:
                 logger.warning(e)
@@ -312,7 +293,7 @@ class Websocket(WebSocketHandler):
             except asyncio.TimeoutError:
                 logger.warning(
                     "Timeout reached while waiting for data. Resetting...")
-                return None
+                raise
 
             except KeyboardInterrupt:
                 logger.info("KeyboardInterrupt")
@@ -321,7 +302,7 @@ class Websocket(WebSocketHandler):
             except Exception as e:
                 logger.error(f"Unexpected error in get_data: {e}")
                 raise
-        return None
+        raise asyncio.CancelledError("get_data stopped because self.alive is False")
 
     async def safe_get_data(self, key: str, retries: int = 2, delay: int = 2) -> dict[str, Any]:
         """

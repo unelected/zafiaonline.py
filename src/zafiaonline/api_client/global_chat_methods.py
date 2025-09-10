@@ -38,9 +38,8 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from zafiaonline.api_client.user_methods import Auth
-
 from zafiaonline.structures import PacketDataKeys
-from zafiaonline.utils.utils import get_user_attributes
+from zafiaonline.utils.utils import Helpers
 from zafiaonline.structures.enums import MessageStyles
 from zafiaonline.utils.utils_for_send_messages import Utils, SentMessages
 
@@ -54,7 +53,7 @@ class GlobalChat:
     sent during the session.
 
     Attributes:
-        client: An authenticated API client instance used for user operations.
+        auth_client: An authenticated API client instance used for user operations.
         sent_messages: A SentMessages instance used to track sent messages.
     """
     def __init__(self, auth_client: "Auth"):
@@ -62,11 +61,12 @@ class GlobalChat:
         Initializes GlobalChat with the provided authenticated client.
 
         Args:
-            client: An authenticated API client used to perform user-related actions.
+            auth_client: An authenticated API client used to perform user-related actions.
         """
         self.auth_client = auth_client
         if self.auth_client:
-            get_user_attributes(self.auth_client)
+            helpers = Helpers()
+            helpers.get_user_attributes(self.auth_client)
         self.sent_messages: "SentMessages" = SentMessages()
 
     async def send_server(self, data: dict, 
@@ -92,7 +92,22 @@ class GlobalChat:
         """
         await self.auth_client.send_server(data, remove_token_from_object)
 
-    async def join_global_chat(self) -> None:
+    async def get_data(self, data: str) -> dict | None:
+        """
+        Fetches structured data from the server based on the given key.
+
+        Delegates the retrieval logic to the authenticated client.
+
+        Args:
+            data (str): The key or identifier for the data to fetch.
+
+        Returns:
+            dict | None: The retrieved data as a dictionary if available;
+            otherwise, None.
+        """
+        return await self.auth_client.get_data(data)
+
+    async def join_global_chat(self) -> dict | None:
         """
         Joins the global chat by sending a join request to the server.
 
@@ -112,8 +127,10 @@ class GlobalChat:
             PacketDataKeys.TYPE: PacketDataKeys.ADD_CLIENT_TO_CHAT
         }
         await self.send_server(chat_join_request)
+        return await self.get_data(PacketDataKeys.MESSAGES)
 
-    async def leave_from_global_chat(self) -> None:
+
+    async def leave_from_global_chat(self) -> dict | None:
         """
         Leaves the global chat and returns the client to the dashboard.
 
@@ -131,7 +148,7 @@ class GlobalChat:
             PacketDataKeys.TYPE: PacketDataKeys.ADD_CLIENT_TO_DASHBOARD
         }
         await self.send_server(leave_from_chat_request)
-
+        return await self.get_data(PacketDataKeys.DASHBOARD)
 
     async def send_message_global(self, content: str, message_style: int =
                                 MessageStyles.NO_COLOR) -> None:

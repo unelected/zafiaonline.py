@@ -22,6 +22,7 @@ from zafiaonline.utils.exceptions import (
 )
 from zafiaonline.utils.md5hash import Md5
 from zafiaonline.utils.utils_for_send_messages import Utils
+from zafiaonline.utils.proxy_store import store
 
 
 __all__: tuple[str, ...] = (
@@ -36,4 +37,7 @@ __all__: tuple[str, ...] = (
 
     # Utils
     "Utils",
+
+    # Proxy
+    "store",
 )

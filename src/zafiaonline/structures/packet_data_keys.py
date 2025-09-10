@@ -379,11 +379,25 @@ class PacketDataKeys(str, Enum):
     PUBLIC_CHAT_MINIMUM_LEVEL = "public_chat_minimum_level"
     PLAYERS_DATA = "data"
     VERSION_CODE = "vc"
-
-    # MARKET
-    UNKNOWN1 = "mbt"
-    UNKNOWN2 = "mrktgg"
-    UNKNOWN3 = "mrktg"
+    MATCH_MAKING_FINDED_USERS_NUMBER = "mmfun"
+    PRIVATE_CHAT_LAST_MESSAGE = "pclm"
+    USER_GET_DEFAULT_PHOTOS = "usgdph"
+    USER_DEFAULT_PHOTOS = "usdph"
+    DASHBOARD = "db"
+    BACKPACK_GET = "bpg"
+    MARKET_BILLING_TYPE = "mbt"
+    MARKET_GET = "mrktg"
+    MARKET = "mr"
+    BUY_BILLING_VIP_ITEM = "bbvi"
+    BUY_SILVER_COINS_ITEM = "bsci"
+    BUY_DECORATION = "bd"
+    BUY_DECORATION_REQUEST = "bdr"
+    MATCH_MAKING_ADD_GAME = "mmag"
+    MATCH_MAKING_USER_ADD_GAME = "mmcuag"
+    MATCH_MAKING_USER_SELECT_ROLE = "mmusr"
+    MATCH_MAKING_COUNT_USER_SELECTED_ROLES = "mmcusr"
+    MATCH_MAKING_ROOM = "mmrr"
+    MATCH_MAKING_ROLES_COUNT = "mmrc"
 
 
 class HttpsApiKeys(str, Enum):

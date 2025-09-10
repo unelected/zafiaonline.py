@@ -41,7 +41,7 @@ if TYPE_CHECKING:
 from zafiaonline.structures.packet_data_keys import PacketDataKeys
 from zafiaonline.structures.models import ModelFriend, ModelMessage
 from zafiaonline.structures.enums import RatingMode, RatingType
-from zafiaonline.utils.utils import get_user_attributes
+from zafiaonline.utils.utils import Helpers
 from zafiaonline.utils.utils_for_send_messages import Utils, SentMessages
 from zafiaonline.utils.logging_config import logger
 
@@ -56,7 +56,7 @@ class Players:
     via the provided authenticated client.
 
     Attributes:
-        client (Auth): An authenticated client used to communicate 
+        auth_client (Auth): An authenticated client used to communicate 
             with the backend.
         sent_messages (SentMessages): A message tracker used for spam 
             prevention and content validation.
@@ -65,14 +65,15 @@ class Players:
         """
         Initializes the Players class with an authenticated client.
 
-        If the client is valid, it retrieves and sets user attributes.
+        If the auth_client is valid, it retrieves and sets user attributes.
 
         Args:
-            client (Auth): The authenticated client instance.
+            auth_client (Auth): The authenticated client instance.
         """
         self.auth_client = auth_client
         if self.auth_client:
-            get_user_attributes(self.auth_client)
+            helpers = Helpers()
+            helpers.get_user_attributes(self.auth_client)
         self.sent_messages: "SentMessages" = SentMessages()
 
     async def send_server(self, data: dict,
@@ -92,19 +93,6 @@ class Players:
             None
         """
         await self.auth_client.send_server(data, remove_token_from_object)
-
-    async def listen(self) -> dict | None:
-        """
-        Listens for a single message from the WebSocket connection.
-
-        Delegates the actual listening operation to the internal client and returns
-        the next available message.
-
-        Returns:
-            dict | None: The received message as a dictionary if available,
-            otherwise None if the connection is closed or no message is received.
-        """
-        return await self.auth_client.listen()
 
     async def get_data(self, data: str) -> dict | None:
         """
@@ -209,7 +197,7 @@ class Players:
         await self.send_server(search_info_request)
         return await self.get_data(PacketDataKeys.SEARCH_USER)
 
-    async def remove_friend(self, friend_id: str) -> None:
+    async def remove_friend(self, friend_id: str) -> dict | None:
         """
         Removes a friend from the user's friend list.
 
@@ -226,6 +214,14 @@ class Players:
             PacketDataKeys.FRIEND_USER_OBJECT_ID: friend_id
         }
         await self.send_server(remove_friend_request)
+        return await self.get_data(PacketDataKeys.REMOVE_FRIEND)
+
+    async def get_friend_requests(self) -> dict | None:
+        get_friend_requests: dict = {
+            PacketDataKeys.TYPE: PacketDataKeys.GET_SENT_FRIEND_REQUESTS_LIST,
+        }
+        await self.send_server(get_friend_requests)
+        return await self.get_data(PacketDataKeys.FRIENDSHIP_LIST)
 
     async def kick_user_vote(self, room_id: str, value: bool = True) -> None:
         """
@@ -241,8 +237,9 @@ class Players:
             PacketDataKeys.VOTE: value
         }
         await self.send_server(vote_request)
+        return None
 
-    async def kick_user(self, user_id: str, room_id: str) -> None:
+    async def kick_user(self, user_id: str, room_id: str) -> dict | None:
         """
         Sends a request to kick a user from the specified room.
 
@@ -256,6 +253,7 @@ class Players:
             PacketDataKeys.USER_OBJECT_ID: user_id
         }
         await self.send_server(kick_request)
+        return await self.get_data(PacketDataKeys.KICK_USER)
 
     async def message_complaint(self, reason: str, screenshot_id: int,
                                 user_id: str) -> dict | None:
@@ -282,7 +280,7 @@ class Players:
             # Retrieved from update_photo_server()
         }
         await self.send_server(complaint_request)
-        return await self.listen()
+        return await self.get_data(PacketDataKeys.MAKE_COMPLAINT)
 
     async def get_private_messages(self, friend_id: str) -> List[ModelMessage]:
         """
@@ -335,9 +333,13 @@ class Players:
             PacketDataKeys.RATING_MODE: rating_mode
         }
         await self.send_server(rating_query)
-        return await self.get_data(PacketDataKeys.RATING)
+        rating: dict | None = await self.get_data(PacketDataKeys.RATING)
+        if isinstance(rating, dict):
+            rating_user_list: dict = rating.get(PacketDataKeys.RATING_USERS_LIST, {})
+            return rating_user_list
+        return None
 
-    async def send_message_friend(self, friend_id: str, content: str) -> None:
+    async def send_message_friend(self, friend_id: str, content: str) -> dict | None:
         """
         Sends a private message to a friend.
 
@@ -366,7 +368,7 @@ class Players:
             }
         }
         await self.send_server(message_data)
-        return None
+        return await self.get_data(PacketDataKeys.PRIVATE_CHAT_LAST_MESSAGE)
 
     async def get_user(self, user_id: str) -> Optional[dict]:
         """
@@ -398,3 +400,15 @@ class Players:
             logger.error(f"Error retrieving user {user_id} data: {e}",
                           exc_info = True)
             return None
+        
+    async def add_friend(self, user_id: str) -> int | None:
+        friend_request: dict = {
+            PacketDataKeys.TYPE: PacketDataKeys.ADD_FRIEND,
+            PacketDataKeys.FRIEND_USER_OBJECT_ID: user_id,
+        }
+        await self.send_server(friend_request)
+        request_data: dict | None = await self.get_data(PacketDataKeys.ADD_FRIEND)
+        if isinstance(request_data, dict):
+            request_status: int = request_data.get(PacketDataKeys.FRIENDSHIP_FLAG, 1)
+            return request_status
+        return None

@@ -21,11 +21,11 @@ Wrapper for handling HTTP requests to Zafia and Mafia APIs.
 
 This module defines the `HttpWrapper` class, which simplifies authenticated
 requests to Zafia and Mafia services. It delegates low-level operations to
-the `Http` client while managing headers, proxy configuration, and API
+the `Http` client while managing headers, and API
 endpoints.
 
 Typical usage example:
-    http = HttpWrapper(proxy="http://127.0.0.1:8080")
+    http = HttpWrapper()
     response = await http.zafia_request(
         method="get",
         endpoint=ZafiaEndpoints.USER_PROFILE,
@@ -38,29 +38,24 @@ from typing import Dict, Literal, Any
 from zafiaonline.transport.http.http_module import Http
 from zafiaonline.structures.packet_data_keys import Endpoints, ZafiaEndpoints
 
+
 class HttpWrapper:
     """
     Facade for the Http client, simplifying API request handling.
 
     This wrapper encapsulates the `Http` instance, providing a higher‑level
-    interface for making Mafia and Zafia API calls without dealing directly
-    with proxy configuration or header construction.
+    interface for making Mafia and Zafia API calls.
 
     Attributes:
-        http (Http): The underlying HTTP client configured with the optional proxy.
+        http (Http): The underlying HTTP client.
     """
-    def __init__(self, proxy: str | None = None):
+    def __init__(self):
         """
-        Initializes the HTTP wrapper with an optional proxy.
+        Initializes the HTTP wrapper.
 
-        Creates an internal `Http` client instance using the given proxy
-        settings, which will be used for all subsequent API requests.
-
-        Args:
-            proxy (str | None): Proxy URL to apply to the underlying HTTP client.
-                If None, requests will be made without a proxy.
+        Creates an internal `Http` client instance.
         """
-        self.http = Http(proxy = proxy)
+        self.http = Http()
 
     async def zafia_request(self, method:
                             Literal["get", "post", "put", "delete"],

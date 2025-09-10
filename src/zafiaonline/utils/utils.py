@@ -25,22 +25,52 @@ attributes from a client's `__dict__` back to the client instance.
 Intended for use in dynamic or reflective systems where attribute resetting
 or propagation is necessary.
 """
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from zafiaonline.api_client.user_methods import Auth
 
 
-def get_user_attributes(auth: "Auth") -> None:
-    """
-    Reassigns all non-callable attributes from a client's __dict__ to itself.
+class Helpers:
+    def get_user_attributes(self, auth: "Auth") -> None:
+        """
+        Reassigns all non-callable attributes from a client's __dict__ to itself.
 
-    Args:
-        auth: The client object whose attributes will be reassigned.
+        Args:
+            auth: The client object whose attributes will be reassigned.
 
-    Returns:
-        None
-    """
-    for key, value in auth.__dict__.items():
-        if not callable(value):
-            setattr(auth, key, value)
+        Returns:
+            None
+        """
+        for key, value in auth.__dict__.items():
+            if not callable(value):
+                setattr(auth, key, value)
+
+    async def send_and_get(
+        self,
+        send_func,
+        get_func,
+        request: dict,
+        response_key: str,
+        extract_key: str | None = None,
+        default: Any = None
+    ) -> dict:
+        """Send a request to the server and retrieve structured data.
+
+        Args:
+            send_func (Callable): Async function to send data to the server.
+            get_func (Callable): Async function to retrieve data from the server.
+            request (dict): The request payload to send.
+            response_key (str): The key used to extract the response block.
+            extract_key (str | None, optional): Specific key inside the response dict to return.
+                If None, the whole dict is returned. Defaults to None.
+            default (Any, optional): Default value if no valid response is found. Defaults to None.
+
+        Returns:
+            Any: The extracted value, the full dict, or the default if nothing is found.
+        """
+        await send_func(request)
+        data: dict = await get_func(response_key)
+        if isinstance(data, dict):
+            return data.get(extract_key, data) if extract_key else data
+        return default

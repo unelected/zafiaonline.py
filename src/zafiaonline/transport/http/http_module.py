@@ -26,11 +26,9 @@ making API calls using the `Http` client.
 
 Typical usage example:
 
-    wrapper = HttpWrapper(proxy="http://127.0.0.1:8080")
-    response = await wrapper.api_mafia_request("get", SomeEndpoint, {"key": "value"})
+    wrapper = Http()
+    response = await wrapper.send_request("get", SomeEndpoint, {"key": "value"})
 """
-
-
 import base64
 import string
 import random
@@ -44,6 +42,7 @@ from aiohttp import ClientError
 
 from zafiaonline.structures.packet_data_keys import Endpoints, ZafiaEndpoints
 from zafiaonline.utils.logging_config import logger
+from zafiaonline.utils.proxy_store import store
 
 
 class Http:
@@ -61,21 +60,16 @@ class Http:
         mafia_url (str): HTTPS URL for the Mafia service.
         api_mafia_url (str): HTTPS URL for the Mafia API.
         zafia_endpoint (ZafiaEndpoints): Currently selected Zafia endpoint.
-        proxy (str | None): Proxy URL to use for HTTP sessions.
         zafia_headers (dict): Default headers for Zafia API requests.
         mafia_headers (dict): Default headers for Mafia API requests,
             including a randomized Dalvik User‑Agent.
     """
-    def __init__(self, proxy):
+    def __init__(self):
         """
         Initializes the HTTP client with proxy and default API settings.
 
         Sets up base URLs, default headers for both Zafia and Mafia services,
         and stores the proxy configuration for future HTTP requests.
-
-        Args:
-        proxy (str | None): Proxy URL to use for all HTTP sessions. If None,
-            no proxy will be applied.
         """
         self.zafia_url: str = "http://185.188.183.144:5000/zafia/"
         self.mafia_address: str = "dottap.com"
@@ -83,7 +77,7 @@ class Http:
         self.mafia_url: str = f"https://{self.mafia_address}/"
         self.api_mafia_url: str = f"https://{self.api_mafia_address}/"
         self.zafia_endpoint: ZafiaEndpoints
-        self.proxy: str | None = proxy
+        self.proxy: str | None = store.get_random_proxy()
         self.zafia_headers: dict = {
             "Connection": "Keep-Alive",
             "Accept-Encoding": "gzip",

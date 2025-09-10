@@ -33,6 +33,7 @@ import types
 
 from typing import TYPE_CHECKING, Any, TypeVar, cast
 
+from zafiaonline.utils.proxy_store import store
 if TYPE_CHECKING:
     from zafiaonline.api_client.player_methods import Players 
     from zafiaonline.api_client.global_chat_methods import GlobalChat 
@@ -59,8 +60,6 @@ class Client:
         _cache (dict[str, Any]): Stores lazily created submodule instances.
     """
     _submodule = TypeVar("_submodule")
-
-    # TODO: @unelected - improve inheritance hierarchy to avoid dynamic delegation
     def __init__(self, proxy: str | None = None):
         """
         Initializes all service submodules with shared client context.
@@ -73,7 +72,8 @@ class Client:
                 If None, no proxy will be used.
         """
         self._cache: dict[str, Any] = {}
-        self.proxy = proxy
+        if isinstance(proxy, str):
+            store.add(proxy)
 
     def __getattr__(self, name: str):
         """
@@ -133,7 +133,7 @@ class Client:
             Auth: The authentication submodule instance.
         """
         return cast("Auth", self._import_submodule("auth", 
-                                                   "user_methods", "Auth", client = self, proxy = self.proxy))
+                                                   "user_methods", "Auth", client = self))
 
     @property
     def players(self) -> "Players":
@@ -225,7 +225,7 @@ class Client:
             HttpsApi: The HTTPS API submodule instance.
         """
         return cast("HttpsApi", self._import_submodule("https", 
-                                                       "https_api", "HttpsApi", proxy = self.proxy))
+                                                       "https_api", "HttpsApi"))
 
     @property
     def zafia(self) -> "ZafiaApi":
@@ -240,4 +240,4 @@ class Client:
             ZafiaApi: The Zafia API submodule instance.
         """
         return cast("ZafiaApi", self._import_submodule("zafia", 
-                                                       "zafia_api", "ZafiaApi", proxy = self.proxy))
+                                                       "zafia_api", "ZafiaApi"))

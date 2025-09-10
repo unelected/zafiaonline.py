@@ -39,7 +39,7 @@ from zafiaonline.utils.md5hash import Md5
 
 class HttpsApi(HttpWrapper):
     """
-    Provides HTTPS API interaction with optional proxy support.
+    Provides HTTPS API interaction.
 
     This class extends `HttpWrapper` to provide additional functionality
     for secure API access over HTTPS, including hashing utilities.
@@ -47,15 +47,10 @@ class HttpsApi(HttpWrapper):
     Attributes:
         md5hash: An instance of `Md5` used for computing MD5 hashes.
     """
-    def __init__(self, proxy: str | None = None):
+    def __init__(self):
         """
-        Initializes the HttpsApi client with optional proxy configuration.
-
-        Args:
-            proxy: Optional. A proxy URL to route HTTPS requests through.
+        Initializes the HttpsApi client.
         """
-        super().__init__(proxy)
-        # TODO: @unelected - DRY proxy
         self.md5hash: "Md5" = Md5()
 
     async def remove_user_account_request(self, language: MafiaLanguages =

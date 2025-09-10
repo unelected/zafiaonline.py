@@ -50,19 +50,7 @@ class ZafiaApi(HttpWrapper):
     This class provides high-level methods to access various Zafia endpoints,
     including actions like managing favorites, checking profile data,
     fetching leaderboard statistics, and verifying user accounts.
-
-    Attributes:
-        proxy (str | None): Optional HTTP proxy to be used for requests.
     """
-    def __init__(self, proxy: str | None = None):
-        """
-        Initializes the ZafiaApi instance with an optional proxy.
-
-        Args:
-            proxy (str | None): Optional proxy string for routing HTTP requests.
-        """
-        super().__init__(proxy)
-
     @staticmethod
     def with_user_id(func: Callable) -> Callable:
         """

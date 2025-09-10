@@ -40,8 +40,10 @@ from typing import TYPE_CHECKING, Union
 from websockets.exceptions import ConnectionClosedOK, ConnectionClosed
 from websockets.asyncio.client import connect
 
+from zafiaonline.utils.proxy_store import store
 from zafiaonline.transport.websocket.config import Config
 from zafiaonline.utils.logging_config import logger
+from zafiaonline.utils.exceptions import BanError
 if TYPE_CHECKING:
     from zafiaonline.transport.websocket.websocket_module import Websocket
 
@@ -61,9 +63,9 @@ class WebSocketHandler():
         listener_task (asyncio.Task | None): Background task that listens for incoming messages.
         websocket (Any): The WebSocket wrapper that manages low-level connection logic.
         data_queue (asyncio.Queue): Queue for storing received messages.
-        client (Any): Optional reference to the parent client or controller.
+        socket (Websocket): Optional reference to the parent client or controller.
     """
-    def __init__(self, socket) -> None:
+    def __init__(self, socket: "Websocket") -> None:
         """
         Initializes the WebSocket handler with configuration and state.
 
@@ -160,17 +162,13 @@ class WebSocketHandler():
             self.listener_task.cancel()
             logger.debug("Listener task cancelled.")
 
-    async def _connect(self, proxy: str | None = None) -> None:
+    async def _connect(self) -> None:
         """
         Creates a WebSocket connection to the configured server URI.
 
         Initializes a low-level WebSocket connection using `self.uri`, applies
         the provided proxy settings, and includes a User-Agent header to mimic
         a common HTTP client. On success, sets `self.alive` to True.
-
-        Args:
-        proxy:
-            Optional proxy URL for the connection. If None, no proxy is used.
 
         Returns:
         None.
@@ -189,7 +187,7 @@ class WebSocketHandler():
         if not headers:
             raise AttributeError("No headers")
         self.ws = await connect(self.uri, user_agent_header = str(headers), 
-                                proxy = proxy)
+                                proxy = store.get_random_proxy())
         self.alive = True
 
     async def _post_connect_setup(self) -> None:
@@ -332,3 +330,26 @@ class WebSocketHandler():
         except Exception as e:
             logger.error(f"Unexpected error in _try_create_connection: {e}")
             return False
+
+    async def _possibility_of_sending(self) -> bool:
+        """
+        Check if sending data over the WebSocket is possible.
+
+        This method verifies the connection state and attempts reconnection
+        if the WebSocket is not alive. If reconnection fails or the client
+        is banned, sending is not possible.
+
+        Returns:
+            bool: True if the WebSocket connection is alive and sending
+            is possible, False otherwise.
+        """
+        if not self.alive:
+            try: 
+                logger.error( "WebSocket is not connected. Attempting to reconnect...") 
+                await self._reconnect()
+                if not self.alive:
+                    logger.error("Reconnection failed. Dropping message.") 
+                    return False 
+            except BanError: 
+                return False
+        return True

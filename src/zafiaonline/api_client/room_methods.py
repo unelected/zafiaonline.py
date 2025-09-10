@@ -36,14 +36,13 @@ from typing import Optional, List, TYPE_CHECKING
 from msgspec.json import decode
 
 from zafiaonline.utils import Md5
-
 if TYPE_CHECKING:
     from zafiaonline.api_client.user_methods import Auth
 from zafiaonline.utils.utils_for_send_messages import Utils, SentMessages
 from zafiaonline.structures import PacketDataKeys, ModelRoom
 from zafiaonline.structures.enums import MessageStyles, RoomModelType, Roles
 from zafiaonline.utils.logging_config import logger
-from zafiaonline.utils.utils import get_user_attributes
+from zafiaonline.utils.utils import Helpers
 
 
 class Room:
@@ -56,7 +55,7 @@ class Room:
     interactions like chat, voting, and forfeiting.
 
     Attributes:
-        client (Auth): Authenticated WebSocket client used for communication.
+        auth_client (Auth): Authenticated WebSocket client used for communication.
         sent_messages (SentMessages): Tracker for detecting repeated messages or spam.
         md5hash (Md5): Utility for hashing passwords with salt before transmission.
     """
@@ -69,12 +68,13 @@ class Room:
         for password security.
 
         Args:
-            client (Auth): An authenticated WebSocket client used to send and receive
+            auth_client (Auth): An authenticated WebSocket client used to send and receive
                 messages related to room interactions.
         """
         self.auth_client = auth_client
         if self.auth_client:
-            get_user_attributes(self.auth_client)
+            helpers = Helpers()
+            helpers.get_user_attributes(self.auth_client)
         self.sent_messages: "SentMessages" = SentMessages()
         self.md5hash: "Md5" = Md5()
 
@@ -123,37 +123,6 @@ class Room:
             otherwise, None.
         """
         return await self.auth_client.listen()
-
-    @property
-    def device_id(self):
-        """
-        Device ID associated with the client.
-
-        Returns:
-            str: The unique device identifier used for authentication.
-        """
-        return self.auth_client.device_id
-
-    async def vote_player_list(self, user_id: str, room_id: str) -> None:
-        """
-        Sends a vote request for a specific player in a room.
-
-        Constructs and sends a vote payload to the server, indicating that the user
-        with the given `user_id` is being voted for within the specified room.
-
-        Args:
-            user_id (str): The ID of the player being voted for.
-            room_id (str): The ID of the room where the vote is cast.
-
-        Returns:
-            None
-        """
-        vote_info_request: dict = {
-            PacketDataKeys.TYPE: PacketDataKeys.VOTE_PLAYER_LIST,
-            PacketDataKeys.USER_OBJECT_ID: user_id,
-            PacketDataKeys.ROOM_OBJECT_ID: room_id
-        }
-        await self.send_server(vote_info_request)
 
     async def create_room(
             self,
@@ -231,7 +200,7 @@ class Room:
                 PacketDataKeys.MIN_PLAYERS: min(18, max(5, min_players)),
                 PacketDataKeys.MAX_PLAYERS: min(21, max(8, max_players)),
                 PacketDataKeys.MIN_LEVEL: max(1, min_level),
-                PacketDataKeys.DEVICE_ID: self.device_id,
+                PacketDataKeys.DAYTIME: 0,
                 PacketDataKeys.PASSWORD: self.md5hash.md5salt(password)
                 if password is not None else "",
                 PacketDataKeys.SELECTED_ROLES: selected_roles,
@@ -328,6 +297,7 @@ class Room:
             PacketDataKeys.ROOM_OBJECT_ID: room_id
         }
         await self.send_server(leave_request)
+        return None
 
     async def leave_room(self, room_id: str) -> None:
         """
@@ -343,6 +313,30 @@ class Room:
             None
         """
         await self.remove_player(room_id)
+        return None
+
+    async def send_invate_to_room(self, user_id: str) -> dict | None:
+        invite_request: dict = {
+            PacketDataKeys.TYPE: PacketDataKeys.SEND_FRIEND_INVITE_TO_ROOM,
+            PacketDataKeys.USER_OBJECT_ID: user_id
+        }
+        await self.send_server(invite_request)
+        return await self.listen()
+
+    async def get_invite_list(self) -> dict | None:
+        get_list_request: dict = {
+            PacketDataKeys.TYPE: PacketDataKeys.GET_FRIENDS_IN_INVITE_LIST,
+        }
+        await self.send_server(get_list_request)
+        return await self.get_data(PacketDataKeys.FRIENDS_IN_INVITE_LIST)
+
+    async def get_players(self, room_id: str) -> dict | None:
+        get_players_request: dict = {
+            PacketDataKeys.TYPE: PacketDataKeys.GET_PLAYERS,
+            PacketDataKeys.ROOM_OBJECT_ID: room_id
+        }
+        await self.send_server(get_players_request)
+        return await self.get_data(PacketDataKeys.PLAYERS_IN_ROOM)
 
     async def create_player(self, room_id: str,
                             room_model_type: RoomModelType =
@@ -393,7 +387,7 @@ class Room:
 
         return {"player_list": player_list, "room_messages": room_messages}
 
-    async def join_room(self, room_id: str, password: str = "") -> None:
+    async def join_room(self, room_id: str, password: str = "") -> dict | None:
         """
         Joins a specified room using the given room ID and optional password.
 
@@ -415,10 +409,16 @@ class Room:
             PacketDataKeys.ROOM_OBJECT_ID: room_id
         }
         await self.send_server(join_request)
+        enter_data: dict | None = await self.get_data(PacketDataKeys.ROOM_ENTER)
+        if isinstance(enter_data, dict):
+            room_data: dict = enter_data.get(PacketDataKeys.ROOM, {})
+            return room_data
+        return None
+
 
     async def role_action(self, user_id: str, room_id: str,
                           room_model_type: RoomModelType =
-                          RoomModelType.NOT_MATCHMAKING_MODE) -> None:
+                          RoomModelType.NOT_MATCHMAKING_MODE) -> dict | None:
         """
         Performs a role-specific action on a user within a room.
 
@@ -441,9 +441,14 @@ class Room:
             PacketDataKeys.ROOM_MODEL_TYPE: room_model_type
         }
         await self.send_server(action_request, True)
+        user_data: dict | None = await self.get_data(PacketDataKeys.USER_DATA)
+        if isinstance(user_data, dict):
+            final_data: dict = user_data.get(PacketDataKeys.DATA, {})
+            return final_data
+        return None
 
     async def give_up(self, room_id: str, room_model_type: RoomModelType =
-    RoomModelType.NOT_MATCHMAKING_MODE) -> None:
+    RoomModelType.NOT_MATCHMAKING_MODE) -> dict | None:
         """
         Sends a request to forfeit the game.
 
@@ -463,6 +468,10 @@ class Room:
             PacketDataKeys.ROOM_OBJECT_ID: room_id
         }
         await self.send_server(give_up_request)
+        finished_data: dict | None = await self.get_data(PacketDataKeys.GAME_FINISHED)
+        if isinstance(finished_data, dict):
+            return finished_data
+        return None
 
     async def send_message_room(self, content: str, room_id: str,
                                 message_style: int = MessageStyles.NO_COLOR)\
@@ -530,7 +539,7 @@ class MatchMaking:
     checking queue status, and retrieving user count.
 
     Attributes:
-        client (Auth): The authenticated client instance used to send and
+        auth_client (Auth): The authenticated client instance used to send and
             receive data from the server.
     """
     def __init__(self, auth_client: "Auth"):
@@ -541,12 +550,13 @@ class MatchMaking:
         user attributes if a valid client is provided.
 
         Args:
-            client (Auth): The authenticated client instance used for communication
+            auth_client (Auth): The authenticated client instance used for communication
                 with the game server.
         """
         self.auth_client = auth_client
         if self.auth_client:
-            get_user_attributes(self.auth_client)
+            helpers = Helpers()
+            helpers.get_user_attributes(self.auth_client)
 
     async def send_server(self, data: dict,
                           remove_token_from_object: bool = False) -> None:
@@ -616,7 +626,7 @@ class MatchMaking:
         return await self.get_data(PacketDataKeys.
                                    GET_MATCH_MAKING_USERS_IN_QUEUE_INTERVAL)
 
-    async def match_making_add_user(self, players_size: int = 8) -> None:
+    async def match_making_add_user(self, players_size: int = 8) -> int | None:
         """
         Adds the user to the matchmaking queue.
 
@@ -635,6 +645,13 @@ class MatchMaking:
             PacketDataKeys.MATCH_MAKING_BASE_PLAYERS_AMOUNT: players_size
         }
         await self.send_server(add_user_request)
+        finded_users_data: dict | None = await self.get_data(PacketDataKeys.
+                                                      MATCH_MAKING_FINDED_USERS_NUMBER)
+        if isinstance(finded_users_data, dict):
+            finded_users: int = finded_users_data.get(PacketDataKeys.
+                                                      MATCH_MAKING_FINDED_USERS_NUMBER, 0)
+            return finded_users
+        return None
 
     async def match_making_remove_user(self) -> None:
         """
@@ -650,3 +667,38 @@ class MatchMaking:
             PacketDataKeys.TYPE: PacketDataKeys.MATCH_MAKING_REMOVE_USER
         }
         await self.send_server(remove_user_request)
+        return None
+
+    async def match_making_add_game(self) -> dict | None:
+        """
+        Sends a matchmaking add game request and retrieves the server response.
+
+        Constructs a request with the type `MATCH_MAKING_ADD_GAME`, sends it to the server, 
+        and then returns the data about the added game.
+
+        Returns:
+            dict | None: A dictionary with information about the added game if available,
+            otherwise None.
+        """
+        add_game: dict = {
+            PacketDataKeys.TYPE: PacketDataKeys.MATCH_MAKING_ADD_GAME,
+        }
+        await self.send_server(add_game)
+        return await self.get_data(PacketDataKeys.MATCH_MAKING_USER_ADD_GAME)
+
+    async def match_making_ban_role(self) -> dict | None:
+        """
+        Sends a matchmaking role selection request and retrieves selected role data.
+
+        Constructs a request with the type `MATCH_MAKING_USER_SELECT_ROLE`, sends it to 
+        the server, and then returns the data about how many users have selected roles.
+
+        Returns:
+            dict | None: A dictionary with information about selected roles if available,
+            otherwise None.
+        """
+        ban_request: dict = {
+            PacketDataKeys.TYPE: PacketDataKeys.MATCH_MAKING_USER_SELECT_ROLE
+        }
+        await self.send_server(ban_request)
+        return await self.get_data(PacketDataKeys.MATCH_MAKING_COUNT_USER_SELECTED_ROLES)

@@ -37,7 +37,6 @@ from typing import TYPE_CHECKING, Awaitable, Callable, Union, Any
 
 if TYPE_CHECKING:
     from zafiaonline.api_client.user_methods import Auth
-
 from zafiaonline.structures import ModelUser
 from zafiaonline.structures.enums import MessageType
 from zafiaonline.utils.exceptions import LoginError
