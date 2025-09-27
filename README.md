@@ -22,8 +22,7 @@
 - anti-ban utilities and message tracking helpers,
 - transport layers and ancillary utilities.
 
-Full documentation is available at:  
-[ReadtheDocs](https://zafiaonlinepy.readthedocs.io/en/latest/)
+Full documentation is available at: [ReadtheDocs](https://zafiaonlinepy.readthedocs.io/en/latest/)
 
 ---
 
