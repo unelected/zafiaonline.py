@@ -12,7 +12,7 @@ sys.path.insert(0, os.path.abspath("../../src"))
 project = 'zafiaonline'
 copyright = '2025, unelected'
 author = 'unelected'
-release = '9.0.1'
+release = '9.0.2'
 
 autodoc_member_order = "bysource"
 autodoc_typehints = "description"
