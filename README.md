@@ -29,7 +29,7 @@ https://zafiaonlinepy.readthedocs.io/en/latest/
 
 ## Install
 
-Install from PyPI:
+Install from PyPI(https://pypi.org/project/zafiaonline/):
 
 ```bash
 pip install zafiaonline
@@ -43,8 +43,6 @@ source .venv/bin/activate    # macOS / Linux
 pip install -e .
 pip install -r docs/requirements.txt   # optional: build docs locally
 ```
-
-> Note: Read the Docs builds use Python **3.12** (RTD may not support 3.13). The library is compatible with Python 3.9+.
 
 ---
 
