@@ -25,7 +25,7 @@ rankings, checking verification data, and more.
 
 Typical usage example:
 
-    api = ZafiaApi()
+    api = ZafiaApiMethods()
     top = await api.get_top(user_id="user_xxxx")
 
 The `ZafiaApi` class extends `HttpWrapper` and handles endpoint-specific requests
@@ -35,15 +35,15 @@ import inspect
 import functools
 
 from secrets import token_hex
-from typing import Any, Awaitable, Callable, Dict
+from typing import Any, Awaitable, Callable
 
-from zafiaonline.structures.enums import MethodGetFavourites, RatingType
+from zafiaonline.structures.enums import HttpsTrafficTypes, MethodGetFavourites, RatingType
 from zafiaonline.transport.http.http_wrapper import HttpWrapper
 from zafiaonline.structures.packet_data_keys import (ZafiaEndpoints,
                                                      ZafiaApiKeys)
 from zafiaonline.utils.logging_config import logger
 
-class ZafiaApi(HttpWrapper):
+class ZafiaApiMethods():
     """
     Asynchronous API client for interacting with Zafia user data and profile features.
 
@@ -51,6 +51,21 @@ class ZafiaApi(HttpWrapper):
     including actions like managing favorites, checking profile data,
     fetching leaderboard statistics, and verifying user accounts.
     """
+    def __init__(self) -> None:
+        """
+        Initialize the client instance.
+
+        This constructor sets up the HTTP wrapper used for making API requests.
+        The `HttpWrapper` provides a unified interface for sending GET, POST,
+        and other HTTP requests with built-in error handling, proxy support,
+        and logging.
+
+        Attributes:
+            http (HttpWrapper): The HTTP wrapper instance responsible for
+                managing all outgoing HTTP requests for this client.
+        """
+        self.http: HttpWrapper = HttpWrapper()
+
     @staticmethod
     def with_user_id(func: Callable) -> Callable:
         """
@@ -67,8 +82,14 @@ class ZafiaApi(HttpWrapper):
             into the parameters.
         """
         @functools.wraps(func)
-        async def wrapper(self, endpoint: str, params: dict,
-                          user_id: str, *args, **kwargs) -> Awaitable[Any]:
+        async def wrapper(
+            self,
+            endpoint: str,
+            params: dict,
+            user_id: str,
+            *args: Any,
+            **kwargs: Any
+        ) -> Awaitable[Any]:
             """
             Injects the user ID into the request parameters before calling the wrapped function.
 
@@ -86,14 +107,26 @@ class ZafiaApi(HttpWrapper):
             Returns:
                 Awaitable[Any]: The result of the wrapped function.
             """
-            full_params: dict = {ZafiaApiKeys.USER_ID: user_id, **params}
-            return await func(self, endpoint, full_params, user_id, *args,
-                              **kwargs)
+            full_params: dict = {
+                ZafiaApiKeys.USER_ID: user_id,
+                **params
+            }
+            return await func(
+                self,
+                endpoint,
+                full_params,
+                user_id,
+                *args,
+                **kwargs
+            )
 
         return wrapper
 
-    async def change_favorite_status(self, user_id: str, favorite_id: str) \
-            -> Dict[str, bool]:
+    async def change_favorite_status(
+        self,
+        user_id: str,
+        favorite_id: str
+    ) -> dict[str, bool]:
         """
         Toggle the favorite status for a specific item by the user.
 
@@ -110,12 +143,18 @@ class ZafiaApi(HttpWrapper):
         endpoint: str = ZafiaEndpoints.CHANGE_FAVORITE_STATUS
         params: dict = {ZafiaApiKeys.FAVORITE_ID: favorite_id}
 
-        return await self._get(endpoint, params = params, user_id =
-        user_id)
+        return await self._get(
+            endpoint,
+            params=params,
+            user_id=user_id
+        )
 
 
-    async def change_visible_top(self, user_id: str, show: bool = True) -> (
-            Dict[str, bool]):
+    async def change_visible_top(
+        self,
+        user_id: str,
+        show: bool = True
+    ) -> dict[str, bool]:
         """
         Changes the visibility status of the user on the top list.
 
@@ -133,12 +172,18 @@ class ZafiaApi(HttpWrapper):
         endpoint: str = ZafiaEndpoints.CHANGE_VISIBLE_TOP
         params: dict = {ZafiaApiKeys.SHOW: str(show).lower()}
 
-        return await self._get(endpoint, params = params, user_id
-        = user_id)
+        return await self._get(
+            endpoint,
+            params=params,
+            user_id=user_id
+        )
 
 
-    async def get_favorites_list(self, user_id: str, from_type:
-    MethodGetFavourites = MethodGetFavourites.InviteMethod) -> Dict[str, Any]:
+    async def get_favorites_list(
+        self,
+        user_id: str,
+        from_type: MethodGetFavourites = MethodGetFavourites.InviteMethod
+    ) -> dict[str, Any]:
         """
         Retrieves the list of favorite users for the specified user.
 
@@ -156,12 +201,20 @@ class ZafiaApi(HttpWrapper):
         endpoint: str = ZafiaEndpoints.GET_FAVORITES_LIST
         params: dict = {ZafiaApiKeys.FROM_TYPE: from_type}
 
-        return await self._get(endpoint, params = params, user_id
-        = user_id)
+        return await self._get(
+            endpoint,
+            params=params,
+            user_id=user_id
+        )
 
 
-    async def check_profile(self, user_id: str, check_id: str,
-                user_nickname: str, check_nickname: str) -> Dict[str, bool]:
+    async def check_profile(
+        self,
+        user_id: str,
+        check_id: str,
+        user_nickname: str,
+        check_nickname: str
+    ) -> dict[str, bool]:
         """
         Compares the specified user's profile with another user's profile.
 
@@ -184,12 +237,18 @@ class ZafiaApi(HttpWrapper):
             ZafiaApiKeys.CHECK_NICKNAME: check_nickname
         }
 
-        return await self._get(endpoint, params = params, user_id
-        = user_id)
+        return await self._get(
+            endpoint,
+            params=params,
+            user_id=user_id
+        )
 
 
-    async def get_top(self, user_id: str, top_type: RatingType =
-                      RatingType.EXPERIENCE) -> (Dict[str, Any]):
+    async def get_top(
+        self,
+        user_id: str,
+        top_type: RatingType = RatingType.EXPERIENCE
+    ) -> dict[str, Any]:
         """
         Retrieves the leaderboard data for a given rating type.
 
@@ -206,12 +265,19 @@ class ZafiaApi(HttpWrapper):
         """
         endpoint: str = ZafiaEndpoints.GET_TOP
         params: dict = {ZafiaApiKeys.TYPE: top_type}
-        return await self._get(endpoint, params = params, user_id
-        = user_id)
+        return await self._get(
+            endpoint,
+            params=params,
+            user_id=user_id
+        )
 
 
-    async def get_verifications(self, user_id: str, version: int = 15,
-                                device_id: str = "") -> Dict[str, Any]:
+    async def get_verifications(
+        self,
+        user_id: str,
+        version: int = 15,
+        device_id: str = ""
+    ) -> dict[str, Any]:
         """
         Retrieves the list of verifications required for the client.
 
@@ -232,12 +298,19 @@ class ZafiaApi(HttpWrapper):
             ZafiaApiKeys.VERSION: version,
             ZafiaApiKeys.DEVICE_ID: device_id or token_hex(8)
         }
-        return await self._get(endpoint, params = params, user_id \
-            = user_id)
+        return await self._get(
+            endpoint,
+            params=params,
+            user_id=user_id
+        )
 
     @with_user_id
-    async def _get(self, endpoint: ZafiaEndpoints, params: dict[str, Any],
-                   user_id: str) -> Dict[str, Any]:
+    async def _get(
+        self,
+        endpoint: ZafiaEndpoints,
+        params: dict[str, Any],
+        user_id: str
+    ) -> dict[str, Any]:
         """
         Executes a GET request to the Zafia API and returns the response as a dictionary.
 
@@ -257,9 +330,12 @@ class ZafiaApi(HttpWrapper):
             Exception: Re-raises any exception that occurs during the request.
         """
         try:
-            data: Dict | bytes =  await self.zafia_request("get",
-                                            endpoint, params = params,
-                                            user_id = user_id)
+            data: dict | bytes =  await self.http.zafia_request(
+                HttpsTrafficTypes.GET,
+                endpoint,
+                params=params,
+                user_id=user_id
+            )
             if isinstance(data, dict):
                 return data
             raise ValueError
@@ -268,5 +344,8 @@ class ZafiaApi(HttpWrapper):
             caller_name: Any = "Unknown function"
             if frame and frame.f_back and frame.f_back.f_code:
                 caller_name = frame.f_back.f_code.co_name
-            logger.exception(f"Unexpected error {e} from {endpoint} request in {caller_name}")
+            logger.exception(
+                f"Unexpected error {e}\n"
+                f"from {endpoint} request in {caller_name}"
+            )
             raise

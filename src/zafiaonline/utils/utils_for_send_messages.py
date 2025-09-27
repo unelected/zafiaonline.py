@@ -35,8 +35,9 @@ Typical usage example:
       print("Slow down to avoid ban.")
 """
 import re
+
 from datetime import datetime
-from typing import List, TypedDict
+from typing import TypedDict
 
 from zafiaonline.utils.logging_config import logger
 
@@ -72,8 +73,8 @@ class SentMessages:
                 If True, sent messages will also be stored in `logged_messages`.
                 Defaults to False.
         """
-        self.messages: List[Message] = []
-        self.logged_messages: List[Message] = []
+        self.messages: list[Message] = []
+        self.logged_messages: list[Message] = []
         self.enable_logging: bool = enable_logging
 
     def add_message(self, message: str) -> None:
@@ -87,12 +88,13 @@ class SentMessages:
             message (str): The message text to store.
         """
         message_time: datetime = self.get_time()
-        self.messages.append({"message_time": message_time, "text":
-            message})
+        self.messages.append(
+            {"message_time": message_time, "text":message}
+        )
         if self.enable_logging:
-            self.logged_messages.append({"message_time":
-                                             message_time,
-                                         "text": message})
+            self.logged_messages.append(
+                {"message_time": message_time, "text": message}
+            )
 
     @staticmethod
     def get_time() -> datetime:
@@ -104,7 +106,7 @@ class SentMessages:
         """
         return datetime.now()
 
-    def get_messages(self) -> List[Message]:
+    def get_messages(self) -> list[Message]:
         """
         Returns a list of all recorded messages.
 
@@ -147,7 +149,7 @@ class SentMessages:
         if self.messages:
             self.messages.pop(0)
 
-    def get_logged_messages(self) -> List[Message]:
+    def get_logged_messages(self) -> list[Message]:
         """
         Returns the list of logged messages.
 
@@ -192,7 +194,7 @@ class Utils:
         return True
 
     @staticmethod
-    def get_time_of_messages(messages: List[Message]) -> List[datetime]:
+    def get_time_of_messages(messages: list[Message]) -> list[datetime]:
         """
         Extracts the message_time field from a list of Message dictionaries.
 
@@ -207,14 +209,16 @@ class Utils:
         """
         if not messages:
             raise ValueError("Argument 'messages' is None or empty list.")
-        messages_time: List[datetime] = []
+        messages_time: list[datetime] = []
         for message in messages:
             message_time: datetime = message.get("message_time")
             messages_time.append(message_time)
         return messages_time
 
     @staticmethod
-    def get_current_time_of_messages(time_list: List[datetime]) -> List[float]:
+    def get_current_time_of_messages(
+            time_list: list[datetime]
+    ) -> list[float]:
         """
         Calculates the elapsed time in seconds since each datetime in the list.
 
@@ -228,7 +232,7 @@ class Utils:
             If time_list contains datetimes from 5 and 10 seconds ago,
             the returned list will be approximately [5.0, 10.0].
         """
-        out_time_list: List[float] = []
+        out_time_list: list[float] = []
         new_time: float = datetime.now().timestamp()
         for time in time_list:
             out_time: float = new_time - time.timestamp()
@@ -257,7 +261,11 @@ class Utils:
             handler.clear_messages()
         return None
 
-    def get_average_time(self, handler: SentMessages, max_len = 6) -> float:
+    def get_average_time(
+            self,
+            handler: SentMessages,
+            max_len = 6
+    ) -> float:
         """
         Calculates the average age (in seconds) of the most recent messages.
 
@@ -275,14 +283,18 @@ class Utils:
         Raises:
             ValueError: If the list of messages is empty or contains messages without valid timestamps.
         """
-        messages: List[Message] =  handler.messages
-        time_messages: List[datetime] = self.get_time_of_messages(messages)
-        current_time: List[float] = self.get_current_time_of_messages(time_messages[
-                                                         -max_len:])
+        messages: list[Message] =  handler.messages
+        time_messages: list[datetime] = self.get_time_of_messages(messages)
+        current_time: list[float] = self.get_current_time_of_messages(
+            time_messages[-max_len:]
+        )
         average_time: float = sum(current_time) / len(current_time)
         return average_time
 
-    def is_ban_risk_message(self, sent_messages_class: SentMessages) -> bool:
+    def is_ban_risk_message(
+            self,
+            sent_messages_class: SentMessages
+    ) -> bool:
         """
         Determines whether recent messaging behavior poses a ban risk.
 
@@ -295,14 +307,23 @@ class Utils:
         Returns:
             bool: True if the message rate suggests ban risk, False otherwise.
         """
-        messages: List[Message] = sent_messages_class.messages
+        messages: list[Message] = sent_messages_class.messages
         if not messages:
             return False
         short_time: float = self.get_average_time(sent_messages_class)
-        long_time: float = self.get_average_time(sent_messages_class, max_len = 9)
-        if (sent_messages_class.get_length_last_messages() >= 6 and short_time <=
-                2.1) or (sent_messages_class.get_length_last_messages(
-            max_len = 20) >= 9 and long_time <= 3):
+        long_time: float = self.get_average_time(
+            sent_messages_class,
+            max_len=9
+        )
+        if (
+            sent_messages_class.get_length_last_messages() >= 6
+            and short_time <= 2.1
+            or (
+                sent_messages_class.get_length_last_messages(
+                    max_len=20
+                ) >= 9 and long_time <= 3
+            )
+        ):
             logger.warning("AntiBanProtection prevented autoban")
             return True
         return False

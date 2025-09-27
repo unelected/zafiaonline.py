@@ -27,7 +27,7 @@ from zafiaonline.structures.enums import MessageStyles
 
 load_dotenv("data.env")
 class BotData:
-    nickname: str = os.getenv("NICKNAME") or "email" 
+    nickname: str = os.getenv("NICKNAME") or "email"
     password: str = os.getenv("PASSWORD") or "password"
 
 class RoomData:

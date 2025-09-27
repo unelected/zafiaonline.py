@@ -28,6 +28,7 @@ and number of iterations).
 """
 import hashlib
 
+
 class Md5:
     """
     Utility class for performing MD5-based hashing.
@@ -49,7 +50,11 @@ class Md5:
         return hashlib.md5(string.encode()).hexdigest()
 
     @staticmethod
-    def md5salt(string: str, salt: str = "azxsw", iterations: int = 5) -> str:
+    def md5salt(
+            string: str,
+            salt: str = "azxsw",
+            iterations: int = 5
+    ) -> str:
         """
         Returns a string hashed multiple times with a salt.
 

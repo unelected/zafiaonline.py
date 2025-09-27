@@ -33,8 +33,9 @@ Typical usage example:
         user_id="123456"
     )
 """
-from typing import Dict, Literal, Any
+from typing import Any
 
+from zafiaonline.structures.enums import HttpsTrafficTypes
 from zafiaonline.transport.http.http_module import Http
 from zafiaonline.structures.packet_data_keys import Endpoints, ZafiaEndpoints
 
@@ -49,7 +50,7 @@ class HttpWrapper:
     Attributes:
         http (Http): The underlying HTTP client.
     """
-    def __init__(self):
+    def __init__(self) -> None:
         """
         Initializes the HTTP wrapper.
 
@@ -57,10 +58,13 @@ class HttpWrapper:
         """
         self.http = Http()
 
-    async def zafia_request(self, method:
-                            Literal["get", "post", "put", "delete"],
-                            endpoint: ZafiaEndpoints, params: dict[str, Any],
-                            user_id: str) -> Dict[str, Any] | bytes:
+    async def zafia_request(
+        self,
+        method: HttpsTrafficTypes,
+        endpoint: ZafiaEndpoints,
+        params: dict[str, Any],
+        user_id: str
+    ) -> dict[str, Any] | bytes:
         """
         Sends an authenticated request to the Zafia API.
 
@@ -88,15 +92,25 @@ class HttpWrapper:
             aiohttp.ClientError: If a network-level error occurs during the request.
             Exception: For any other errors encountered while sending or processing the response.
         """
-        data: tuple[str, dict[str, str]] = self.http.build_zafia_headers(endpoint, user_id)
+        data: tuple[str, dict[str, str]] = self.http.build_zafia_headers(
+            endpoint,
+            user_id
+        )
         url: str = data[0]
         headers: dict = data[1]
-        return await self.http.send_request(method = method, url = url,
-                                params = params, headers = headers)
+        return await self.http.send_request(
+            method=method,
+            url=url,
+            params=params,
+            headers=headers
+        )
 
-    async def mafia_request(self, method: Literal["get", "post", "put",
-                            "delete"], endpoint: Endpoints | str,
-                            params: dict[str, Any] | None = None) -> dict[str, str] | bytes:
+    async def mafia_request(
+        self,
+        method: HttpsTrafficTypes,
+        endpoint: Endpoints | str,
+        params: dict[str, Any] | None = None
+    ) -> dict[str, str] | bytes:
         """
         Sends an authenticated request to the Mafia service.
 
@@ -119,13 +133,21 @@ class HttpWrapper:
             On non-JSON response:
                 b'\x89PNG\r\n\x1a\n...'
         """
-        headers: Dict[str, str] = self.http.build_mafia_headers()
-        return await (self.http.mafia_request(
-            self.http.mafia_url, method, endpoint, params, headers))
+        headers: dict[str, str] = self.http.build_mafia_headers()
+        return await self.http.mafia_request(
+            self.http.mafia_url,
+            method,
+            endpoint,
+            params,
+            headers
+        )
 
-    async def api_mafia_request(self, method: Literal["get", "post", "put",
-                            "delete"], endpoint: Endpoints,
-                            params: dict[str, Any] | None = None,) -> dict[str, Any] | bytes:
+    async def api_mafia_request(
+        self,
+        method: HttpsTrafficTypes,
+        endpoint: Endpoints,
+        params: dict[str, Any] | None = None
+    ) -> dict[str, Any] | bytes:
         """
         Sends an authenticated request to the Mafia API.
 
@@ -142,6 +164,11 @@ class HttpWrapper:
         dict[str, Any] | bytes: Parsed JSON response as a dict if the server
         returns JSON; otherwise, raw response bytes.
         """
-        headers: Dict[str, str] = self.http.build_api_mafia_headers()
-        return await (self.http.mafia_request(
-            self.http.api_mafia_url, method, endpoint, params, headers))
+        headers: dict[str, str] = self.http.build_api_mafia_headers()
+        return await self.http.mafia_request(
+            self.http.api_mafia_url,
+            method,
+            endpoint,
+            params,
+            headers
+        )

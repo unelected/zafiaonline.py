@@ -574,7 +574,7 @@ class Renaming(dict, Enum):
         "token": "t", "accept_messages": "ac",
         "rank": "r", "selected_language": "slc",
         "online": "on", "player_role_statistics": "prst",
-        "match_making_score": "mmscr"
+        "match_making_score": "mmscr", "is_in_room": "rr",
         }
 
     USER_NEW_API = {

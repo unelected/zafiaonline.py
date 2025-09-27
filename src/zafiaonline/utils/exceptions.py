@@ -33,9 +33,8 @@ Typical usage example:
     if server_response["type"] == "USER_BLOCKED":
         raise BanError(client, server_response, auth)
 """
-from typing import Type
-
 from zafiaonline.main import Client
+from zafiaonline.structures.packet_data_keys import PacketDataKeys
 
 
 class ListenDataException(Exception):
@@ -48,8 +47,12 @@ class ListenDataException(Exception):
     disconnections that were not handled properly.
     """
 
-    def __init__(self, message: str = "An error occurred while receiving data from "
-                               "the listener."):
+    def __init__(
+        self,
+        message: str = (
+            "An error occurred while receiving data from the listener."
+        )
+    ) -> None:
         super().__init__(message)
 
 
@@ -63,7 +66,10 @@ class ListenExampleErrorException(Exception):
     handling.
     """
 
-    def __init__(self, message: str = "An example listening error occurred."):
+    def __init__(
+            self,
+            message: str = "An example listening error occurred."
+    ) -> None:
         super().__init__(message)
 
 class BanError(Exception):
@@ -79,7 +85,12 @@ class BanError(Exception):
         auth (Type | None): Optional authentication object for fallback user data.
         message (str): Explanation of the ban including reason and remaining time.
     """
-    def __init__(self, client: "Client", data: dict = {}, auth: Type | None = None):
+    def __init__(
+            self,
+            client: "Client",
+            data: dict = {},
+            auth: type | None = None
+    ) -> None:
         """
         Initializes a BanError indicating the client has been banned.
 
@@ -98,9 +109,6 @@ class BanError(Exception):
             ValueError: If client or auth values are missing.
             AttributeError: If required client or auth user attributes are missing.
         """
-        from zafiaonline.structures.packet_data_keys import PacketDataKeys
-
-
         self.client = client
         self.auth = auth
 
@@ -111,15 +119,20 @@ class BanError(Exception):
             raise ValueError("No auth or client classes")
         if not self.auth.user or not self.client.user:
             raise AttributeError("No user in auth and client classes")
-        username = (self.client.user.username or self.auth.user.username or
-                    "UnknownUser")
+        username: str = (
+            self.client.auth.user.username
+            or self.auth.user.username
+            or "UnknownUser"
+        )
         time: str | int = data[PacketDataKeys.TIME_SEC_REMAINING.value]
         ban_time_seconds: int = int(time)
 
         ban_time = round(ban_time_seconds / 3600, 1)
 
-        message = (f"{username} have been banned due to {reason}, "
-                   f"remaining lockout {ban_time} hours")
+        message = (
+            f"{username} have been banned due to {reason}, "
+            f"remaining lockout {ban_time} hours"
+        )
         super().__init__(message)
 
 class LoginError(Exception):

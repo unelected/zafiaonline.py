@@ -29,6 +29,7 @@ Typical usage example:
     print(config.address, config.port, config.connect_type)
 """
 import yaml
+
 from importlib.resources import files, as_file
 
 
@@ -58,7 +59,7 @@ class Config:
         config_path = files('zafiaonline.transport.websocket').joinpath(path)
         with as_file(config_path) as resource_file:
             with open(resource_file, "r") as config_file:
-                config = yaml.safe_load(config_file)
+                config: dict = yaml.safe_load(config_file)
         self.address: str = config.get("address", "dottap.com")
         self.port: int = config.get("port", 7091)
         self.connect_type: str = config.get("connect_type", "wss")

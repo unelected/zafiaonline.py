@@ -27,17 +27,17 @@ receiving responses, and parsing returned data into model objects.
 Typical usage example:
 
     client = Client(...)
-    await client.remove_friend("user_id")
+    await client.players.remove_friend("user_id")
     messages = await client.get_private_messages("friend_id")
 """
 import asyncio
 import json
 
-from typing import List, Optional, Dict, Any, TYPE_CHECKING
+from typing import Any, TYPE_CHECKING
 from msgspec.json import decode
 
 if TYPE_CHECKING:
-    from zafiaonline.api_client.user_methods import Auth
+    from zafiaonline.api_client.user_methods import AuthService
 from zafiaonline.structures.packet_data_keys import PacketDataKeys
 from zafiaonline.structures.models import ModelFriend, ModelMessage
 from zafiaonline.structures.enums import RatingMode, RatingType
@@ -46,7 +46,7 @@ from zafiaonline.utils.utils_for_send_messages import Utils, SentMessages
 from zafiaonline.utils.logging_config import logger
 
 
-class Players:
+class PlayersMethods:
     """
     Handles all player-related interactions in the system.
 
@@ -61,7 +61,7 @@ class Players:
         sent_messages (SentMessages): A message tracker used for spam 
             prevention and content validation.
     """
-    def __init__(self, auth_client: "Auth"):
+    def __init__(self, auth_client: "AuthService") -> None:
         """
         Initializes the Players class with an authenticated client.
 
@@ -70,14 +70,17 @@ class Players:
         Args:
             auth_client (Auth): The authenticated client instance.
         """
-        self.auth_client = auth_client
+        self.auth_client: "AuthService" = auth_client
         if self.auth_client:
-            helpers = Helpers()
+            helpers: "Helpers" = Helpers()
             helpers.get_user_attributes(self.auth_client)
         self.sent_messages: "SentMessages" = SentMessages()
 
-    async def send_server(self, data: dict,
-                          remove_token_from_object: bool = False) -> None:
+    async def send_server(
+        self,
+        data: dict,
+        remove_token_from_object: bool = False
+    ) -> None:
         """
         Sends data to the server using the authenticated client.
 
@@ -94,7 +97,7 @@ class Players:
         """
         await self.auth_client.send_server(data, remove_token_from_object)
 
-    async def get_data(self, data: str) -> dict | None:
+    async def get_data(self, data: str) -> dict:
         """
         Sends a request and waits for a specific response from the server.
 
@@ -110,7 +113,7 @@ class Players:
         """
         return await self.auth_client.get_data(data)
 
-    async def friend_list(self) -> List[ModelFriend]:
+    async def friend_list(self) -> list[ModelFriend]:
         """
         Fetches the user's friend list from the server.
 
@@ -128,17 +131,22 @@ class Players:
         }
         await self.send_server(friends_request)
 
-        received_data: dict | None = await self.get_data(PacketDataKeys.FRIENDSHIP_LIST)
-        if received_data is None:
-            raise AttributeError("No friend list data")
+        received_data: dict = await self.get_data(
+            PacketDataKeys.FRIENDSHIP_LIST
+        )
 
-        friends: List[ModelFriend] = []
+        friends: list[ModelFriend] = []
 
         for friend in received_data[PacketDataKeys.FRIENDSHIP_LIST]:
-            friends.append(decode(json.dumps(friend), type = ModelFriend))
+            friends.append(
+                decode(
+                    json.dumps(friend),
+                    type=ModelFriend
+                )
+            )
         return friends
 
-    async def get_friend_invite_list(self) -> dict | None:
+    async def get_friend_invite_list(self) -> dict:
         """
         Fetches the list of friends in the invite list from the server.
 
@@ -155,7 +163,7 @@ class Players:
         await self.send_server(get_invite_list_request)
         return await self.get_data(PacketDataKeys.FRIENDS_IN_INVITE_LIST)
 
-    async def invite_friend(self, player_id: str) -> dict | None:
+    async def invite_friend(self, player_id: str) -> dict:
         """
         Sends a friend invite to a player by their ID.
 
@@ -176,7 +184,7 @@ class Players:
         await self.send_server(invite_request)
         return await self.get_data(PacketDataKeys.FRIEND_IS_INVITED)
 
-    async def search_player(self, nickname: str) -> dict | None:
+    async def search_player(self, nickname: str) -> dict:
         """
         Searches for a player by their nickname.
 
@@ -197,7 +205,7 @@ class Players:
         await self.send_server(search_info_request)
         return await self.get_data(PacketDataKeys.SEARCH_USER)
 
-    async def remove_friend(self, friend_id: str) -> dict | None:
+    async def remove_friend(self, friend_id: str) -> dict:
         """
         Removes a friend from the user's friend list.
 
@@ -216,14 +224,18 @@ class Players:
         await self.send_server(remove_friend_request)
         return await self.get_data(PacketDataKeys.REMOVE_FRIEND)
 
-    async def get_friend_requests(self) -> dict | None:
+    async def get_friend_requests(self) -> dict:
         get_friend_requests: dict = {
             PacketDataKeys.TYPE: PacketDataKeys.GET_SENT_FRIEND_REQUESTS_LIST,
         }
         await self.send_server(get_friend_requests)
         return await self.get_data(PacketDataKeys.FRIENDSHIP_LIST)
 
-    async def kick_user_vote(self, room_id: str, value: bool = True) -> None:
+    async def kick_user_vote(
+        self,
+        room_id: str,
+        value: bool = True
+    ) -> None:
         """
         Sends a vote request to kick a user from a room.
 
@@ -239,7 +251,11 @@ class Players:
         await self.send_server(vote_request)
         return None
 
-    async def kick_user(self, user_id: str, room_id: str) -> dict | None:
+    async def kick_user(
+        self,
+        user_id: str,
+        room_id: str
+    ) -> dict:
         """
         Sends a request to kick a user from the specified room.
 
@@ -255,8 +271,12 @@ class Players:
         await self.send_server(kick_request)
         return await self.get_data(PacketDataKeys.KICK_USER)
 
-    async def message_complaint(self, reason: str, screenshot_id: int,
-                                user_id: str) -> dict | None:
+    async def message_complaint(
+        self,
+        reason: str,
+        screenshot_id: int,
+        user_id: str
+    ) -> dict:
         """
         Submits a complaint about a user's message.
 
@@ -282,7 +302,10 @@ class Players:
         await self.send_server(complaint_request)
         return await self.get_data(PacketDataKeys.MAKE_COMPLAINT)
 
-    async def get_private_messages(self, friend_id: str) -> List[ModelMessage]:
+    async def get_private_messages(
+        self,
+        friend_id: str
+    ) -> list[ModelMessage]:
         """
         Retrieves private messages exchanged with a specific friend.
 
@@ -301,22 +324,25 @@ class Players:
         }
         await self.send_server(private_messages_request)
 
-        received_messages: dict | None = await self.get_data(
+        received_messages: dict = await self.get_data(
             PacketDataKeys.PRIVATE_CHAT_LIST_MESSAGES
         )
-        if received_messages is None:
-            raise AttributeError
 
-        messages: List[ModelMessage] = [
-            decode(json.dumps(message), type = ModelMessage)
+        messages: list[ModelMessage] = [
+            decode(
+                json.dumps(message),
+                type=ModelMessage
+            )
             for message in received_messages[PacketDataKeys.MESSAGES]
         ]
 
         return messages
 
-    async def get_rating(self, rating_type: RatingType =
-                        RatingType.AUTHORITY,
-                        rating_mode: RatingMode = RatingMode.ALL_TIME) -> dict | None:
+    async def get_rating(
+        self,
+        rating_type: RatingType = RatingType.AUTHORITY,
+        rating_mode: RatingMode = RatingMode.ALL_TIME
+    ) -> dict:
         """
         Retrieves the player rating based on the specified type and mode.
 
@@ -333,13 +359,18 @@ class Players:
             PacketDataKeys.RATING_MODE: rating_mode
         }
         await self.send_server(rating_query)
-        rating: dict | None = await self.get_data(PacketDataKeys.RATING)
-        if isinstance(rating, dict):
-            rating_user_list: dict = rating.get(PacketDataKeys.RATING_USERS_LIST, {})
-            return rating_user_list
-        return None
+        rating: dict = await self.get_data(PacketDataKeys.RATING)
+        rating_user_list: dict = rating.get(
+            PacketDataKeys.RATING_USERS_LIST,
+            {}
+        )
+        return rating_user_list
 
-    async def send_message_friend(self, friend_id: str, content: str) -> dict | None:
+    async def send_message_friend(
+        self,
+        friend_id: str,
+        content: str
+    ) -> dict | None:
         """
         Sends a private message to a friend.
 
@@ -370,7 +401,7 @@ class Players:
         await self.send_server(message_data)
         return await self.get_data(PacketDataKeys.PRIVATE_CHAT_LAST_MESSAGE)
 
-    async def get_user(self, user_id: str) -> Optional[dict]:
+    async def get_user(self, user_id: str) -> dict | None:
         """
         Retrieves the profile data of a specific user.
 
@@ -383,7 +414,7 @@ class Players:
         Raises:
             Exception: If an unexpected error occurs while fetching the data.
         """
-        user_payload: Dict[str, Any] = {
+        user_payload: dict[str, Any] = {
             PacketDataKeys.TYPE: PacketDataKeys.GET_USER_PROFILE,
             PacketDataKeys.USER_RECEIVER: user_id,
             PacketDataKeys.USER_OBJECT_ID: self.auth_client.user.user_id,
@@ -391,24 +422,29 @@ class Players:
         await self.send_server(user_payload)
 
         try:
-            user_data: dict | None = await self.get_data(PacketDataKeys.USER_PROFILE)
+            user_data: dict = await self.get_data(
+                PacketDataKeys.USER_PROFILE
+            )
             if not user_data:
                 logger.error(f"Error: get_data returned {user_data}")
                 return None
             return user_data
         except Exception as e:
-            logger.error(f"Error retrieving user {user_id} data: {e}",
-                          exc_info = True)
+            logger.error(
+                f"Error retrieving user {user_id} data: {e}",
+                exc_info=True
+            )
             return None
         
-    async def add_friend(self, user_id: str) -> int | None:
+    async def add_friend(self, user_id: str) -> int:
         friend_request: dict = {
             PacketDataKeys.TYPE: PacketDataKeys.ADD_FRIEND,
             PacketDataKeys.FRIEND_USER_OBJECT_ID: user_id,
         }
         await self.send_server(friend_request)
-        request_data: dict | None = await self.get_data(PacketDataKeys.ADD_FRIEND)
-        if isinstance(request_data, dict):
-            request_status: int = request_data.get(PacketDataKeys.FRIENDSHIP_FLAG, 1)
-            return request_status
-        return None
+        request_data: dict = await self.get_data(PacketDataKeys.ADD_FRIEND)
+        request_status: int = request_data.get(
+            PacketDataKeys.FRIENDSHIP_FLAG,
+            1
+        )
+        return request_status

@@ -33,12 +33,15 @@ Typical usage example:
 import logging
 import sys
 
+
 logger: logging.Logger = logging.getLogger("zafiaonline")
 logger.setLevel(logging.INFO)
 logger.propagate = False
 
 if not logger.handlers:
     handler: logging.StreamHandler = logging.StreamHandler(sys.stdout)
-    formatter: logging.Formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+    formatter: logging.Formatter = logging.Formatter(
+        "%(asctime)s - %(levelname)s - %(message)s"
+    )
     handler.setFormatter(formatter)
     logger.addHandler(handler)

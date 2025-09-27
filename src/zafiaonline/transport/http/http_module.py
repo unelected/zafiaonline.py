@@ -36,13 +36,14 @@ import uuid
 
 import aiohttp
 
-from typing import Any, Dict, Literal
+from typing import Any
 from urllib.parse import urljoin
 from aiohttp import ClientError
 
 from zafiaonline.structures.packet_data_keys import Endpoints, ZafiaEndpoints
 from zafiaonline.utils.logging_config import logger
 from zafiaonline.utils.proxy_store import store
+from zafiaonline.structures.enums import HttpsTrafficTypes
 
 
 class Http:
@@ -64,7 +65,7 @@ class Http:
         mafia_headers (dict): Default headers for Mafia API requests,
             including a randomized Dalvik User‑Agent.
     """
-    def __init__(self):
+    def __init__(self) -> None:
         """
         Initializes the HTTP client with proxy and default API settings.
 
@@ -84,10 +85,11 @@ class Http:
             "User-Agent": "okhttp/3.12.0"
         }
         self.mafia_headers: dict = {
-            "HOST": self.mafia_address,
+            "Host": self.mafia_address,
             "User-Agent": "okhttp/4.12.0",
             "Connection": "Keep-Alive",
-            "Accept-Encoding": "gzip"
+            "Accept-Encoding": "gzip",
+            "Content-Type": "application/x-www-form-urlencoded"
         }
 
     @staticmethod
@@ -108,13 +110,21 @@ class Http:
             For example:
                 'a9f1b3c7e0d45a67b21d09cf87bc1234'
         """
-        return ''.join(random.choices(string.hexdigits.lower(), k = length))
+        return ''.join(
+            random.choices(
+                string.hexdigits.lower(),
+                k = length
+            )
+        )
 
-    async def mafia_request(self, url: str, method: Literal["get", "post", "put",
-                            "delete"], endpoint: Endpoints | str,
-                            params: dict[str,Any] | None = None,
-                            headers: Dict[str, str] | None = None,
-                            ) -> dict[str, Any] | bytes:
+    async def mafia_request(
+        self,
+        url: str,
+        method: HttpsTrafficTypes,
+        endpoint: Endpoints | str,
+        params: dict[str,Any] | None = None,
+        headers: dict[str, str] | None = None,
+    ) -> dict[str, Any] | bytes:
         """
         Sends an HTTP request to a specified Mafia API endpoint.
 
@@ -124,7 +134,7 @@ class Http:
 
         Args:
             url (str): The base URL of the Mafia API.
-            method (Literal["get", "post", "put", "delete"]): HTTP method to use.
+            method (HttpsTrafficTypes): HTTP method to use.
             endpoint (Endpoints | str): Enum member representing the API endpoint path.
             params (dict[str, Any], optional): Query parameters or JSON body
                 payload for the request. Defaults to None.
@@ -146,10 +156,18 @@ class Http:
             url = urljoin(url, endpoint.value)
         else:
             url = urljoin(url, endpoint)
-        return await self.send_request(method, url, params, headers)
+        return await self.send_request(
+            method,
+            url,
+            params,
+            headers
+        )
 
-    def __build_headers(self, user_id:
-                        str, headers: dict) -> tuple[str, Dict[str, str]]:
+    def __build_headers(
+        self,
+        user_id: str,
+        headers: dict
+    ) -> tuple[str, dict[str, str]]:
         """
         Builds the request URL and HTTP headers based on the user context.
 
@@ -212,7 +230,11 @@ class Http:
             return url, True
         return url
 
-    def __create_headers(self, headers: dict, user_id: str) -> Dict:
+    def __create_headers(
+            self,
+            headers: dict,
+            user_id: str
+    ) -> dict:
         """
         Adds an Authorization header with a user-specific token.
 
@@ -241,8 +263,11 @@ class Http:
         headers["Authorization"] = auth_token
         return headers
 
-    def build_zafia_headers(self, endpoint: ZafiaEndpoints, user_id:
-            str = str(uuid.uuid4())) -> tuple[str, Dict[str, str]]:
+    def build_zafia_headers(
+        self,
+        endpoint: ZafiaEndpoints,
+        user_id: str = str(uuid.uuid4())
+    ) -> tuple[str, dict[str, str]]:
         """
         Prepares the full request URL and headers for a Zafia API call.
 
@@ -278,8 +303,10 @@ class Http:
         headers: dict = data[1]
         return url, headers
 
-    def build_mafia_headers(self, user_id:
-                            str = str(uuid.uuid4())) -> Dict[str, str]:
+    def build_mafia_headers(
+        self,
+        user_id: str = str(uuid.uuid4())
+    ) -> dict[str, str]:
         """
         Constructs HTTP headers for Mafia API requests with authorization.
 
@@ -304,8 +331,10 @@ class Http:
         headers: dict = self.__create_headers(headers, user_id)
         return headers
 
-    def build_api_mafia_headers(self, user_id:
-                                str = str(uuid.uuid4())) -> Dict[str, str]:
+    def build_api_mafia_headers(
+        self,
+        user_id: str = str(uuid.uuid4())
+    ) -> dict[str, str]:
         """
         Constructs HTTP headers for the Mafia API, including authorization and any future custom headers.
 
@@ -330,13 +359,181 @@ class Http:
         """
         #TODO: @unelected - add new headers
         headers: dict = self.mafia_headers.copy()
+        headers["Host"] = self.api_mafia_address
         headers: dict = self.__create_headers(headers, user_id)
         return headers
 
-    async def send_request(self, method: Literal["get", "post", "put", "delete"],
-                           url: str, params: dict[str, Any] | None = None,
-                           headers: dict[str, str] | None = None
-                           ) -> dict[str, Any] | bytes:
+    def _make_session(
+            self,
+            headers: dict[str, str] | None
+    ) -> aiohttp.ClientSession:
+        """
+        Creates and returns a new aiohttp client session.
+
+        The session is configured with the provided headers and the
+        proxy setting defined in the class instance.
+
+        Args:
+            headers (dict[str, str] | None): Optional HTTP headers to
+                include in all requests made through the session.
+
+        Returns:
+            aiohttp.ClientSession: A configured client session ready
+            for sending HTTP requests.
+        """
+        return aiohttp.ClientSession(
+            headers=headers,
+            proxy=self.proxy
+        )
+
+    async def _handle_response(
+            self,
+            response: aiohttp.ClientResponse,
+            url: str
+    ) -> dict[str, Any] | bytes:
+        """
+        Processes an HTTP response and returns parsed data.
+
+        If the response has a JSON content type, it is parsed and returned as
+        a dictionary. Otherwise, the raw text is returned inside a dictionary
+        with an "error" key, and a warning is logged.
+
+        Args:
+            response (aiohttp.ClientResponse): The HTTP response object to process.
+            url (str): The request URL, used for logging.
+
+        Returns:
+            dict[str, Any] | bytes: Parsed JSON response as a dictionary if content 
+            type is JSON, otherwise a dictionary with an "error" key containing the 
+            raw response text.
+        """
+        if response.content_type == 'application/json':
+            return await response.json()
+        else:
+            text: str = await response.text()
+            logger.warning(f"Response from {url}: {text}")
+            return {"error": text}
+
+    async def _request_post(
+        self,
+        session: aiohttp.ClientSession,
+        method: str,
+        url: str,
+        params: dict[str, Any] | None
+    ) -> dict[str, Any] | bytes:
+        """
+        Executes an HTTP POST request using the given session.
+
+        Sends a JSON payload if provided, then processes the server response.
+        Delegates response parsing to `_handle_response`, which automatically
+        parses JSON or wraps non-JSON text into a dictionary.
+
+        Args:
+            session (aiohttp.ClientSession): The active HTTP client session.
+            url (str): The request URL.
+            params (dict[str, Any] | None): The JSON payload for the POST request.
+
+        Returns:
+            dict[str, Any] | bytes: Parsed JSON response as a dictionary if the 
+            response content type is JSON, otherwise a dictionary containing 
+            an "error" key with the raw response text.
+
+        Raises:
+            aiohttp.ClientError: If a network-related error occurs.
+            Exception: For any other unexpected error during request execution.
+        """
+        return await self._execute_request(session, method, url, json=params)
+
+    @staticmethod
+    def to_form(mapping: dict) -> dict:
+        if not mapping:
+            return {}
+        return {
+            (key.value if hasattr(key, "value") else key):
+            (value.value if hasattr(value, "value") else value)
+            for key, value in mapping.items()
+        }
+    async def _execute_request(
+        self,
+        session: aiohttp.ClientSession,
+        method: str,
+        url: str,
+        *,
+        json: dict[str, Any] | None = None,
+        params: dict[str, Any] | None = None
+    ) -> dict[str, Any] | bytes:
+        """
+        Executes an HTTP request and handles errors in a unified way.
+
+        Args:
+            session (aiohttp.ClientSession): The active HTTP session.
+            method (str): The HTTP method name (e.g., "post", "get").
+            url (str): The target request URL.
+            json (dict[str, Any] | None): JSON body for requests like POST.
+            params (dict[str, Any] | None): Query parameters for requests like GET.
+
+        Returns:
+            dict[str, Any] | bytes: Parsed response data.
+        """
+        try:
+            if isinstance(json, dict):
+                async with getattr(session, method)(
+                    url,
+                    data=self.to_form(json)
+                ) as response:
+                    return await self._handle_response(response, url)
+            elif isinstance(params, dict):
+                async with getattr(session, method)(
+                    url,
+                    params=self.to_form(params)
+                ) as response:
+                    return await self._handle_response(response, url)
+            raise RuntimeError("Unknown _execute_request error")
+        except ClientError as e:
+            logger.error(f"Network error during {method.upper()} {url}: {e}")
+            raise
+        except Exception as e:
+            logger.error(f"Error {method.upper()} {url}: {e}")
+            raise
+
+    async def _request_generic(
+        self,
+        session: aiohttp.ClientSession,
+        method: str,
+        url: str,
+        params: dict[str, Any] | None
+    ) -> dict[str, Any] | bytes:
+        """
+        Executes a generic HTTP request (e.g., GET, PUT, DELETE) using the given session.
+
+        Handles sending the request, processing the response, and logging errors.
+        Delegates response parsing to `_handle_response`, which automatically parses
+        JSON or returns text content wrapped in a dictionary.
+
+        Args:
+            session (aiohttp.ClientSession): The active HTTP client session.
+            method (str): The HTTP method name (e.g., "get", "put", "delete").
+            url (str): The request URL.
+            params (dict[str, Any] | None): Optional query parameters for the request.
+
+        Returns:
+            dict[str, Any] | bytes: The parsed JSON response as a dictionary if 
+            the response is JSON, or a dictionary containing an "error" key with
+            the raw text response otherwise.
+
+        Raises:
+            aiohttp.ClientError: If a network-related error occurs.
+            Exception: For any other unexpected error during request execution.
+        """
+        return await self._execute_request(session, method, url, params=params)
+
+    async def send_request(
+        self,
+        method: HttpsTrafficTypes,
+        url: str,
+        params: dict[str, Any] | None = None,
+        headers: dict[str, str] | None = None
+    ) -> dict[str, Any] | bytes:
         """
         Sends an HTTP request and returns the parsed response.
 
@@ -346,7 +543,7 @@ class Http:
         as appropriate.
 
         Args:
-            method (Literal["get", "post", "put", "delete"]): HTTP method to use.
+            method (HttpsTrafficTypes): HTTP method to use.
             url (str): The full request URL.
             params (dict[str, Any], optional): Query parameters or JSON payload.
                 Defaults to None.
@@ -372,21 +569,9 @@ class Http:
             Exception: For any other exceptions encountered while sending or
                 processing the response.
         """
-        async with aiohttp.ClientSession(headers = headers, proxy = self.proxy) as session:
-            try:
-                async with await getattr(session, method)(url, params = params) as response:
-                    if response.content_type == 'application/json':
-                        data: dict = await response.json()
-                    else:
-                        text: str = await response.text()
-                        logger.warning(f"Response from {url}: {text}")
-                        data: dict = {'error': text}
-                    return data
-            except ClientError as e:
-                logger.error(
-                    f"Network error during {method.upper()} request to"
-                    f" {url}: {e}")
-                raise
-            except Exception as e:
-                logger.error(f"Error {method.upper()} {url}: {e}")
-                raise
+        async with self._make_session(headers) as session:
+            request_method: str = method.value
+            if request_method == HttpsTrafficTypes.POST.value:
+                return await self._request_post(session, request_method, url, params)
+            else:
+                return await self._request_generic(session, request_method, url, params)

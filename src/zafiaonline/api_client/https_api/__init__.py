@@ -16,31 +16,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from zafiaonline.api_client.api_decorators import ApiDecorators
-from zafiaonline.api_client.global_chat_methods import GlobalChatMethods
-from zafiaonline.api_client.player_methods import PlayersMethods
-from zafiaonline.api_client.room_methods import RoomMethods, MatchMakingMethods
-from zafiaonline.api_client.user_methods import AuthService, UserMethods
 from zafiaonline.api_client.https_api.https_api import HttpsApiMethods
-from zafiaonline.api_client.zafia_api import ZafiaApiMethods
 
 __all__: tuple[str, ...] = (
-    # Decorators
-    "ApiDecorators",
-
-    # Chat
-    "GlobalChatMethods",
-
-    # Players
-    "PlayersMethods",
-    "AuthService",
-    "UserMethods",
-
-    # RoomType
-    "RoomMethods",
-    "MatchMakingMethods",
-
     # HttpTraffic
     "HttpsApiMethods",
-    "ZafiaApiMethods",
 )

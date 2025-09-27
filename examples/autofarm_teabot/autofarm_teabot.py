@@ -85,13 +85,21 @@ class MessagesHandle:
             await asyncio.sleep(message_handler.DELAY)
             await client.global_chat.join_global_chat()
             await asyncio.sleep(message_handler.DELAY)
-        await client.global_chat.send_message_global(message_handler.TROLL_MESSAGE)
+        await client.global_chat.send_message_global(
+            message_handler.TROLL_MESSAGE
+        )
 
 
 class PrepareData:
     load_dotenv("data.env")
-    TEA_IS_READY_TO_BE_TAKEN = os.getenv("TEA_IS_READY_TO_BE_TAKEN", "Новый чай готов для получения!")
-    BOT_NICKNAMES = os.getenv("BOT_NICKNAMES", "").split(",")
+    TEA_IS_READY_TO_BE_TAKEN = os.getenv(
+        "TEA_IS_READY_TO_BE_TAKEN",
+        "Новый чай готов для получения!"
+    )
+    BOT_NICKNAMES = os.getenv(
+        "BOT_NICKNAMES",
+        ""
+    ).split(",")
 
     @staticmethod
     async def farm_tea():
@@ -101,14 +109,19 @@ class PrepareData:
     def cooldown_is_done(content):
         prepare_data = PrepareData()
         data_handle = DataHandle()
-        return (content == prepare_data.TEA_IS_READY_TO_BE_TAKEN and
-                data_handle.USER_NAME in prepare_data.BOT_NICKNAMES)
+        return (
+            content == prepare_data.TEA_IS_READY_TO_BE_TAKEN
+            and data_handle.USER_NAME
+            in prepare_data.BOT_NICKNAMES
+        )
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level = logging.INFO,
-                            format = "%(asctime)s - %(levelname)s - %(message)s",
-                            datefmt = "%H:%M:%S")
+    logging.basicConfig(
+        level = logging.INFO,
+        format = "%(asctime)s - %(levelname)s - %(message)s",
+        datefmt = "%H:%M:%S"
+    )
     client = Client()
     main = Main()
     try:

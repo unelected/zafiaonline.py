@@ -21,6 +21,7 @@ import logging
 import sys
 import os
 
+from typing import NoReturn
 from dotenv import load_dotenv
 from aioconsole import ainput
 
@@ -28,8 +29,9 @@ from zafiaonline.api_client.api_decorators import ApiDecorators
 from zafiaonline.utils.exceptions import ListenExampleErrorException
 from zafiaonline.main import Client
 
+
 class SimpleBot:
-    def __init__(self):
+    def __init__(self) -> None:
         self.task1 = None
         self.task2 = None
         self.task3 = None
@@ -37,97 +39,128 @@ class SimpleBot:
         self.content = None
         self.user_name = None
 
-    async def main(self):
+    async def main(self) -> None:
         load_dotenv("account_data.env")
-        email:str = os.getenv("EMAIL") or "email"
-        password:str = os.getenv("PASSWORD") or "password"
+        email: str = os.getenv("EMAIL") or "email"
+        password: str = os.getenv("PASSWORD") or "password"
         await mafia.auth.sign_in(email, password)
         await mafia.global_chat.join_global_chat()  # join in global chat
         await self.run_tasks()
 
 
     @staticmethod
-    async def rejoin():
+    async def rejoin() -> None:
         await mafia.global_chat.leave_from_global_chat()
         await mafia.global_chat.join_global_chat()
 
-    async def reenter_timer(self):
+    async def reenter_timer(self) -> None:
         try:
             await asyncio.sleep(300)
             await self.rejoin()
         except asyncio.CancelledError:
             pass
 
-    async def chat_listener(self):
+    async def chat_listener(self) -> NoReturn:
         while True:
             try:
-                result = await mafia.auth.listen()
+                result: dict = await mafia.auth.listen()
             except ListenExampleErrorException as e:
                 await mafia.auth.disconnect()
                 raise SystemExit("listen error", e)
             except Exception as e:
                 logging.error(f"unexcepted exception {e}")
                 raise
-            if not result:
-                logging.error("received empty result from listen.")
-                continue
-            
-            if result:
-                logging.info(result)
-                self.print_message(result)
+            logging.info(result)
+            self.print_message(result)
         # await chat.send_message_global(content)
         
     @ApiDecorators.extract_message
-    def print_message(self, content):
+    def print_message(self, content: str) -> None:
         self.content = content
         print(f"{self.user_name}: {self.content}")
 
-    async def chat_sender(self):
+    async def chat_sender(self) -> None:
+        """Main loop for reading user input and dispatching messages/commands."""
         while True:
-            my_message = await ainput()
-            if my_message is None:
-                logging.info("empty message not send")
+            my_message: str = await ainput()
+            if not await self._validate_message(my_message):
                 continue
-            if not self.user_bot_config:
-                raise AttributeError
-            if not self.task1 or not self.task2:
-                raise AttributeError
-            if my_message in self.user_bot_config["commands"]:
-                command = self.user_bot_config["commands"][my_message]
-                if command.get("cancel_tasks"):
-                    self.task1.cancel()
-                    self.task2.cancel()
-                    try:
-                        await asyncio.gather(self.task1, self.task2)
-                    except asyncio.CancelledError:
-                        pass
-                    await mafia.global_chat.leave_from_global_chat()
-                    await mafia.auth.disconnect()
-                    print(command["message"])
-                    sys.exit()
-                elif command.get("rejoin"):
-                    await self.rejoin()
-                    continue
 
-            # Обработка фраз
-            if my_message in self.user_bot_config["phrases"]:
-                responses = self.user_bot_config["phrases"][my_message]
-                if responses:
-                    for response in responses:
-                        # Замена {input} на введенное сообщение
-                        text = response["text"].format(input=my_message)
-                        await mafia.global_chat.send_message_global(text)
+            if await self._handle_command(my_message):
+                continue
 
-                        # Задержка перед следующим сообщением
-                        delay = response.get("delay", 0)
-                        if delay > 0:
-                            await asyncio.sleep(delay)
-                    continue
+            if await self._handle_phrase(my_message):
+                continue
 
-            # По умолчанию отправлять сообщение
-            await mafia.global_chat.send_message_global(my_message)
+            await self._send_default(my_message)
 
-    async def run_tasks(self):
+    async def _validate_message(self, message: str | None) -> bool:
+        """Checks whether the message is valid for sending."""
+        if message is None:
+            logging.info("empty message not send")
+            return False
+        if not self.user_bot_config:
+            raise AttributeError("Missing user_bot_config")
+        if not self.task1 or not self.task2:
+            raise AttributeError("Tasks not initialized")
+        return True
+
+
+    async def _handle_command(self, message: str) -> bool:
+        """Handles special commands like cancel or rejoin. Returns True if handled."""
+        if self.user_bot_config:
+            if message not in self.user_bot_config["commands"]:
+                return False
+            
+            command: dict = self.user_bot_config["commands"][message]
+
+            if command.get("cancel_tasks"):
+                await self._cancel_tasks()
+                await mafia.global_chat.leave_from_global_chat()
+                await mafia.auth.disconnect()
+                print(command["message"])
+                sys.exit()
+
+            if command.get("rejoin"):
+                await self.rejoin()
+                return True
+
+        return False
+
+    async def _cancel_tasks(self) -> None:
+        """Cancels running tasks gracefully."""
+        if self.task1 and self.task2:
+            self.task1.cancel()
+            self.task2.cancel()
+            try:
+                await asyncio.gather(self.task1, self.task2)
+            except asyncio.CancelledError:
+                pass
+
+
+    async def _handle_phrase(self, message: str) -> bool:
+        """Checks if message is a phrase trigger, sends responses. Returns True if handled."""
+        if self.user_bot_config:
+            if message not in self.user_bot_config["phrases"]:
+                return False
+
+            responses: list[dict] = self.user_bot_config["phrases"][message]
+            for response in responses:
+                text = response["text"].format(input=message)
+                await mafia.global_chat.send_message_global(text)
+
+                delay = response.get("delay", 0)
+                if delay > 0:
+                    await asyncio.sleep(delay)
+            return True
+        return False
+
+
+    async def _send_default(self, message: str) -> None:
+        """Sends a default message when no command or phrase matched."""
+        await mafia.global_chat.send_message_global(message)
+
+    async def run_tasks(self) -> None:
         self.task1 = asyncio.create_task(self.reenter_timer())  # timer
         self.task2 = asyncio.create_task(self.chat_listener())  # listener
         self.task3 = asyncio.create_task(self.chat_sender())  # chat sender
@@ -140,12 +173,12 @@ if __name__ == "__main__":
     logging.basicConfig(
     filename='my_log.log',        # имя файла для логов
     filemode='a',                 # 'w' — перезаписывать, 'a' — добавлять
-        level=logging.INFO,       # уровень логирования
+    level=logging.INFO,           # уровень логирования
     format='%(asctime)s - %(levelname)s - %(message)s',
     datefmt='%Y-%m-%d %H:%M:%S'
 )
-    mafia = Client()
-    bot = SimpleBot()
+    mafia: Client = Client()
+    bot: SimpleBot = SimpleBot()
     try:
         asyncio.run(bot.main())
     except KeyboardInterrupt:

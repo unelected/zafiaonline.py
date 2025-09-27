@@ -127,7 +127,8 @@ class Websocket(WebSocketHandler):
             Exception: If an unexpected error occurs while closing the connection.
         """
         logger.debug(
-            f"Attempting to close WebSocket. self.alive={self.alive}")
+            f"Attempting to close WebSocket. self.alive={self.alive}"
+        )
 
         if not self.alive:
             logger.debug("WebSocket already closed.")
@@ -138,8 +139,11 @@ class Websocket(WebSocketHandler):
         await self._cancel_listener_task()
         logger.debug("Disconnected.")
 
-    async def send_server(self, data: dict,
-                          remove_token_from_object: bool = False) -> None:
+    async def send_server(
+        self,
+        data: dict,
+        remove_token_from_object: bool = False
+    ) -> None:
         """
         Sends a JSON-encoded payload to the WebSocket server.
 
@@ -157,12 +161,15 @@ class Websocket(WebSocketHandler):
             None
         """
 
-        packet: dict = await self._make_packet(data, remove_token_from_object)
+        packet: dict = await self._make_packet(
+            data,
+            remove_token_from_object
+        )
 
         try:
             json_data: str = json.dumps(packet)
             if not self.ws:
-                raise AttributeError
+                raise AttributeError("No self.ws")
             await self.ws.send(json_data)
 
         except json.JSONDecodeError as e:
@@ -170,11 +177,16 @@ class Websocket(WebSocketHandler):
 
         except websockets.ConnectionClosed:
             logger.error(
-                "WebSocket closed while sending data. Reconnecting...")
+                "WebSocket closed while sending data. Reconnecting..."
+            )
             asyncio.create_task(self._reconnect())
         return None
-    
-    async def _make_packet(self, data: dict, remove_token_from_object: bool) -> dict:
+
+    async def _make_packet(
+            self,
+            data: dict,
+            remove_token_from_object: bool
+    ) -> dict:
         """
         Build the final packet structure for WebSocket transmission.
 
@@ -194,11 +206,17 @@ class Websocket(WebSocketHandler):
         """
         inner: dict = data.copy()
         if not remove_token_from_object:
-            if self.token:
+            if self.token and self.token is not None:
                 inner[PacketDataKeys.TOKEN] = self.token
-            if self.user_id:
-                inner.setdefault(PacketDataKeys.USER_OBJECT_ID, self.user_id)
-        return { PacketDataKeys.DATA: inner, PacketDataKeys.VERSION_CODE: 55 }
+            if self.user_id and self.user_id is not None:
+                inner.setdefault(
+                    PacketDataKeys.USER_OBJECT_ID,
+                    self.user_id
+                )
+        return {
+            PacketDataKeys.DATA: inner,
+            PacketDataKeys.VERSION_CODE: 55
+        }
 
     async def listen(self) -> dict[str, Any]:
         """
@@ -215,8 +233,10 @@ class Websocket(WebSocketHandler):
         """
         while self.alive:
             try:
-                response: str = await asyncio.wait_for(self.data_queue.get(),
-                                                  timeout = 5)
+                response: str = await asyncio.wait_for(
+                    self.data_queue.get(),
+                    timeout = 5
+                )
                 if response is None:
                     logger.error("Received None response from queue")
 
@@ -261,7 +281,10 @@ class Websocket(WebSocketHandler):
         """
         while self.alive:
             try:
-                data: dict[str, Any] = await asyncio.wait_for(self.listen(), timeout = 10)
+                data: dict[str, Any] = await asyncio.wait_for(
+                    self.listen(),
+                    timeout=10
+                )
                 event: str | None = data.get(PacketDataKeys.TYPE)
 
                 if event is None and PacketDataKeys.TIME not in data:
@@ -280,10 +303,13 @@ class Websocket(WebSocketHandler):
                     raise RuntimeError(f"Game in room is started")
 
                 elif event == PacketDataKeys.USER_USING_DOUBLE_ACCOUNT:
-                    raise RuntimeError("Used double account. Please use proxy")
+                    raise RuntimeError(
+                        "Used double account. Please use proxy"
+                    )
 
                 logger.debug(
-                    f"Unexpected event type received: {event}.")
+                    f"Unexpected event type received: {event}."
+                )
 
             except BanError as e:
                 logger.warning(e)
@@ -292,7 +318,8 @@ class Websocket(WebSocketHandler):
 
             except asyncio.TimeoutError:
                 logger.warning(
-                    "Timeout reached while waiting for data. Resetting...")
+                    "Timeout reached while waiting for data. Resetting..."
+                )
                 raise
 
             except KeyboardInterrupt:
@@ -302,9 +329,16 @@ class Websocket(WebSocketHandler):
             except Exception as e:
                 logger.error(f"Unexpected error in get_data: {e}")
                 raise
-        raise asyncio.CancelledError("get_data stopped because self.alive is False")
+        raise asyncio.CancelledError(
+            "get_data stopped because self.alive is False"
+        )
 
-    async def safe_get_data(self, key: str, retries: int = 2, delay: int = 2) -> dict[str, Any]:
+    async def safe_get_data(
+            self,
+            key: str,
+            retries: int = 2,
+            delay: int = 2
+    ) -> dict[str, Any]:
         """
         Attempts to retrieve data associated with the given key, retrying on failure.
 
@@ -328,4 +362,5 @@ class Websocket(WebSocketHandler):
                 logger.error(f"Unexpected error in get_data: {e}")
                 await asyncio.sleep(delay)
         raise ValueError(
-            f"Failed to get data for {key} after {retries} retries")
+            f"Failed to get data for {key} after {retries} retries"
+        )

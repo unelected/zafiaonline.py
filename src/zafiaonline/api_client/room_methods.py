@@ -26,18 +26,18 @@ relies on communication with a game server using structured packet data.
 Typical usage example:
 
     auth = Auth(...)
-    matchmaking = MatchMaking(auth)
+    matchmaking = MatchMakingMethods(auth)
     await matchmaking.match_making_add_user(players_size = 12)
 """
 import asyncio
 import json
 
-from typing import Optional, List, TYPE_CHECKING
+from typing import TYPE_CHECKING
 from msgspec.json import decode
 
 from zafiaonline.utils import Md5
 if TYPE_CHECKING:
-    from zafiaonline.api_client.user_methods import Auth
+    from zafiaonline.api_client.user_methods import AuthService
 from zafiaonline.utils.utils_for_send_messages import Utils, SentMessages
 from zafiaonline.structures import PacketDataKeys, ModelRoom
 from zafiaonline.structures.enums import MessageStyles, RoomModelType, Roles
@@ -45,7 +45,7 @@ from zafiaonline.utils.logging_config import logger
 from zafiaonline.utils.utils import Helpers
 
 
-class Room:
+class RoomMethods:
     """
     Handles multiplayer room logic over WebSocket for an authenticated client.
 
@@ -59,7 +59,7 @@ class Room:
         sent_messages (SentMessages): Tracker for detecting repeated messages or spam.
         md5hash (Md5): Utility for hashing passwords with salt before transmission.
     """
-    def __init__(self, auth_client: "Auth"):
+    def __init__(self, auth_client: "AuthService") -> None:
         """
         Initializes a Room instance with an authenticated WebSocket client.
 
@@ -71,15 +71,18 @@ class Room:
             auth_client (Auth): An authenticated WebSocket client used to send and receive
                 messages related to room interactions.
         """
-        self.auth_client = auth_client
+        self.auth_client: "AuthService" = auth_client
         if self.auth_client:
             helpers = Helpers()
             helpers.get_user_attributes(self.auth_client)
         self.sent_messages: "SentMessages" = SentMessages()
         self.md5hash: "Md5" = Md5()
 
-    async def send_server(self, data: dict, 
-                          remove_token_from_object: bool = False) -> None:
+    async def send_server(
+        self,
+        data: dict,
+        remove_token_from_object: bool = False
+    ) -> None:
         """
         Sends a structured payload to the game server via WebSocket.
 
@@ -125,14 +128,14 @@ class Room:
         return await self.auth_client.listen()
 
     async def create_room(
-            self,
-            selected_roles: List[Roles | int | None] = [],
-            title: str = "",
-            max_players: int = 8,
-            min_players: int = 5,
-            password: str | None = None,
-            min_level: int = 1,
-            vip_enabled: bool = False
+        self,
+        selected_roles: list[Roles | int | None] = [],
+        title: str = "",
+        max_players: int = 8,
+        min_players: int = 5,
+        password: str | None = None,
+        min_level: int = 1,
+        vip_enabled: bool = False
     ) -> ModelRoom | None:
         """
         Creates a new game room with the specified parameters.
@@ -158,23 +161,36 @@ class Room:
             AttributeError: If no response data is received after sending the request.
         """
         roles: list[int | None] = selected_roles or []
-        room_request: dict = self._build_room_request(roles, title,
-                                                max_players, min_players,
-                                                password, min_level,
-                                                vip_enabled)
+        room_request: dict = self._build_room_request(
+            roles,
+            title,
+            max_players,
+            min_players,
+            password,
+            min_level,
+            vip_enabled
+        )
 
         await self.send_server(room_request)
-        received_data: dict | None = await self._get_validated_room_response(room_request)
+        received_data: dict | None = await self._get_validated_room_response(
+            room_request
+        )
 
         if received_data is None:
             raise AttributeError("No received data")
 
         return self._decode_room(received_data)
 
-    def _build_room_request(self, selected_roles: List[Roles | int | None],
-            title: str, max_players: int, min_players: int, password:
-            Optional[str],
-            min_level: int, vip_enabled: bool) -> dict:
+    def _build_room_request(
+        self,
+        selected_roles: list[Roles | int | None],
+        title: str,
+        max_players: int,
+        min_players: int,
+        password: str | None,
+        min_level: int,
+        vip_enabled: bool
+    ) -> dict:
         """
         Constructs the request payload for creating a room.
 
@@ -208,8 +224,10 @@ class Room:
             },
         }
 
-    async def _get_validated_room_response(self, room_request: dict) -> \
-    dict | None:
+    async def _get_validated_room_response(
+        self,
+        room_request: dict
+    ) -> dict | None:
         """
         Sends the room creation request and ensures a valid response is received.
 
@@ -229,17 +247,23 @@ class Room:
         while attempt <= max_attempts:
             try:
                 received_data: dict | None = await self.get_data(
-                    PacketDataKeys.ROOM_CREATED)
+                    PacketDataKeys.ROOM_CREATED
+                )
                 if isinstance(received_data, dict) and received_data.get(
-                        PacketDataKeys.TYPE) == PacketDataKeys.ROOM_CREATED:
+                    PacketDataKeys.TYPE
+                ) == PacketDataKeys.ROOM_CREATED:
                     return received_data
-                logger.warning(f"Invalid room creation response"
-                               f" {received_data}, retrying...")
+                logger.warning(
+                    "Invalid room creation response"
+                    f"{received_data}, retrying..."
+                )
                 await asyncio.sleep(12)
                 await self.send_server(room_request)
             except Exception as e:
-                logger.error(f"Get server data error: "
-                              f"{e}", exc_info=True)
+                logger.error(
+                    f"Get server data error: {e}",
+                    exc_info=True
+                )
             attempt += 1
 
         logger.error("Room creation failed after retry.")
@@ -266,17 +290,24 @@ class Room:
                     logger.error("Missing room data in response")
                     return None
 
-                return decode(json.dumps(received_data[PacketDataKeys.ROOM]),
-                          type = ModelRoom)
+                return decode(
+                    json.dumps(received_data[PacketDataKeys.ROOM]),
+                    type=ModelRoom
+                )
             return None
 
         except TypeError:
-            logger.error(f"Failed to decode room data: data is None",
-                          exc_info = True)
+            logger.error(
+                f"Failed to decode room data: data is None",
+                exc_info=True
+            )
             return None
 
         except Exception as e:
-            logger.error(f"Failed to decode room data: {e}", exc_info = True)
+            logger.error(
+                f"Failed to decode room data: {e}",
+                exc_info=True
+            )
             return None
 
     async def remove_player(self, room_id: str) -> None:
@@ -315,7 +346,10 @@ class Room:
         await self.remove_player(room_id)
         return None
 
-    async def send_invate_to_room(self, user_id: str) -> dict | None:
+    async def send_invate_to_room(
+        self,
+        user_id: str
+    ) -> dict | None:
         invite_request: dict = {
             PacketDataKeys.TYPE: PacketDataKeys.SEND_FRIEND_INVITE_TO_ROOM,
             PacketDataKeys.USER_OBJECT_ID: user_id
@@ -338,10 +372,11 @@ class Room:
         await self.send_server(get_players_request)
         return await self.get_data(PacketDataKeys.PLAYERS_IN_ROOM)
 
-    async def create_player(self, room_id: str,
-                            room_model_type: RoomModelType =
-                            RoomModelType.NOT_MATCHMAKING_MODE)\
-                            -> dict | None:
+    async def create_player(
+        self,
+        room_id: str,
+        room_model_type: RoomModelType = RoomModelType.NOT_MATCHMAKING_MODE
+    ) -> dict | None:
         """
         Creates a player in the specified room and retrieves room statistics.
 
@@ -368,15 +403,18 @@ class Room:
             PacketDataKeys.ROOM_OBJECT_ID: room_id
         }
         await self.send_server(create_player_request)
-        data: dict | None = await self.get_data(PacketDataKeys.ROOM_STATISTICS)
+        data: dict | None = await self.get_data(
+            PacketDataKeys.ROOM_STATISTICS
+        )
         attempts: int = 0
         while data is None and attempts < 3:
             await self.send_server(create_player_request)
             try:
                 data = await self.get_data(PacketDataKeys.ROOM_STATISTICS)
             except TimeoutError:
-                logger.error("NOT CRITICAL error get room players and "
-                              "messages")
+                logger.error(
+                    "NOT CRITICAL error get room players and messages"
+                )
             attempts += 1
             if data is not None and attempts < 3:
                 break
@@ -385,9 +423,16 @@ class Room:
         player_list: list = data.get(PacketDataKeys.PLAYERS, [])
         room_messages: list = data.get(PacketDataKeys.MESSAGES, [])
 
-        return {"player_list": player_list, "room_messages": room_messages}
+        return {
+            "player_list": player_list,
+            "room_messages": room_messages
+        }
 
-    async def join_room(self, room_id: str, password: str = "") -> dict | None:
+    async def join_room(
+        self,
+        room_id: str,
+        password: str = ""
+    ) -> dict | None:
         """
         Joins a specified room using the given room ID and optional password.
 
@@ -405,20 +450,26 @@ class Room:
         join_request: dict = {
             PacketDataKeys.TYPE: PacketDataKeys.ROOM_ENTER,
             PacketDataKeys.ROOM_PASS: self.md5hash.md5salt(
-                password) if password else "",
+                password
+            ) if password else "",
             PacketDataKeys.ROOM_OBJECT_ID: room_id
         }
         await self.send_server(join_request)
-        enter_data: dict | None = await self.get_data(PacketDataKeys.ROOM_ENTER)
+        enter_data: dict | None = await self.get_data(
+            PacketDataKeys.ROOM_ENTER
+        )
         if isinstance(enter_data, dict):
             room_data: dict = enter_data.get(PacketDataKeys.ROOM, {})
             return room_data
         return None
 
 
-    async def role_action(self, user_id: str, room_id: str,
-                          room_model_type: RoomModelType =
-                          RoomModelType.NOT_MATCHMAKING_MODE) -> dict | None:
+    async def role_action(
+        self,
+        user_id: str,
+        room_id: str,
+        room_model_type: RoomModelType = RoomModelType.NOT_MATCHMAKING_MODE
+    ) -> dict | None:
         """
         Performs a role-specific action on a user within a room.
 
@@ -441,14 +492,19 @@ class Room:
             PacketDataKeys.ROOM_MODEL_TYPE: room_model_type
         }
         await self.send_server(action_request, True)
-        user_data: dict | None = await self.get_data(PacketDataKeys.USER_DATA)
+        user_data: dict | None = await self.get_data(
+            PacketDataKeys.USER_DATA
+        )
         if isinstance(user_data, dict):
             final_data: dict = user_data.get(PacketDataKeys.DATA, {})
             return final_data
         return None
 
-    async def give_up(self, room_id: str, room_model_type: RoomModelType =
-    RoomModelType.NOT_MATCHMAKING_MODE) -> dict | None:
+    async def give_up(
+        self,
+        room_id: str,
+        room_model_type: RoomModelType = RoomModelType.NOT_MATCHMAKING_MODE
+    ) -> dict | None:
         """
         Sends a request to forfeit the game.
 
@@ -468,14 +524,19 @@ class Room:
             PacketDataKeys.ROOM_OBJECT_ID: room_id
         }
         await self.send_server(give_up_request)
-        finished_data: dict | None = await self.get_data(PacketDataKeys.GAME_FINISHED)
+        finished_data: dict | None = await self.get_data(
+            PacketDataKeys.GAME_FINISHED
+        )
         if isinstance(finished_data, dict):
             return finished_data
         return None
 
-    async def send_message_room(self, content: str, room_id: str,
-                                message_style: int = MessageStyles.NO_COLOR)\
-                                -> None:
+    async def send_message_room(
+        self,
+        content: str,
+        room_id: str,
+        message_style: int = MessageStyles.NO_COLOR
+    )-> None:
         """
         Sends a message to the specified room.
 
@@ -530,7 +591,7 @@ class Room:
         return await self.get_data(PacketDataKeys.ROOMS)
 
 
-class MatchMaking:
+class MatchMakingMethods:
     """
     Handles matchmaking operations for the client.
 
@@ -542,7 +603,7 @@ class MatchMaking:
         auth_client (Auth): The authenticated client instance used to send and
             receive data from the server.
     """
-    def __init__(self, auth_client: "Auth"):
+    def __init__(self, auth_client: "AuthService") -> None:
         """
         Initializes the MatchMaking instance.
 
@@ -553,13 +614,16 @@ class MatchMaking:
             auth_client (Auth): The authenticated client instance used for communication
                 with the game server.
         """
-        self.auth_client = auth_client
+        self.auth_client: "AuthService" = auth_client
         if self.auth_client:
-            helpers = Helpers()
+            helpers: "Helpers" = Helpers()
             helpers.get_user_attributes(self.auth_client)
 
-    async def send_server(self, data: dict,
-                          remove_token_from_object: bool = False) -> None:
+    async def send_server(
+        self,
+        data: dict,
+        remove_token_from_object: bool = False
+    ) -> None:
         """
         Sends a packet to the server through the authenticated client.
 
@@ -600,9 +664,14 @@ class MatchMaking:
             PacketDataKeys.TYPE: PacketDataKeys.MATCH_MAKING_GET_STATUS
         }
         await self.send_server(status_request)
-        return await self.get_data(PacketDataKeys.MATCH_MAKING_MATCH_STATUS)
+        return await self.get_data(
+            PacketDataKeys.MATCH_MAKING_MATCH_STATUS
+        )
 
-    async def users_waiting_count(self, players_size: int = 8) -> dict | None:
+    async def users_waiting_count(
+        self,
+        players_size: int = 8
+    ) -> dict | None:
         """
         Retrieves the number of users currently waiting for a matchmaking game.
 
@@ -623,10 +692,14 @@ class MatchMaking:
             PacketDataKeys.MATCH_MAKING_BASE_PLAYERS_AMOUNT: players_size
         }
         await self.send_server(users_in_wait_request)
-        return await self.get_data(PacketDataKeys.
-                                   GET_MATCH_MAKING_USERS_IN_QUEUE_INTERVAL)
+        return await self.get_data(
+            PacketDataKeys.GET_MATCH_MAKING_USERS_IN_QUEUE_INTERVAL
+        )
 
-    async def match_making_add_user(self, players_size: int = 8) -> int | None:
+    async def match_making_add_user(
+        self,
+        players_size: int = 8
+    ) -> int | None:
         """
         Adds the user to the matchmaking queue.
 
@@ -645,11 +718,14 @@ class MatchMaking:
             PacketDataKeys.MATCH_MAKING_BASE_PLAYERS_AMOUNT: players_size
         }
         await self.send_server(add_user_request)
-        finded_users_data: dict | None = await self.get_data(PacketDataKeys.
-                                                      MATCH_MAKING_FINDED_USERS_NUMBER)
+        finded_users_data: dict | None = await self.get_data(
+            PacketDataKeys.MATCH_MAKING_FINDED_USERS_NUMBER
+        )
         if isinstance(finded_users_data, dict):
-            finded_users: int = finded_users_data.get(PacketDataKeys.
-                                                      MATCH_MAKING_FINDED_USERS_NUMBER, 0)
+            finded_users: int = finded_users_data.get(
+                PacketDataKeys.MATCH_MAKING_FINDED_USERS_NUMBER,
+                0
+            )
             return finded_users
         return None
 
@@ -684,7 +760,9 @@ class MatchMaking:
             PacketDataKeys.TYPE: PacketDataKeys.MATCH_MAKING_ADD_GAME,
         }
         await self.send_server(add_game)
-        return await self.get_data(PacketDataKeys.MATCH_MAKING_USER_ADD_GAME)
+        return await self.get_data(
+            PacketDataKeys.MATCH_MAKING_USER_ADD_GAME
+        )
 
     async def match_making_ban_role(self) -> dict | None:
         """
@@ -701,4 +779,6 @@ class MatchMaking:
             PacketDataKeys.TYPE: PacketDataKeys.MATCH_MAKING_USER_SELECT_ROLE
         }
         await self.send_server(ban_request)
-        return await self.get_data(PacketDataKeys.MATCH_MAKING_COUNT_USER_SELECTED_ROLES)
+        return await self.get_data(
+            PacketDataKeys.MATCH_MAKING_COUNT_USER_SELECTED_ROLES
+        )

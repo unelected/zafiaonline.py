@@ -48,6 +48,13 @@ class Sex(IntEnum):
     WOMEN = 1
 
 
+class HttpsTrafficTypes(str, Enum):
+    GET = "get"
+    POST = "post"
+    PUT = "put"
+    DELETE = "delete"
+
+
 class Languages(str, Enum):
     """
     Enumeration representing supported languages.

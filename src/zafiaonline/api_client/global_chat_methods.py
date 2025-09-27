@@ -19,7 +19,7 @@
 """
 Handles interaction with the global chat system for authenticated clients.
 
-This module defines the GlobalChat class, which allows clients to join
+This module defines the GlobalChatMethods class, which allows clients to join
 and leave the global chat, send messages, and perform basic anti-spam
 handling. It is designed to be used as part of a WebSocket-based client
 for MafiaOnline or similar real-time systems.
@@ -27,7 +27,7 @@ for MafiaOnline or similar real-time systems.
 Typical usage example:
 
     auth = Auth(...)
-    chat = GlobalChat(auth)
+    chat = GlobalChatMethods(auth)
     await chat.join_global_chat()
     await chat.send_message_global("Hello everyone!")
     await chat.leave_from_global_chat()
@@ -37,14 +37,14 @@ import asyncio
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from zafiaonline.api_client.user_methods import Auth
+    from zafiaonline.api_client.user_methods import AuthService
 from zafiaonline.structures import PacketDataKeys
 from zafiaonline.utils.utils import Helpers
 from zafiaonline.structures.enums import MessageStyles
 from zafiaonline.utils.utils_for_send_messages import Utils, SentMessages
 
 
-class GlobalChat:
+class GlobalChatMethods:
     """
     Handles global chat interactions for an authenticated user.
 
@@ -56,21 +56,24 @@ class GlobalChat:
         auth_client: An authenticated API client instance used for user operations.
         sent_messages: A SentMessages instance used to track sent messages.
     """
-    def __init__(self, auth_client: "Auth"):
+    def __init__(self, auth_client: "AuthService") -> None:
         """
         Initializes GlobalChat with the provided authenticated client.
 
         Args:
             auth_client: An authenticated API client used to perform user-related actions.
         """
-        self.auth_client = auth_client
+        self.auth_client: "AuthService" = auth_client
         if self.auth_client:
-            helpers = Helpers()
+            helpers: "Helpers" = Helpers()
             helpers.get_user_attributes(self.auth_client)
         self.sent_messages: "SentMessages" = SentMessages()
 
-    async def send_server(self, data: dict, 
-                          remove_token_from_object: bool = False) -> None:
+    async def send_server(
+        self,
+        data: dict,
+        remove_token_from_object: bool = False
+    ) -> None:
         """
         Sends data to the server through the authenticated client.
 
@@ -92,7 +95,7 @@ class GlobalChat:
         """
         await self.auth_client.send_server(data, remove_token_from_object)
 
-    async def get_data(self, data: str) -> dict | None:
+    async def get_data(self, data: str) -> dict:
         """
         Fetches structured data from the server based on the given key.
 
@@ -107,7 +110,7 @@ class GlobalChat:
         """
         return await self.auth_client.get_data(data)
 
-    async def join_global_chat(self) -> dict | None:
+    async def join_global_chat(self) -> dict:
         """
         Joins the global chat by sending a join request to the server.
 
@@ -130,7 +133,7 @@ class GlobalChat:
         return await self.get_data(PacketDataKeys.MESSAGES)
 
 
-    async def leave_from_global_chat(self) -> dict | None:
+    async def leave_from_global_chat(self) -> dict:
         """
         Leaves the global chat and returns the client to the dashboard.
 
@@ -150,8 +153,11 @@ class GlobalChat:
         await self.send_server(leave_from_chat_request)
         return await self.get_data(PacketDataKeys.DASHBOARD)
 
-    async def send_message_global(self, content: str, message_style: int =
-                                MessageStyles.NO_COLOR) -> None:
+    async def send_message_global(
+        self,
+        content: str,
+        message_style: int = MessageStyles.NO_COLOR
+    ) -> None:
         """
         Sends a message to the global chat with optional styling.
 

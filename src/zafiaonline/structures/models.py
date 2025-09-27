@@ -17,7 +17,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 """
-Data models used across the Zafia Online game.
+Data models used across the Mafia Online game.
 
 This module defines the core structured data types used for player profiles,
 rooms, server configuration, chat messages, GUI settings, and more. These
@@ -31,16 +31,15 @@ Typical usage example:
     user = ModelUser(username="Player123", password="21242424")
     room = ModelRoom(room_id="ru_96180a0e-57bd-4f4f-bf72-3e0978351761", max_players=12)
 """
-from msgspec import Struct
-from typing import List
 
+from msgspec import Struct
 from zafiaonline.structures.packet_data_keys import Renaming
 from zafiaonline.structures.enums import Sex, Languages, Roles
 
 
 class ModelUser(Struct, rename = Renaming.USER):
     """
-    Represents a user profile in the Zafia Online game.
+    Represents a user profile in the Mafia Online game.
 
     This model contains detailed information about a user, such as their
     experience, level, VIP status, game statistics, and authentication token.
@@ -50,7 +49,7 @@ class ModelUser(Struct, rename = Renaming.USER):
         user_id (str | None): Unique identifier of the user.
         updated (int | None): Timestamp of the last profile update.
         username (str | None): Username of the player.
-        photo (int | str | None): Profile photo identifier or URL.
+        photo (str | None): Profile photo identifier or URL.
         experience (int | None): Total experience points.
         next_level_experience (int | None): Experience needed for next level.
         previous_level_experience (int | None): Experience required for previous level.
@@ -90,11 +89,12 @@ class ModelUser(Struct, rename = Renaming.USER):
     role: int | None = None
     online: int | None = None
     selected_language: Languages = Languages.RUSSIAN
+    is_in_room: None = None
 
 
 class ModelOtherUser(Struct, rename = Renaming.USER_NEW_API):
     """
-    Represents another user's profile in the new API format of Zafia Online.
+    Represents another user's profile in the new API format of Mafia Online.
 
     This model is used for representing external or public-facing user data,
     typically in API responses where reduced or modified fields are used
@@ -146,7 +146,7 @@ class ModelOtherUser(Struct, rename = Renaming.USER_NEW_API):
 
 class ModelServerConfig(Struct, rename = Renaming.SERVER_CONFIG):
     """
-    Configuration model for server-level game settings in Zafia Online.
+    Configuration model for server-level game settings in Mafia Online.
 
     This model defines server-side parameters that affect game behavior,
     pricing, and UI visibility for all users.
@@ -167,7 +167,7 @@ class ModelServerConfig(Struct, rename = Renaming.SERVER_CONFIG):
 
 class ModelRoom(Struct, rename = Renaming.ROOM):
     """
-    Model representing a game room in Zafia Online.
+    Model representing a game room in Mafia Online.
 
     This structure contains metadata and settings for a multiplayer room
     where players gather before starting a game.
@@ -189,7 +189,7 @@ class ModelRoom(Struct, rename = Renaming.ROOM):
     min_level: int | None = None
     vip_enabled: bool | None = None
     status: int | None = None
-    selected_roles: List[Roles] | None = None
+    selected_roles: list[Roles] | None = None
     title: str | None = None
     password: str | None = None
     room_model_tupe: int | None = None

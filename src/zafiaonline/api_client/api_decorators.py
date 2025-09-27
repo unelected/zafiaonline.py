@@ -33,14 +33,15 @@ Typical usage example:
 """
 import functools
 
-from typing import TYPE_CHECKING, Awaitable, Callable, Union, Any
+from typing import TYPE_CHECKING, Awaitable, Callable, Any
 
 if TYPE_CHECKING:
-    from zafiaonline.api_client.user_methods import Auth
+    from zafiaonline.api_client.user_methods import AuthService
 from zafiaonline.structures import ModelUser
 from zafiaonline.structures.enums import MessageType
 from zafiaonline.utils.exceptions import LoginError
 from zafiaonline.utils.logging_config import logger
+from zafiaonline.structures.packet_data_keys import PacketDataKeys
 
 
 class ApiDecorators:
@@ -73,8 +74,14 @@ class ApiDecorators:
             ValueError: If no user is found for the given `player_nickname`.
         """
         @functools.wraps(func)
-        async def wrapper(cls, player_id: str | None,
-                          player_nickname: str | None, auth: "Auth", *args, **kwargs) -> Awaitable[Any]:
+        async def wrapper(
+            cls,
+            player_id: str | None,
+            player_nickname: str | None,
+            auth: "AuthService",
+            *args: Any,
+            **kwargs: Any
+        ) -> Awaitable[Any]:
             """
             Resolves `player_id` via `player_nickname` if not provided and calls the wrapped function.
 
@@ -99,23 +106,27 @@ class ApiDecorators:
                 ValueError: If `player_nickname` lookup returns no matching player.
             """
             if TYPE_CHECKING:
-                from zafiaonline.api_client.player_methods import Players
-            from zafiaonline.structures.packet_data_keys import PacketDataKeys
-            players: "Players" = Players(auth)
+                from zafiaonline.api_client.player_methods import PlayersMethods
+            players: "PlayersMethods" = PlayersMethods(auth)
 
             if player_id is None:
                 if player_nickname is None:
                     raise AttributeError("No nickname and no id")
-                result: dict | None = await players.search_player(player_nickname)
-                if result is None:
-                    raise ValueError
+                result: dict = await players.search_player(player_nickname)
                 users: dict = result[PacketDataKeys.USERS]
                 if not users:
                     raise ValueError(
-                        f"Player with nickname '{player_nickname}' not found")
+                        f"Player with nickname '{player_nickname}' not found"
+                    )
                 user: dict = users[0]
                 player_id = str(user[PacketDataKeys.OBJECT_ID])
-            return await func(cls, player_id, player_nickname, *args, **kwargs)
+            return await func(
+                cls,
+                player_id,
+                player_nickname,
+                *args,
+                **kwargs
+            )
 
         return wrapper
 
@@ -140,7 +151,11 @@ class ApiDecorators:
             pair is provided.
         """
         @functools.wraps(func)
-        async def wrapper(self, *args, **kwargs) -> Union[ModelUser, bool]:
+        async def wrapper(
+            self,
+            *args: Any,
+            **kwargs: Any
+        ) -> ModelUser | bool:
             """
             Validates presence of login credentials before executing the function.
 
@@ -175,12 +190,16 @@ class ApiDecorators:
                     logger.error("Not all login details have been entered")
                     raise LoginError
 
-            return await func(self, *args, **kwargs)
+            return await func(
+                self,
+                *args,
+                **kwargs
+            )
 
         return wrapper
 
     @staticmethod
-    def requires_room_check(auth: "Auth") -> Callable:
+    def requires_room_check(auth: "AuthService") -> Callable:
         """
         Decorator to ensure the user is in the specified room before executing the function.
 
@@ -197,13 +216,17 @@ class ApiDecorators:
         Raises:
             ValueError: If the user is not in a room, or if the room does not match the given room_id.
         """
-        from zafiaonline.api_client.player_methods import (Players,
-                                                           PacketDataKeys)
-        players = Players(auth)
+        from zafiaonline.api_client.player_methods import PlayersMethods
+        players = PlayersMethods(auth)
 
         async def decorator(func: Callable) -> Callable:
             @functools.wraps(func)
-            async def wrapper(self, room_id: str, *args, **kwargs) -> Awaitable[Any]:
+            async def wrapper(
+                self,
+                room_id: str,
+                *args: Any,
+                **kwargs: Any
+            ) -> Awaitable[Any]:
                 """
                 Validates that the user is in the expected room before executing the function.
 
@@ -223,11 +246,16 @@ class ApiDecorators:
                 Raises:
                     ValueError: If the user is not in a room or is in a different room than `room_id`.
                 """
-                profile: dict | None = await players.get_user(self.client.auth.user.user_id)
+                profile: dict | None = await players.get_user(
+                    self.client.auth.user.user_id
+                )
                 if profile is None:
                     raise ValueError
-                user_room_id: str = profile.get(PacketDataKeys.ROOM, {}).get(
-                    PacketDataKeys.OBJECT_ID)
+                user_room_id: str = profile.get(
+                    PacketDataKeys.ROOM, {}
+                ).get(
+                    PacketDataKeys.OBJECT_ID
+                )
 
                 if not user_room_id:
                     raise ValueError("The user is not in the room")
@@ -235,9 +263,15 @@ class ApiDecorators:
                 if user_room_id != room_id:
                     raise ValueError(
                         f"The user is in another room "
-                        f"(ID: {user_room_id}), but not in {room_id}")
+                        f"(ID: {user_room_id}), but not in {room_id}"
+                    )
 
-                return await func(self, room_id, *args, **kwargs)
+                return await func(
+                    self,
+                    room_id,
+                    *args,
+                    **kwargs
+                )
 
             return wrapper
         return decorator
@@ -271,7 +305,12 @@ class ApiDecorators:
             Callable: The wrapped function, or None if the packet is not a main text message.
         """
         @functools.wraps(func)
-        async def wrapper(self, result, *args, **kwargs) -> Union[Awaitable[Any], None]:
+        async def wrapper(
+            self,
+            result: dict[str, Any],
+            *args: Any,
+            **kwargs: Any
+            ) -> Awaitable[Any] | None:
             """
             Extracts and processes main text messages from the result before calling the wrapped function.
 
@@ -288,10 +327,11 @@ class ApiDecorators:
             Returns:
                 Awaitable[Any] | None: The result of the wrapped function if called, otherwise None.
             """
-            from zafiaonline.structures.packet_data_keys import PacketDataKeys
             if result.get(PacketDataKeys.TYPE) == PacketDataKeys.MESSAGE:
                 message: dict = result.get(PacketDataKeys.MESSAGE, {})
-                message_type: int | None = message.get(PacketDataKeys.MESSAGE_TYPE)
+                message_type: int | None = message.get(
+                    PacketDataKeys.MESSAGE_TYPE
+                )
 
                 if message_type == MessageType.MAIN_TEXT:
                     user: dict = message.get(PacketDataKeys.USER, {})
@@ -302,7 +342,12 @@ class ApiDecorators:
                     self.user_name = user.get(PacketDataKeys.USERNAME)
                     self.sex = user.get(PacketDataKeys.SEX)
 
-                    return await func(self, content, *args, **kwargs)
+                    return await func(
+                        self,
+                        content,
+                        *args,
+                        **kwargs
+                    )
 
             return None
 

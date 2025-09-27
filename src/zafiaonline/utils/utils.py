@@ -28,11 +28,11 @@ or propagation is necessary.
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from zafiaonline.api_client.user_methods import Auth
+    from zafiaonline.api_client.user_methods import AuthService
 
 
 class Helpers:
-    def get_user_attributes(self, auth: "Auth") -> None:
+    def get_user_attributes(self, auth: "AuthService") -> None:
         """
         Reassigns all non-callable attributes from a client's __dict__ to itself.
 

@@ -35,18 +35,30 @@ class TestClient(unittest.IsolatedAsyncioTestCase):
 
     async def test_get_user(self):
         await self.client.auth.sign_in(self.nickname, self.password)
-        user_data: dict | None = await self.client.players.get_user(self.player_user_id)
+        user_data: dict | None = await self.client.players.get_user(
+            self.player_user_id
+        )
         if user_data is None:
             raise ValueError
         profile: dict | None = user_data.get(PacketDataKeys.USER_PROFILE)
         if profile is None:
             raise ValueError
         profile_data = profile.get(PacketDataKeys.PROFILE_USER_DATA)
-        self.assertIn(self.player_user_id, profile_data.get(PacketDataKeys.OBJECT_ID))
+        self.assertIn(
+            self.player_user_id, profile_data.get(
+                PacketDataKeys.OBJECT_ID
+            )
+        )
 
     async def test_sign_in(self):
-        data = await self.client.auth.sign_in(self.nickname, self.password)
-        self.assertIn(self.client.auth.user.user_id, data.user_id)
+        data = await self.client.auth.sign_in(
+            self.nickname,
+            self.password
+        )
+        self.assertIn(
+            self.client.auth.user.user_id,
+            data.user_id
+        )
 
 if __name__ == "__main__":
     unittest.main()

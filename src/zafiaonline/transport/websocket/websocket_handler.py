@@ -36,7 +36,7 @@ Typical usage example:
 import asyncio
 import websockets
 
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING
 from websockets.exceptions import ConnectionClosedOK, ConnectionClosed
 from websockets.asyncio.client import connect
 
@@ -101,7 +101,7 @@ class WebSocketHandler():
             try:
                 if not self.ws:
                     raise AttributeError
-                message: Union[str, bytes] = await self.ws.recv()
+                message: str | bytes = await self.ws.recv()
                 await self.data_queue.put(message)
 
             except ConnectionClosedOK:
@@ -115,7 +115,8 @@ class WebSocketHandler():
                 break
             except websockets.ConnectionClosed:
                 logger.warning(
-                    "WebSocket connection lost. Attempting to reconnect...")
+                    "WebSocket connection lost. Attempting to reconnect..."
+                )
                 asyncio.create_task(self._reconnect())
                 break
             except KeyboardInterrupt:
@@ -185,9 +186,12 @@ class WebSocketHandler():
             "User-Agent": "okhttp/4.12.0"
         }
         if not headers:
-            raise AttributeError("No headers")
-        self.ws = await connect(self.uri, user_agent_header = str(headers), 
-                                proxy = store.get_random_proxy())
+            raise AttributeError("No headers in WebSocket")
+        self.ws = await connect(
+            self.uri,
+            user_agent_header=str(headers),
+            proxy=store.get_random_proxy()
+        )
         self.alive = True
 
     async def _post_connect_setup(self) -> None:
@@ -232,9 +236,10 @@ class WebSocketHandler():
             logger.error(f"Reconnection attempt {attempt + 1} failed.")
 
         if await self._should_stop_reconnect():
-            return
+            return None
 
         logger.critical("Max reconnection attempts reached. Giving up.")
+        return None
 
     async def _handle_reconnect(self) -> None:
         """
@@ -267,7 +272,7 @@ class WebSocketHandler():
         try:
             if not self.ws:
                 raise AttributeError
-            await self.ws.close(code = 1000)
+            await self.ws.close(code=1000)
             logger.debug("WebSocket connection closed gracefully.")
         except ConnectionClosed as e:
             logger.debug(f"Connection already closed: {e}")
@@ -322,7 +327,10 @@ class WebSocketHandler():
         try:
             if self.websocket is None:
                 raise AttributeError("No WebSocket")
-            await asyncio.wait_for(self.websocket.create_connection(), timeout = 10)
+            await asyncio.wait_for(
+                self.websocket.create_connection(),
+                timeout=10
+            )
             return True
         except asyncio.TimeoutError:
             logger.error("Timeout while trying to reconnect.")
@@ -345,11 +353,13 @@ class WebSocketHandler():
         """
         if not self.alive:
             try: 
-                logger.error( "WebSocket is not connected. Attempting to reconnect...") 
+                logger.error(
+                    "WebSocket is not connected. Attempting to reconnect..."
+                )
                 await self._reconnect()
                 if not self.alive:
-                    logger.error("Reconnection failed. Dropping message.") 
-                    return False 
-            except BanError: 
+                    logger.error("Reconnection failed. Dropping message.")
+                    return False
+            except BanError:
                 return False
         return True

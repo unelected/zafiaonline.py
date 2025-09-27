@@ -28,7 +28,7 @@ profile photo uploads, gender updates, and dashboard management.
 Typical usage example:
 
     auth = Auth(...)
-    user = User(auth)
+    user = UserMethods(auth)
     await user.username_set("CoolPlayer123")
     await user.select_language(Languages.ENGLISH)
     await user.buy_vip()
@@ -36,7 +36,7 @@ Typical usage example:
 import base64
 import json
 
-from typing import  Optional, TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any
 from secrets import token_hex
 from msgspec.json import decode
 
@@ -53,7 +53,7 @@ from zafiaonline.utils.utils import Helpers
 from zafiaonline.utils.proxy_store import store
 
 
-class Auth(Websocket):
+class AuthService(Websocket):
     """
     Handles user authentication and session-related metadata for WebSocket communication.
 
@@ -67,7 +67,11 @@ class Auth(Websocket):
         user (ModelUser): Model representing the authenticated user.
         server_configi (ModelServerConfig): Model for server configuration.
     """
-    def __init__(self, client: "Client", proxy: str | None = None) -> None:
+    def __init__(
+        self,
+        client: "Client",
+        proxy: str | None = None
+    ) -> None:
         """
         Initialize the Auth handler with client and optional proxy.
 
@@ -76,8 +80,8 @@ class Auth(Websocket):
             proxy (Optional[str]): Optional proxy address.
         """
         self.client: "Client" = client
-        self.token: Optional[str] = None
-        self.user_id: Optional[str] = None
+        self.token: str | None = None
+        self.user_id: str | None = None
         self.device_id: str = ""
         self.md5hash: "Md5" = Md5()
         self.user: "ModelUser" = ModelUser()
@@ -87,8 +91,13 @@ class Auth(Websocket):
         super().__init__(client = client)
 
     @ApiDecorators.login_required
-    async def sign_in(self, email: str = "", password: str = "",
-                      token: str = "", user_id: str = "") -> ModelUser | bool:
+    async def sign_in(
+        self,
+        email: str = "",
+        password: str = "",
+        token: str = "",
+        user_id: str = ""
+    ) -> ModelUser | bool:
         """
         Signs in a user using email/password or token-based authentication.
 
@@ -105,7 +114,12 @@ class Auth(Websocket):
         self._warn_if_default_email(email)
         await self._ensure_connection()
 
-        auth_data: dict = self._prepare_auth_data(email, password, token, user_id)
+        auth_data: dict = self._prepare_auth_data(
+            email,
+            password,
+            token,
+            user_id
+        )
         await self.send_server(auth_data)
 
         data: ModelUser | bool = await self._process_auth_response()
@@ -136,8 +150,13 @@ class Auth(Websocket):
             logger.debug("Connection not active. Attempting to connect...")
             await self.create_connection()
 
-    def _prepare_auth_data(self, email: str, password: str, token: str,
-                           user_id: str) -> dict:
+    def _prepare_auth_data(
+        self,
+        email: str,
+        password: str,
+        token: str,
+        user_id: str
+    ) -> dict:
         """
         Prepares the authentication payload for the sign-in request.
 
@@ -162,7 +181,9 @@ class Auth(Websocket):
                 # Generates a random device ID
                 PacketDataKeys.TYPE: PacketDataKeys.SIGN_IN,
                 PacketDataKeys.EMAIL: email,
-                PacketDataKeys.PASSWORD: self.md5hash.md5salt(password or ""),
+                PacketDataKeys.PASSWORD: self.md5hash.md5salt(
+                    password or ""
+                ),
                 PacketDataKeys.DEVICE_ID: self.device_id,
                 }
         return data
@@ -178,10 +199,13 @@ class Auth(Websocket):
             ModelUser: The authenticated user object if successful.
             bool: False if authentication fails or response is invalid.
         """
-        received_data: dict | None = await self.get_data(PacketDataKeys.USER_SIGN_IN)
+        received_data: dict | None = await self.get_data(
+            PacketDataKeys.USER_SIGN_IN
+        )
 
         if not received_data or received_data.get(
-                PacketDataKeys.TYPE) != PacketDataKeys.USER_SIGN_IN:
+                PacketDataKeys.TYPE
+        ) != PacketDataKeys.USER_SIGN_IN:
             logger.error("Sign-in data retrieval error")
             return False
 
@@ -199,15 +223,21 @@ class Auth(Websocket):
         try:
             user_data: str | None = received_data.get(PacketDataKeys.USER)
             server_config_data: str | None = received_data.get(
-                PacketDataKeys.SERVER_CONFIG)
+                PacketDataKeys.SERVER_CONFIG
+            )
 
             if not user_data or not server_config_data:
                 logger.error("Missing user or server config data in response")
                 return
 
-            self.user: ModelUser = decode(json.dumps(user_data).encode(), type = ModelUser)
-            self.server_config: ModelServerConfig = decode(json.dumps(server_config_data),
-                                        type = ModelServerConfig)
+            self.user: ModelUser = decode(
+                json.dumps(user_data).encode(),
+                type=ModelUser
+            )
+            self.server_config: ModelServerConfig = decode(
+                json.dumps(server_config_data),
+                type=ModelServerConfig
+            )
 
             self.token = self.user.token
             self.user_id = self.user.user_id
@@ -215,10 +245,13 @@ class Auth(Websocket):
             self.update_auth_data()
 
         except Exception as e:
-            logger.error(f"Error parsing user data: {e}", exc_info=True)
+            logger.error(
+                f"Error parsing user data: {e}",
+                exc_info=True
+            )
 
 
-class User:
+class UserMethods:
     """
     Handles user-related actions within the Mafia client.
 
@@ -232,7 +265,7 @@ class User:
         auth_client (Auth): An instance of the authenticated client used to
             communicate with the Mafia API for user-specific actions.
     """
-    def __init__(self, auth_client: "Auth"):
+    def __init__(self, auth_client: "AuthService") -> None:
         """
         Initializes the User interaction interface.
 
@@ -245,13 +278,16 @@ class User:
             auth_client (Auth): The authenticated Mafia client used for making
                 user-related API calls.
         """
-        self.auth_client: "Auth" = auth_client
+        self.auth_client: "AuthService" = auth_client
         if self.auth_client:
-            helpers = Helpers()
+            helpers: "Helpers" = Helpers()
             helpers.get_user_attributes(self.auth_client)
 
-    async def send_server(self, data: dict[str, Any],
-                          remove_token_from_object: bool = False) -> None:
+    async def send_server(
+        self,
+        data: dict[str, Any],
+        remove_token_from_object: bool = False
+    ) -> None:
         """
         Sends a data payload to the server through the authenticated client.
 
@@ -270,7 +306,7 @@ class User:
         """
         await self.auth_client.send_server(data, remove_token_from_object)
 
-    async def get_data(self, data: str) -> dict | None:
+    async def get_data(self, data: str) -> dict:
         """
         Fetches structured data from the server based on the given key.
 
@@ -285,7 +321,7 @@ class User:
         """
         return await self.auth_client.get_data(data)
 
-    async def listen(self) -> dict | None:
+    async def listen(self) -> dict:
         """
         Listens for incoming messages from the server.
 
@@ -299,7 +335,7 @@ class User:
         """
         return await self.auth_client.listen()
 
-    async def username_set(self, nickname: str) -> str | None:
+    async def username_set(self, nickname: str) -> str:
         """
         Sends a request to the server to update the user's username.
 
@@ -318,41 +354,57 @@ class User:
             PacketDataKeys.USERNAME: nickname
         }
         await self.send_server(username_update_request)
-        username_data: dict | None = await self.get_data(PacketDataKeys.USERNAME_SET)
+        username_data: dict | None = await self.get_data(
+            PacketDataKeys.USERNAME_SET
+        )
         if isinstance(username_data, dict):
-            username: str = username_data.get(PacketDataKeys.USERNAME, "")
+            username: str = username_data.get(
+                PacketDataKeys.USERNAME,
+                ""
+            )
             return username
-        return None
 
 
-    async def backpack_get(self) -> dict | None:
+    async def backpack_get(self) -> dict:
         get_backpack: dict = {
             PacketDataKeys.TYPE: PacketDataKeys.BACKPACK,
         }
         await self.send_server(get_backpack)
         backpack_data: dict | None = await self.get_data(
-            PacketDataKeys.BACKPACK_GET)
+            PacketDataKeys.BACKPACK_GET
+        )
         if isinstance(backpack_data, dict):
-            backpack: dict = backpack_data.get(PacketDataKeys.BACKPACK, {})
+            backpack: dict = backpack_data.get(
+                PacketDataKeys.BACKPACK,
+                {}
+            )
             return backpack
-        return None
 
-    async def get_market(self, market_type: int = 0, app_language: 
-                         MafiaLanguages = MafiaLanguages.English) -> dict | None:
+    async def get_market(
+        self,
+        market_type: int = 0,
+        app_language: MafiaLanguages = MafiaLanguages.English
+    ) -> dict:
         market_request: dict = {
             PacketDataKeys.TYPE: PacketDataKeys.MARKET_GET,
             PacketDataKeys.MARKET_BILLING_TYPE: market_type,
             PacketDataKeys.APP_LANGUAGE: app_language,
         }
         await self.send_server(market_request)
-        market_data: dict | None = await self.get_data(PacketDataKeys.MARKET_GET)
+        market_data: dict | None = await self.get_data(
+            PacketDataKeys.MARKET_GET
+        )
         if isinstance(market_data, dict):
-            market: dict = market_data.get(PacketDataKeys.MARKET, {})
+            market: dict = market_data.get(
+                PacketDataKeys.MARKET,
+                {}
+            )
             return market
-        return None
 
-    async def select_language(self, language: Languages = Languages.RUSSIAN)\
-            -> dict | None:
+    async def select_language(
+        self,
+        language: Languages = Languages.RUSSIAN
+    ) -> dict:
         """
         Sends a request to the server to update the user's preferred language.
 
@@ -374,10 +426,13 @@ class User:
         await self.send_server(language_update_request)
         return await self.get_data(PacketDataKeys.SERVER_LANGUAGE)
 
-    async def buy_vip(self, market_product_id: BuyVipMethodsIds\
-                      = BuyVipMethodsIds.BuyWithSilverCoins,
-                      app_language: MafiaLanguages
-                      = MafiaLanguages.English) -> dict | None:
+    async def buy_vip(
+        self,
+        market_product_id: BuyVipMethodsIds = (
+            BuyVipMethodsIds.BuyWithSilverCoins
+        ),
+        app_language: MafiaLanguages = MafiaLanguages.English
+    ) -> dict:
         buy_vip_request: dict = {
             PacketDataKeys.TYPE: PacketDataKeys.BUY_BILLING_VIP_ITEM,
             PacketDataKeys.MARKET_PRODUCT_ID: market_product_id,
@@ -386,9 +441,12 @@ class User:
         await self.send_server(buy_vip_request)
         return await self.listen()
 
-    async def buy_silver_coins(self, market_product_id: BuySilverCoinsMethodsIds\
-                      = BuySilverCoinsMethodsIds.BuyFiveThousandCoins,
-                      ) -> dict | None:
+    async def buy_silver_coins(
+        self,
+        market_product_id: BuySilverCoinsMethodsIds = (
+            BuySilverCoinsMethodsIds.BuyFiveThousandCoins
+        )
+    ) -> dict:
         buy_silver_coins_request: dict = {
             PacketDataKeys.TYPE: PacketDataKeys.BUY_SILVER_COINS_ITEM,
             PacketDataKeys.MARKET_PRODUCT_ID: market_product_id,
@@ -396,12 +454,15 @@ class User:
         await self.send_server(buy_silver_coins_request)
         return await self.listen()
 
-    async def buy_decorations(self, market_product_id: BuyDecorationsMethodIds = 
-                              BuyDecorationsMethodIds.\
-                              BuySixHundredSilver, 
-                              decoration_id: int = 7, 
-                              decoration_parameter: int = 10, 
-                              second_parameter: int | None = None) -> dict | None:
+    async def buy_decorations(
+        self,
+        market_product_id: BuyDecorationsMethodIds = (
+            BuyDecorationsMethodIds.BuySixHundredSilver
+        ),
+        decoration_id: int = 7,
+        decoration_parameter: int = 10,
+        second_parameter: int | None = None
+    ) -> dict:
         buy_decorations_request: dict = {
             PacketDataKeys.TYPE: PacketDataKeys.BUY_DECORATION,
             PacketDataKeys.BUY_DECORATION_REQUEST: {
@@ -413,13 +474,20 @@ class User:
             }
         }
         if second_parameter:
-            buy_decorations_request[PacketDataKeys.BUY_DECORATION_REQUEST][
-                PacketDataKeys.DECORAION_PARARAMETER]["2"] = second_parameter
+            buy_decorations_request[
+                PacketDataKeys.BUY_DECORATION_REQUEST
+            ][
+                PacketDataKeys.DECORAION_PARARAMETER
+            ][
+                "2"
+            ] = second_parameter
         await self.send_server(buy_decorations_request)
         return await self.listen()
-  
 
-    async def buy_vip_old(self, app_language = MafiaLanguages.Russian) -> dict | None:
+    async def buy_vip_old(
+            self,
+            app_language = MafiaLanguages.Russian
+    ) -> dict:
         """
         Sends a request to purchase a VIP account for the user.
 
@@ -442,18 +510,28 @@ class User:
         await self.send_server(buy_vip_request)
         return await self.listen()
 
-    async def get_default_photos(self) -> dict | None:
+    async def get_default_photos(self) -> dict:
         photo_request: dict = {
             PacketDataKeys.TYPE: PacketDataKeys.USER_GET_DEFAULT_PHOTOS,
         }
         await self.send_server(photo_request)
-        photos_data: dict | None = await self.get_data(PacketDataKeys.USER_DEFAULT_PHOTOS)
+        photos_data: dict | None = await self.get_data(
+            PacketDataKeys.USER_DEFAULT_PHOTOS
+        )
         if isinstance(photos_data, dict):
-            total_data: dict = photos_data.get(PacketDataKeys.USER_GET_DEFAULT_PHOTOS, {})
-            cache_key: int = total_data.get(PacketDataKeys.CACHE_KEY, 0)
-            photo_data: list = total_data.get(PacketDataKeys.USER_DEFAULT_PHOTOS_IDS, [])
+            total_data: dict = photos_data.get(
+                PacketDataKeys.USER_GET_DEFAULT_PHOTOS,
+                {}
+            )
+            cache_key: int = total_data.get(
+                PacketDataKeys.CACHE_KEY,
+                0
+            )
+            photo_data: list = total_data.get(
+                PacketDataKeys.USER_DEFAULT_PHOTOS_IDS,
+                []
+            )
             return {"photos_data": photo_data, "cache_key": cache_key}
-        return None
 
     async def update_photo(self, file: bytes) -> None:
         """
@@ -476,7 +554,7 @@ class User:
         await self.send_server(update_photo_request)
         return None
 
-    async def update_sex(self, sex: Sex) -> dict | None:
+    async def update_sex(self, sex: Sex) -> dict:
         """
         Sends a request to update the user's gender on the server.
 
@@ -501,7 +579,7 @@ class User:
         await self.send_server(update_sex_request)
         return await self.get_data(PacketDataKeys.SEX)
 
-    async def update_photo_server(self, file: bytes) -> str | None:
+    async def update_photo_server(self, file: bytes) -> str:
         """
         Uploads and updates a screenshot on the server.
 
@@ -522,13 +600,18 @@ class User:
             PacketDataKeys.FILE: base64.encodebytes(file).decode()
         }
         await self.send_server(upload_photo_request)
-        screenshot_data: dict | None = await self.get_data(PacketDataKeys.UPLOAD_SCREENSHOT)
+        screenshot_data: dict | None = await self.get_data(
+            PacketDataKeys.UPLOAD_SCREENSHOT
+        )
         if isinstance(screenshot_data, dict):
-            screenshot: str = str(screenshot_data.get(PacketDataKeys.SCREENSHOT))
+            screenshot: str = str(
+                screenshot_data.get(
+                    PacketDataKeys.SCREENSHOT
+                )
+            )
             return screenshot
-        return None
 
-    async def dashboard(self) -> dict | None:
+    async def dashboard(self) -> dict:
         """
         Sends a request to add the client to the dashboard.
 
