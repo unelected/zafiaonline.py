@@ -29,7 +29,7 @@ https://zafiaonlinepy.readthedocs.io/en/latest/
 
 ## Install
 
-Install from PyPI(https://pypi.org/project/zafiaonline/):
+Install from [PyPI](https://pypi.org/project/zafiaonline/):
 
 ```bash
 pip install zafiaonline
