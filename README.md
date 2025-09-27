@@ -57,7 +57,7 @@ async def main():
     client = zafiaonline.Client()
     await client.auth.sign_in("email@example.com", "your_password")
     # Use the client for API calls, then sign out
-    await client.auth.sign_out()
+    await client.https.sign_out()
 
 asyncio.run(main())
 ```
@@ -77,9 +77,9 @@ import zafiaonline
 async def example():
     client = zafiaonline.Client()
     await client.auth.sign_in("email", "password")
-    profile = await client.users.get_profile()   # example API
-    print(profile)
-    await client.auth.sign_out()
+    profile = await client.players.get_user("user_xxxxxxxxxxxx")   # example id
+    print(profile[zafiaonline.PacketDataKeys.USER_PROFILE][zafiaonline.PacketDataKeys.PROFILE_USER_DATA])
+    await client.https.sign_out()
 
 asyncio.run(example())
 ```
