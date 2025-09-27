@@ -177,10 +177,10 @@ This way, connection details are kept separate from your code and can be changed
 
 ## Troubleshooting Sphinx / Documentation
 
-* **`Unexpected indentation`** — fix docstring code examples: use `::` then an indented literal block:
+* **`Unexpected indentation`** — fix docstring code examples: use `:` then an indented literal block:
 
   ```python
-  """Example usage::
+  """Typical Usage Example:
 
       messages = SentMessages(enable_logging=True)
       messages.add_message("hello")
