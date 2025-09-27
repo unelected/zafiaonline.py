@@ -23,7 +23,7 @@
 - transport layers and ancillary utilities.
 
 Full documentation is available at:  
-https://zafiaonlinepy.readthedocs.io/en/latest/
+[ReadtheDocs](https://zafiaonlinepy.readthedocs.io/en/latest/)
 
 ---
 
