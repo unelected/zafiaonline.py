@@ -28,7 +28,7 @@ keywords = [
   "websocket api",
   "real-time api",
   "python game api",
-  "multiplayer game"
+  "multiplayer game",
   "chat game",
   "roleplay game",
   "online game",
@@ -42,7 +42,6 @@ classifiers = [
   "Development Status :: 5 - Production/Stable",
   "Environment :: Console",
   "Intended Audience :: Developers",
-  "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
   "Programming Language :: Python",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3.10",
