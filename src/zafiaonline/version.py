@@ -16,4 +16,4 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-__version__: str = "9.0.2"
+__version__: str = "9.1.0"
