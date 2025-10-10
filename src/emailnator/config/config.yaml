@@ -1,0 +1,6 @@
+BASE_URL: "https://www.emailnator.com"
+TIMEOUT: 15
+USE_HTTP2: true
+USER_AGENT: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0"
+GMAIL_CONFIG: ["dotGmail", "plusGmail"]
+PROOXY: null

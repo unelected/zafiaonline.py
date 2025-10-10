@@ -1,210 +1,219 @@
-<h1 align="center">
-  Mafia Online API for Python
-</h1>
 
-<p align="center">
-  A Python client library for <a href="https://play.google.com/store/apps/details?id=com.tokarev.mafia">Mafia Online</a>.
-</p>
+# emailnator-wrapper
 
-<p align="center">
-  <img alt="PyPI" src="https://img.shields.io/pypi/v/zafiaonline.svg">
-  <img alt="Read the Docs" src="https://img.shields.io/readthedocs/zafiaonlinepy?label=docs">
-  <img alt="Python version" src="https://img.shields.io/badge/python-3.9%2B-blue.svg">
-  <img alt="License" src="https://img.shields.io/badge/license-GPL--3.0--or--later-red.svg">
-</p>
+[![PyPI](https://img.shields.io/pypi/v/emailnator-wrapper.svg?color=blue)](https://pypi.org/project/emailnator-wrapper/)
+[![Python](https://img.shields.io/badge/python-3.9%2B-blue.svg)](https://www.python.org/)
+[![Docs](https://img.shields.io/badge/docs-online-success)](https://emailnator-wrapper.readthedocs.io/en/latest/)
+
+Asynchronous and synchronous API wrapper for **EmailNator**.
+
+Provides a small, well-typed SDK to generate temporary Gmail-style addresses and read incoming messages.
+Designed for both standalone scripts and integration into automation or testing pipelines.
 
 ---
 
-## Overview
+## 🚀 Features
 
-`zafiaonline` is a small library providing utilities and client functionality for interacting with the **Mafia Online** service. It includes:
-- an async `Client` for authentication and API calls,
-- anti-ban utilities and message tracking helpers,
-- transport layers and ancillary utilities.
+✅ Fully **asynchronous core** using `httpx.AsyncClient`
+✅ **Synchronous wrapper** for blocking workflows
+✅ Automatic **XSRF token** management via `XsrfManager`
+✅ Async-safe **singleton HTTP client** (`AsyncSingletonMeta`)
+✅ YAML-based **configurable setup** with optional proxy
+✅ Google-style **docstrings** and complete type hints
+✅ **Thoroughly tested** with `pytest` (`tests/sync`, `tests/asyncio`)
 
-Full documentation is available at [ReadtheDocs](https://zafiaonlinepy.readthedocs.io/en/latest/)
+📚 **Documentation:** [ReadTheDocs](https://emailnator-wrapper.readthedocs.io/en/latest/)
 
 ---
 
-## Install
+## 🧩 Requirements
 
-Install from [PyPI](https://pypi.org/project/zafiaonline/):
+* Python **3.9+** (tested on 3.13)
+* Dependencies:
+
+  * `httpx`
+  * `PyYAML`
+  * (for tests) `pytest`, `pytest-asyncio`
+
+---
+
+## 💾 Installation
 
 ```bash
-pip install zafiaonline
-````
-
-Install for development from source:
-
-```bash
-python -m venv .venv
-source .venv/bin/activate    # macOS / Linux
-pip install -e .
-pip install -r docs/requirements.txt   # optional: build docs locally
+pip install emailnator-wrapper
 ```
 
 ---
 
-## Quickstart — Import and Auth
+## ⚙️ Configuration
 
-Example using the async `Client`:
+`emailnator/config/config.yaml` (example):
+
+```yaml
+BASE_URL: https://www.emailnator.com
+TIMEOUT: 15
+USE_HTTP2: true
+USER_AGENT: "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+GMAIL_CONFIG:
+  - dotGmail
+  - plusGmail
+PROXY: null
+```
+
+**Notes:**
+
+* Use `null` (not `"None"`) to disable proxies.
+* Never store credentials or secrets in YAML files.
+
+---
+
+## 🚀 Quickstart — Asynchronous (recommended)
+
+`examples/async_example.py`
 
 ```python
 import asyncio
-import zafiaonline
+from emailnator.asyncio.email_generator import AsyncEmailGenerator
 
 async def main():
-    client = zafiaonline.Client()
-    await client.auth.sign_in("email@example.com", "your_password")
-    # Use the client for API calls, then sign out
-    await client.https.sign_out()
+    generator = await AsyncEmailGenerator()
+    email = await generator.generate_email()
+    messages = await generator.get_messages(email)
+    print(f"Email: {email}\nMessages: {messages}")
 
-asyncio.run(main())
+if __name__ == "__main__":
+    asyncio.run(main())
 ```
-
-If you prefer a synchronous helper wrapper, wrap async calls via `asyncio.run()` or your own event loop.
 
 ---
 
-## Examples
+## ⚡ Quickstart — Synchronous Wrapper
 
-Create a client and fetch some data (pseudo-code):
+`examples/sync_example.py`
 
 ```python
-import asyncio
-import zafiaonline
+from emailnator.sync.email_generator import EmailGenerator
 
-async def example():
-    client = zafiaonline.Client()
-    await client.auth.sign_in("email", "password")
-    profile = await client.players.get_user("user_xxxxxxxxxxxx")   # example id
-    print(profile[zafiaonline.PacketDataKeys.USER_PROFILE][zafiaonline.PacketDataKeys.PROFILE_USER_DATA])
-    await client.https.sign_out()
+def main():
+    gen = EmailGenerator()
+    email = gen.generate_email()
+    messages = gen.get_messages(email)
+    print(f"Email: {email}\nMessages: {messages}")
 
-asyncio.run(example())
+if __name__ == "__main__":
+    main()
 ```
-
-Adjust imports and method names to the actual API surface of your package.
 
 ---
 
-## Documentation
+## 📚 Public API Overview
 
-Docs are published at:
-[https://zafiaonlinepy.readthedocs.io/en/latest/](https://zafiaonlinepy.readthedocs.io/en/latest/)
+| Component               | Description                                        |
+| ----------------------- | -------------------------------------------------- |
+| `AsyncEmailGenerator`   | High-level async interface. Awaitable constructor. |
+| `Generators`            | Wraps `/generate-email` endpoint (bulk + single).  |
+| `MessageGetter`         | Retrieves and parses inbox messages.               |
+| `AsyncEmailnatorClient` | Shared async HTTP client singleton.                |
+| `XsrfManager`           | Manages XSRF lifecycle and headers.                |
+| `config`                | Loads YAML into structured config attributes.      |
 
-Build docs locally:
+---
+
+## 🧩 Behavior Notes
+
+* Always **`await` the constructor** if using async metaclass (`await AsyncEmailGenerator()`).
+* YAML `PROXY: null` means *no proxy* — don’t use `"None"`.
+* Possible HTTP issues (`403`, `419`) may stem from **bot protection** — consider rotating proxies.
+* Avoid using `asyncio.run()` inside an already running loop.
+
+---
+
+## 🧪 Tests
+
+Tests are divided into two categories:
+
+```
+tests/
+├── asyncio/
+│   ├── test_generators.py
+│   ├── test_message_getter.py
+│   └── test_email_generator.py
+└── sync/
+    ├── test_generators_sync.py
+    └── test_email_generator_sync.py
+```
+
+### Run all tests
 
 ```bash
-cd docs
-make html
-# Open docs/_build/html/index.html
+pytest -v
 ```
 
-If you use the `src/` layout, ensure `docs/source/conf.py` contains:
+### Run only async tests
 
-```python
-import os
-import sys
-sys.path.insert(0, os.path.abspath("../../src"))
-master_doc = "index"
+```bash
+pytest tests/asyncio -v
 ```
+
+### Run only sync tests
+
+```bash
+pytest tests/sync -v
+```
+
+All tests use `pytest-asyncio` and can be executed locally or in CI (GitHub Actions workflow provided).
 
 ---
 
-## Read the Docs (CI) config
+## 📘 Documentation
 
-Example `.readthedocs.yaml` to place in the repo root:
+Full API documentation is available on ReadTheDocs:
+-> [https://emailnator-wrapper.readthedocs.io/en/latest/](https://emailnator-wrapper.readthedocs.io/en/latest/)
 
-```yaml
-version: 2
+You’ll find:
 
-build:
-  os: ubuntu-22.04
-  tools:
-    python: latest
-
-sphinx:
-  configuration: docs/source/conf.py
-
-python:
-  install:
-    - method: pip
-      path: .
-    - requirements: docs/requirements.txt
-```
-
-And `docs/requirements.txt` (basic):
-
-```
-sphinx
-sphinx-rtd-theme
-```
+* Installation guide
+* API references (async & sync layers)
+* Architecture overview
+* Examples & testing guide
 
 ---
 
-## Configuration (YAML)
+## ⚠️ Troubleshooting
 
-The library also supports configuration via a **YAML** file for WebSocket connection parameters.  
-Example `config.yaml`:
-
-```yaml
-host: "dottap.com"
-port: 7091
-connect_type: "wss"
-````
-
-You can then load and use it inside your project:
-
-```python
-class Config:
-    def __init__(self, path: str = "ws_config.yaml") -> None:
-        config_path = files('zafiaonline.transport.websocket').joinpath(path)
-        with as_file(config_path) as resource_file:
-            with open(resource_file, "r") as config_file:
-                config: dict = yaml.safe_load(config_file)
-        self.address: str = config.get("address", "dottap.com")
-        self.port: int = config.get("port", 7091)
-        self.connect_type: str = config.get("connect_type", "wss")
-```
-
-This way, connection details are kept separate from your code and can be changed without modifying Python files.
+| Issue                                             | Cause / Fix                                         |
+| ------------------------------------------------- | --------------------------------------------------- |
+| `coroutine object has no attribute`               | Forgot to `await` async constructor.                |
+| `RuntimeWarning: coroutine was never awaited`     | Created coroutine but didn’t await it.              |
+| `ValueError: Unknown scheme for proxy URL "None"` | Fix YAML: use `null` instead of `"None"`.           |
+| HTTP 419 / “Page Expired”                         | Missing or expired XSRF token — refresh it.         |
+| HTTP 403                                          | Cloudflare or bot protection triggered — use proxy. |
 
 ---
 
-## Troubleshooting Sphinx / Documentation
+## 🤝 Contributing
 
-* **`Unexpected indentation`** — fix docstring code examples: use `:` then an indented literal block:
+1. Fork the repository.
+2. Create a feature branch (`feature/my-change`).
+3. Add or update tests under `tests/`.
+4. Open a Pull Request.
 
-  ```python
-  """Typical Usage Example:
-
-      messages = SentMessages(enable_logging=True)
-      messages.add_message("hello")
-  """
-  ```
-
-* **`Index file is not present`** — ensure `docs/source/index.rst` exists and `master_doc = "index"` in `conf.py`.
-
-* **Duplicate or ambiguous cross-references** — avoid re-exporting the same object in `__init__.py` or use fully-qualified cross-references (e.g. `:class:\`zafiaonline.main.Client``) or `:no-index:` to suppress duplicates.
+✅ Follow code style: type hints, async-safe patterns, Google-style docstrings.
+✅ Keep public API backward-compatible when possible.
 
 ---
 
-## Contributing
+## 📄 License
 
-1. Fork the repo → create a feature branch → open a PR.
-2. Follow code style and include tests for non-trivial changes.
-3. In PR description, explain changes and link documentation where applicable.
-
----
-
-## License
-
-This project is licensed under **GNU GPL v3.0 or later**. See the `LICENSE` file for details.
+Licensed under the **GNU Affero General Public License v3 (AGPL-3.0)**.
+See [LICENSE](./LICENSE) for full details.
 
 ---
 
-## Contact
+## 🌐 Project Links
 
-Author: `unelected`
-Bugs & feature requests: open an issue on the repository.
+| Resource                  | URL                                                                                       |
+| ------------------------- | ----------------------------------------------------------------------------------------- |
+| 📘 Documentation          | [emailnator-wrapper.readthedocs.io](https://emailnator-wrapper.readthedocs.io/en/latest/) |
+| 🐍 PyPI                   | [pypi.org/project/emailnator-wrapper](https://pypi.org/project/emailnator-wrapper/)       |
+
