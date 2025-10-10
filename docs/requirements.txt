@@ -1,0 +1,4 @@
+emailnator-wrapper
+furo
+sphinx
+sphinx-autodoc-typehints
