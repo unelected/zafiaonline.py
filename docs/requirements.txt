@@ -1,5 +1,0 @@
-sphinx~=8.2.0
-furo
-sphinxcontrib-trio
-sphinx-copybutton
-sphinx-inline-tabs
