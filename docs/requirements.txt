@@ -1,4 +1,5 @@
-emailnator-wrapper
+sphinx~=8.2.0
 furo
-sphinx
-sphinx-autodoc-typehints
+sphinxcontrib-trio
+sphinx-copybutton
+sphinx-inline-tabs

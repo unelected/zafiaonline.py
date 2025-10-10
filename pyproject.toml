@@ -3,63 +3,71 @@ requires = ["setuptools >= 80"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "emailnator-wrapper"
+name = "zafiaonline"
 dynamic = ["version", "readme"]
 keywords = [
-  "email generator",
-  "emailnator",
-  "gmailnator",
-  "gmail generator",
-  "gmail",
-  "email",
-  "tempmail",
-  "api",
-  "temporary",
-  "generator",
-  "emailnator api",
-  "gmailnator api",
-  "web api",
-  "web",
-  "bulk emails",
-  "emails",
-  "mail",
-  "mail generator"
+  "mafiaonline",
+  "Mafia Online",
+  "dottap",
+  "mafia api",
+  "game api",
+  "asyncio",
+  "websocket client",
+  "Mafia Online API",
+  "API Mafia Online",
+  "zafiaonline",
+  "zafiaonline.py",
+  "bot",
+  "game bot",
+  "game automation",
+  "python bot",
+  "python api client",
+  "async api client",
+  "python websocket",
+  "dottap api",
+  "websocket api",
+  "real-time api",
+  "python game api",
+  "multiplayer game",
+  "chat game",
+  "roleplay game",
+  "online game",
+  "text game"
 ]
-description = "A Python wrapper for the Emailnator service providing both synchronous and asynchronous APIs."
+description = "A Python API library for interacting with Mafia Online game."
 requires-python = ">=3.10"
-license = "AGPL-3.0-or-later"
+license = "GPL-3.0-or-later"
 license-files = ["LICENSE.txt"]
 classifiers = [
   "Development Status :: 5 - Production/Stable",
   "Environment :: Console",
   "Intended Audience :: Developers",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Software Development :: Libraries",
+  "Topic :: Games/Entertainment",
+  "Topic :: Internet"
 ]
 authors = [
     { name = "unelected" }
 ]
 
 dependencies = [
-  "httpx~=0.28.1",
-  "pyyaml~=6.0.2"
+    "websockets >= 15.0.1",
+    "msgspec ~= 0.19",
+    "aiohttp ~= 3.12",
+    "pyyaml ~= 6.0"
 ]
-
 [project.optional-dependencies]
-test = [
-    "pytest>=8.0",
-    "pytest-asyncio>=1.0",
-    "coverage",
-]
-
+dev = ["pytest ~= 8.4"]
 [project.urls]
-Homepage = "https://github.com/unelected/emailnator-wrapper"
-Repository = "https://github.com/unelected/emailnator-wrapper.git"
-
-[tool.pytest.ini_options]
-asyncio_mode = "auto"
-testpaths = ["tests"]
-python_files = ["test_*.py"]
-python_functions = ["test_*"]
-python_classes = ["Test*"]
+Homepage = "https://github.com/unelected/zafiaonline.py"
+Repository = "https://github.com/unelected/zafiaonline.py.git"
+Documentation = "https://zafiaonlinepy.readthedocs.io"
+Issues = "https://github.com/unelected/zafiaonline.py/issues"
 
 [tool.setuptools]
 package-dir = { "" = "src" }
@@ -68,7 +76,7 @@ package-dir = { "" = "src" }
 where = ["src"]
 
 [tool.setuptools.package-data]
-"emailnator.config" = ["*.yaml"]
+"zafiaonline.transport.websocket" = ["*.yaml"]
 [tool.setuptools.dynamic]
-version = { attr = "emailnator.version.__version__" }
+version = { attr = "zafiaonline.version.__version__" }
 readme = {file = "README.md", content-type = "text/markdown"}
