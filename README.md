@@ -15,6 +15,16 @@
 
 ---
 
+## Temporary Suspension of Library Updates
+
+During an audit, it was discovered that my code was being used in violation of the terms of the **GPL** license. As a result, an investigation is currently underway.
+
+Until the situation is resolved, no updates to the library to support the **new API** will be released.
+
+Further updates and a possible timeline for resuming development will be provided after the investigation is complete.
+
+---
+
 ## Overview
 
 `zafiaonline` is a small library providing utilities and client functionality for interacting with the **Mafia Online** service. It includes:
