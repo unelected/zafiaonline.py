@@ -192,7 +192,7 @@ class ModelRoom(Struct, rename = Renaming.ROOM):
     selected_roles: list[Roles] | None = None
     title: str | None = None
     password: str | None = None
-    room_model_tupe: int | None = None
+    room_model_tupe: int | None = None # TODO: unelected - change name
 
 
 class ModelShortUser(Struct, rename = Renaming.SHORT_USER):
