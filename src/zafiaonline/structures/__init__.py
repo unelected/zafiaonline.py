@@ -16,26 +16,44 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from zafiaonline.structures.packet_data_keys import PacketDataKeys, HttpsApiKeys, ZafiaApiKeys, Endpoints, ZafiaEndpoints, Renaming
+from zafiaonline.structures.packet_data_keys import (
+    PacketDataKeys,
+    HttpsApiKeys,
+    Endpoints,
+    Renaming,
+)
 from zafiaonline.structures.enums import (
-    Sex, Roles, Languages, RatingMode, RatingType,
-    ActivityType, RoomModelType, FriendInRoomType, ProfilePhotoType,
-    MessageType, MessageStyles, MafiaLanguages, MethodGetFavourites
+    Sex,
+    Roles,
+    Languages,
+    RatingMode,
+    RatingType,
+    ActivityType,
+    RoomModelType,
+    FriendInRoomType,
+    ProfilePhotoType,
+    MessageType,
+    MessageStyles,
+    MafiaLanguages,
+    MethodGetFavourites,
 )
 from zafiaonline.structures.models import (
-    ModelUser, ModelOtherUser, ModelServerConfig, ModelRoom,
-    ModelShortUser, ModelFriend, ModelMessage, ModelGUI
+    ModelUser,
+    ModelOtherUser,
+    ModelServerConfig,
+    ModelRoom,
+    ModelShortUser,
+    ModelFriend,
+    ModelMessage,
+    ModelGUI,
 )
 
 __all__: tuple[str, ...] = (
     # Constants
     "PacketDataKeys",
     "HttpsApiKeys",
-    "ZafiaApiKeys",
     "Endpoints",
-    "ZafiaEndpoints",
     "Renaming",
-
     # Enums
     "Sex",
     "Languages",
@@ -50,7 +68,6 @@ __all__: tuple[str, ...] = (
     "MessageStyles",
     "MafiaLanguages",
     "MethodGetFavourites",
-
     # Models
     "ModelUser",
     "ModelOtherUser",

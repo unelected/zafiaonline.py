@@ -28,6 +28,7 @@ Typical usage example:
     client = Client()
     client.auth.login(...)
 """
+
 import importlib
 import types
 
@@ -53,18 +54,13 @@ class Client:
         proxy (str | None): Optional proxy URL used for HTTPS requests.
         _cache (dict[str, Any]): Stores lazily created submodule instances.
     """
+
     # User
     auth = make_submodule_property(
-        "auth",
-        "user_methods",
-        "AuthService",
-        client=lambda self: self
+        "auth", "user_methods", "AuthService", client=lambda self: self
     )
     user = make_submodule_property(
-        "user",
-        "user_methods",
-        "UserMethods",
-        auth_client=lambda self: self.auth
+        "user", "user_methods", "UserMethods", auth_client=lambda self: self.auth
     )
 
     # Players
@@ -72,7 +68,7 @@ class Client:
         "players",
         "player_methods",
         "PlayersMethods",
-        auth_client=lambda self: self.auth
+        auth_client=lambda self: self.auth,
     )
 
     # Global Chat
@@ -80,34 +76,22 @@ class Client:
         "global_chat",
         "global_chat_methods",
         "GlobalChatMethods",
-        auth_client=lambda self: self.auth
+        auth_client=lambda self: self.auth,
     )
 
     # Room
     room = make_submodule_property(
-        "room",
-        "room_methods",
-        "RoomMethods",
-        auth_client=lambda self: self.auth
+        "room", "room_methods", "RoomMethods", auth_client=lambda self: self.auth
     )
     matchmaking = make_submodule_property(
         "matchmaking",
         "room_methods",
         "MatchMakingMethods",
-        auth_client=lambda self: self.auth
+        auth_client=lambda self: self.auth,
     )
 
     # Traffic
-    https = make_submodule_property(
-        "https",
-        "https_api",
-        "HttpsApiMethods"
-    )
-    zafia = make_submodule_property(
-        "zafia",
-        "zafia_api",
-        "ZafiaApiMethods"
-    )
+    https = make_submodule_property("https", "https_api", "HttpsApiMethods")
 
     # Typing
     _submodule = TypeVar("_submodule")
@@ -150,12 +134,7 @@ class Client:
         )
 
     def _import_submodule(
-        self,
-        attr: str,
-        module_name: str,
-        class_name: str,
-        *args: Any,
-        **kwargs: Any
+        self, attr: str, module_name: str, class_name: str, *args: Any, **kwargs: Any
     ) -> object:
         """
         Lazily imports a submodule class, instantiates it, and caches the instance.
@@ -191,13 +170,11 @@ class Client:
 
             except ImportError as e:
                 raise ImportError(
-                    f"Failed to import module "
-                    f"'zafiaonline.api_client.{module_name}'"
+                    f"Failed to import module 'zafiaonline.api_client.{module_name}'"
                 ) from e
             except AttributeError as e:
                 raise ImportError(
-                    f"Module '{module_name}'" 
-                    f"does not define class '{class_name}'"
+                    f"Module '{module_name}'does not define class '{class_name}'"
                 ) from e
             except Exception as e:
                 raise RuntimeError(

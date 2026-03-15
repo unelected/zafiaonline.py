@@ -23,8 +23,6 @@ from zafiaonline.api_client.player_methods import PlayersMethods
 from zafiaonline.api_client.global_chat_methods import GlobalChatMethods
 from zafiaonline.api_client.room_methods import RoomMethods, MatchMakingMethods
 from zafiaonline.api_client.https_api import HttpsApiMethods
-from zafiaonline.api_client.zafia_api import ZafiaApiMethods
-
 
 class Client:
     auth: AuthService
@@ -34,15 +32,9 @@ class Client:
     room: RoomMethods
     matchmaking: MatchMakingMethods
     https: HttpsApiMethods
-    zafia: ZafiaApiMethods
 
     def __init__(self, proxy: str | None = None) -> None: ...
     def __getattr__(self, name: str) -> object: ...
     def _import_submodule(
-        self,
-        attr: str,
-        module_name: str,
-        class_name: str,
-        *args: Any,
-        **kwargs: Any
+        self, attr: str, module_name: str, class_name: str, *args: Any, **kwargs: Any
     ) -> object: ...

@@ -20,7 +20,7 @@
 Enums and renaming dictionaries for networking and API communication.
 
 This module contains enum classes and key renaming mappings used for encoding
-and decoding messages between clients and servers in Mafia Online and Zafia Online.
+and decoding messages between client and server in Mafia Online
 
 Typical usage example:
 
@@ -29,6 +29,7 @@ Typical usage example:
     value = PacketDataKeys.USERNAME
     renamed_dict = rename_payload(data, rename_map=Renaming.USER)
 """
+
 from enum import Enum
 from typing import Any
 
@@ -45,6 +46,7 @@ class PacketDataKeys(str, Enum):
     a single letter or abbreviation, which identifies a specific action,
     status, user attribute, or system message in the protocol.
     """
+
     ACCEPTED = "a"
     ACCEPT_MESSAGES = "ac"
     ACTIVE = "ac"
@@ -418,6 +420,7 @@ class HttpsApiKeys(str, Enum):
         CURRENT_PASSWORD (str): Key for the user's current password.
         VERIFICATION_CODE (str): Key for email or account verification code.
     """
+
     LANGUAGE = "lang"
     NEW_EMAIL = "newEmail"
     DEVICE_ID = "deviceId"
@@ -427,38 +430,6 @@ class HttpsApiKeys(str, Enum):
     PASSWORD = "password"
     CURRENT_PASSWORD = "currentPassword"
     VERIFICATION_CODE = "verificationCode"
-
-
-class ZafiaApiKeys(str, Enum):
-    """
-    Enumeration of API parameter keys used in Zafia API requests.
-
-    This enum defines string constants representing keys commonly used
-    in requests to the Zafia API. These keys identify user-related data,
-    request parameters, and device information.
-
-    Attributes:
-        USER_ID (str): Key for specifying the user identifier.
-        FAVORITE_ID (str): Key for specifying the favorite item identifier.
-        SHOW (str): Key for controlling visibility or display options.
-        FROM_TYPE (str): Key indicating the source or type of a request.
-        CHECK_ID (str): Key for an ID to be checked or verified.
-        USER_NICKNAME (str): Key for the user's nickname.
-        CHECK_NICKNAME (str): Key for a nickname to be checked.
-        TYPE (str): Key for specifying the type or category.
-        VERSION (str): Key for the API or client version.
-        DEVICE_ID (str): Key for identifying the user's device.
-    """
-    USER_ID = "userId"
-    FAVORITE_ID = "favoriteId"
-    SHOW = "show"
-    FROM_TYPE = "fromType"
-    CHECK_ID = "checkId"
-    USER_NICKNAME = "userNickname"
-    CHECK_NICKNAME = "checkNickname"
-    TYPE = "type"
-    VERSION = "version"
-    DEVICE_ID = "deviceId"
 
 
 class Endpoints(str, Enum):
@@ -482,6 +453,7 @@ class Endpoints(str, Enum):
         BACKPACK_GET (str): Endpoint to get the contents of a user's backpack.
         BACKPACK_GET_BONUS_PRICES (str): Endpoint to fetch bonus item prices in the backpack.
     """
+
     REMOVE_ACCOUNT = "user/remove"
     PROFILE_PHOTO = "mafia/profile_photo/{user_id}.jpg"
     CLIENT_CONFIG = "mafia/clientConfig{version}.txt"
@@ -494,31 +466,6 @@ class Endpoints(str, Enum):
     USER_GET = "user/get"
     BACKPACK_GET = "backpack/get"
     BACKPACK_GET_BONUS_PRICES = "backpack/get_bonus_prices"
-
-
-class ZafiaEndpoints(str, Enum):
-    """
-    API endpoints for Zafia Online.
-
-    This enum contains shorthand identifiers used in Zafia Online's
-    internal API routing. Each value corresponds to a specific backend
-    action that the client can trigger.
-
-    Attributes:
-        CHANGE_FAVORITE_STATUS: Change the favorite status of a user.
-        CHANGE_VISIBLE_TOP: Change a user's visibility in the top list.
-        CHECK_PROFILE: Retrieve another user's profile data.
-        GET_FAVORITES_LIST: Get the current user's list of favorites.
-        GET_TOP: Retrieve the top-ranking users.
-        GET_VERIFICATIONS: Get verification-related data.
-    """
-    CHANGE_FAVORITE_STATUS = "cfs"
-    CHANGE_VISIBLE_TOP = "cvt"
-    CHECK_PROFILE = "cpr"
-    GET_FAVORITES_LIST = "gfl"
-    GET_TOP = "gt"
-    GET_VERIFICATIONS = "vf"
-
 
     def format(self, *args: Any, **kwargs: Any) -> str:
         """
@@ -561,38 +508,65 @@ class Renaming(dict, Enum):
         DECORATIONS: Mapping for decoration item types.
         DECORATIONS_PARAMETERS: Mapping for parameters of decorations.
     """
+
     USER = {
-        "user_id": "o", "username": "u",
-        "updated": "up", "photo": "ph", "experience": "ex",
+        "user_id": "o",
+        "username": "u",
+        "updated": "up",
+        "photo": "ph",
+        "experience": "ex",
         "next_level_experience": "nle",
-        "previous_level_experience": "ple", "level": "l",
-        "gold": "g", "money": "mo",
-        "is_vip": "v", "vip_updated": "vupd",
-        "played_games": "pg", "score": "sc",
-        "sex": "s", "wins_as_killer": "wik",
-        "wins_as_mafia": "wim", "wins_as_peaceful": "wip",
-        "token": "t", "accept_messages": "ac",
-        "rank": "r", "selected_language": "slc",
-        "online": "on", "player_role_statistics": "prst",
-        "match_making_score": "mmscr", "is_in_room": "rr",
-        }
+        "previous_level_experience": "ple",
+        "level": "l",
+        "gold": "g",
+        "money": "mo",
+        "is_vip": "v",
+        "vip_updated": "vupd",
+        "played_games": "pg",
+        "score": "sc",
+        "sex": "s",
+        "wins_as_killer": "wik",
+        "wins_as_mafia": "wim",
+        "wins_as_peaceful": "wip",
+        "token": "t",
+        "accept_messages": "ac",
+        "rank": "r",
+        "selected_language": "slc",
+        "online": "on",
+        "player_role_statistics": "prst",
+        "match_making_score": "mmscr",
+        "is_in_room": "rr",
+    }
 
     USER_NEW_API = {
-        "user_id": "o", "username": "u",
-        "updated": "up", "photo": "ph", "experience": "ex",
+        "user_id": "o",
+        "username": "u",
+        "updated": "up",
+        "photo": "ph",
+        "experience": "ex",
         "next_level_experience": "nle",
-        "previous_level_experience": "ple", "level": "l", 
-        "gold": "g", "money": "mo",
-        "is_vip": "v", "vip_updated": "vupd",
-        "played_games": "pg", "score": "sc",
-        "sex": "s", "wins_as_killer": "wik",
-        "wins_as_mafia": "wim", "wins_as_peaceful": "wip",
-        "token": "t", "accept_messages": "ac",
-        "selected_language": "slc", "user_account_coins": "uac",
-        "decorations": "dcrs", "silver_coins": "scns",
-        "online": "on", "player_role_statistics": "prst",
-        "match_making_score": "mmscr"
-        }
+        "previous_level_experience": "ple",
+        "level": "l",
+        "gold": "g",
+        "money": "mo",
+        "is_vip": "v",
+        "vip_updated": "vupd",
+        "played_games": "pg",
+        "score": "sc",
+        "sex": "s",
+        "wins_as_killer": "wik",
+        "wins_as_mafia": "wim",
+        "wins_as_peaceful": "wip",
+        "token": "t",
+        "accept_messages": "ac",
+        "selected_language": "slc",
+        "user_account_coins": "uac",
+        "decorations": "dcrs",
+        "silver_coins": "scns",
+        "online": "on",
+        "player_role_statistics": "prst",
+        "match_making_score": "mmscr",
+    }
 
     SERVER_CONFIG = {
         "kick_user_price": "kup",
@@ -600,42 +574,58 @@ class Renaming(dict, Enum):
         "price_username_set": "pus",
         "server_language_change_time": "slct",
         "show_password_room_info_button": "sprib",
-        "set_photo_minimal_level": "sppml", 
+        "set_photo_minimal_level": "sppml",
         "room_title_minimal_level": "srtml",
         "room_password_minimal_level": "srpml",
         "match_making_users_in_queue_interval": "mmguiqik",
         "connection_inactive_timeout": "cit",
         "connection_checker_period": "ccp",
-        }
+    }
 
     ROOM = {
-        "room_id": "o", "min_players": "mnp",
-        "max_players": "mxp", "min_level": "mnl",
-        "vip_enabled": "venb", "status": "s",
-        "selected_roles": "sr", "title": "tt",
-        "password": "pw", "room_model_type": "rmt",
-        }
+        "room_id": "o",
+        "min_players": "mnp",
+        "max_players": "mxp",
+        "min_level": "mnl",
+        "vip_enabled": "venb",
+        "status": "s",
+        "selected_roles": "sr",
+        "title": "tt",
+        "password": "pw",
+        "room_model_type": "rmt",
+    }
 
     CURRENET_ROOM = {
-        "game_status": "s", "min_level": "mnl",
-        "room_id": "o", "password": "pw",
-        "players_number": "pn", "same_room": "isr",
-        "title": "tt", "vip_enabled": "venb",
+        "game_status": "s",
+        "min_level": "mnl",
+        "room_id": "o",
+        "password": "pw",
+        "players_number": "pn",
+        "same_room": "isr",
+        "title": "tt",
+        "vip_enabled": "venb",
     }
 
     ROOM_IN_LOBBY = {
-        "room_id": "o", "min_players": "mnp",
-        "max_players": "mxp", "min_level": "mnl",
-        "vip_enabled": "venb", "status": "s",
-        "selected_roles": "sr", "title": "tt",
-        "password": "pw", "creator_id": "rco", 
-        "game_status": "s", "room_status": "rs",
-        "friend_in_room": "fir", "players": "pls",
+        "room_id": "o",
+        "min_players": "mnp",
+        "max_players": "mxp",
+        "min_level": "mnl",
+        "vip_enabled": "venb",
+        "status": "s",
+        "selected_roles": "sr",
+        "title": "tt",
+        "password": "pw",
+        "creator_id": "rco",
+        "game_status": "s",
+        "room_status": "rs",
+        "friend_in_room": "fir",
+        "players": "pls",
         "players_number": "pn",
         "invited_in_room": "iinvtd",
         "invitation_sender_username": "isun",
-        "friend_in_room": "fir", "room_model_type": "rmt",
-
+        "friend_in_room": "fir",
+        "room_model_type": "rmt",
     }
 
     ROOM_IN_LOBBY_STATE = {
@@ -643,47 +633,59 @@ class Renaming(dict, Enum):
         "friend_in_room": "fir",
         "players_in_room": "pin",
         "invited_in_room": "iinvtd",
-        "room_id": "ro"
+        "room_id": "ro",
     }
 
     SHORT_USER = {
-        "user_id": "o", "username": "u",
-        "updated": "up", "photo": "ph", "online": "on",
-        "sex": "s", "is_vip": "v", "vip_updated": "vupd"
-        }
+        "user_id": "o",
+        "username": "u",
+        "updated": "up",
+        "photo": "ph",
+        "online": "on",
+        "sex": "s",
+        "is_vip": "v",
+        "vip_updated": "vupd",
+    }
 
     FRIEND = {
-        "friend_id": "o", "updated": "up",
-        "user": "uu", "new_messages": "nm",
-        "user_id": "uo"
-        }
+        "friend_id": "o",
+        "updated": "up",
+        "user": "uu",
+        "new_messages": "nm",
+        "user_id": "uo",
+    }
 
     FRIENDSHIP = {
         # friendship response
-        "accepted": "a", "currenet_room": "rr",
-        "friend_data": "ff", "friend_id": "f", 
-        "user_data": "uu"
-        }
+        "accepted": "a",
+        "currenet_room": "rr",
+        "friend_data": "ff",
+        "friend_id": "f",
+        "user_data": "uu",
+    }
 
     MESSAGE = {
-        "user_id": "uo", "friend_id": "fp",
-        "created": "c", "text": "tx", "message_style": "mstl",
-        "accepted": "a", "message_type": "t"
-            }
+        "user_id": "uo",
+        "friend_id": "fp",
+        "created": "c",
+        "text": "tx",
+        "message_style": "mstl",
+        "accepted": "a",
+        "message_type": "t",
+    }
 
-    GUI = {
-        "count_authority_for_swap_icon":"r"
-        }
+    GUI = {"count_authority_for_swap_icon": "r"}
 
     DECORATIONS = {
-        "photo_border": "8", "photo_border_animation": "7",
-        "profile_animation": "4", "profile_background": "6",
-        "profile_main_color": "5", "username_animation": "0",
-        "username_background": "1", "username_shadow": "2",
-        "username_text": "3"
+        "photo_border": "8",
+        "photo_border_animation": "7",
+        "profile_animation": "4",
+        "profile_background": "6",
+        "profile_main_color": "5",
+        "username_animation": "0",
+        "username_background": "1",
+        "username_shadow": "2",
+        "username_text": "3",
     }
 
-    DECORATIONS_PARAMETERS = {
-        "alpha": "0", "value": "1",
-        "file": "2", "speed": "3"
-    }
+    DECORATIONS_PARAMETERS = {"alpha": "0", "value": "1", "file": "2", "speed": "3"}
